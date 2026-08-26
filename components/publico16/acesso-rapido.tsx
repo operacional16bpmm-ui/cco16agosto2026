@@ -6,6 +6,7 @@ import {
   IconePlanilha,
   IconeRestrito,
 } from "@/components/publico16/icones-cop";
+import { AjudaWhatsApp } from "@/components/publico16/ajuda-whatsapp";
 
 /**
  * Barra de ações da página da auditoria, no padrão do portal institucional da
@@ -68,33 +69,39 @@ export function AcessoRapido({
         </div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {/* AÇÃO DIÁRIA — preto e vermelho, o botão que a tropa procura. */}
-          <a
-            href={urlFormulario}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group relative flex h-full flex-col justify-between overflow-hidden rounded-lg border-2 border-[#ca0202] bg-[#111] p-6 shadow-[0_10px_28px_rgba(0,0,0,0.28)] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_16px_38px_rgba(202,2,2,0.35)]"
-          >
-            {/* brilho que corre no hover: dá vida sem poluir */}
-            <span className="pointer-events-none absolute -inset-x-10 -top-16 h-24 rotate-12 bg-[#ca0202]/25 blur-2xl transition-transform duration-700 group-hover:translate-y-40" />
-            <span className="relative">
-              <span className="flex h-14 w-14 items-center justify-center rounded-lg bg-[#ca0202] text-white shadow-lg transition-transform duration-300 group-hover:scale-110">
-                <IconeLancarAuditoria size={30} />
+          {/* AÇÃO DIÁRIA — preto e vermelho, o botão que a tropa procura. O
+              wrapper existe só para pendurar o socorro do WhatsApp no canto:
+              botão dentro de link seria HTML inválido. */}
+          <div className="relative h-full">
+            <AjudaWhatsApp />
+            <a
+              href={urlFormulario}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group relative flex h-full flex-col justify-between overflow-hidden rounded-lg border-2 border-[#ca0202] bg-[#111] p-6 shadow-[0_10px_28px_rgba(0,0,0,0.28)] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_16px_38px_rgba(202,2,2,0.35)]"
+            >
+              {/* brilho que corre no hover: dá vida sem poluir */}
+              <span className="pointer-events-none absolute -inset-x-10 -top-16 h-24 rotate-12 bg-[#ca0202]/25 blur-2xl transition-transform duration-700 group-hover:translate-y-40" />
+              <span className="relative">
+                <span className="flex h-14 w-14 items-center justify-center rounded-lg bg-[#ca0202] text-white shadow-lg transition-transform duration-300 group-hover:scale-110">
+                  <IconeLancarAuditoria size={30} />
+                </span>
+                <span className="mt-4 block text-[11px] font-black uppercase tracking-[0.18em] text-[#ff5a5a]">
+                  Formulário da auditoria
+                </span>
+                <span className="mt-1 block font-serif text-xl font-bold leading-snug text-white">
+                  Lançar auditoria do turno
+                </span>
+                <span className="mt-2 block text-[14px] leading-snug text-white/65">
+                  É aqui que você preenche. Mínimo de 3 ID&apos;s de mídia por
+                  turno.
+                </span>
               </span>
-              <span className="mt-4 block text-[11px] font-black uppercase tracking-[0.18em] text-[#ff5a5a]">
-                Formulário da auditoria
+              <span className="relative mt-5 inline-flex items-center justify-center rounded-md bg-[#ca0202] px-5 py-3.5 text-[15px] font-bold uppercase tracking-wide text-white transition-colors group-hover:bg-[#e40707]">
+                Preencher agora
               </span>
-              <span className="mt-1 block font-serif text-xl font-bold leading-snug text-white">
-                Lançar auditoria do turno
-              </span>
-              <span className="mt-2 block text-[14px] leading-snug text-white/65">
-                É aqui que você preenche. Mínimo de 3 ID&apos;s de mídia por turno.
-              </span>
-            </span>
-            <span className="relative mt-5 inline-flex items-center justify-center rounded-md bg-[#ca0202] px-5 py-3.5 text-[15px] font-bold uppercase tracking-wide text-white transition-colors group-hover:bg-[#e40707]">
-              Preencher agora
-            </span>
-          </a>
+            </a>
+          </div>
 
           {atalhos.map((a) => {
             const conteudo = (
