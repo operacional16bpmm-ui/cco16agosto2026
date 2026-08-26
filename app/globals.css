@@ -436,6 +436,18 @@ body {
   /* Tabelas rolam na tela; no papel precisam mostrar tudo. */
   .tabela-rolante { max-height: none !important; overflow: visible !important; }
 
+  /* O rodapé fecha a página em azul-noite na tela. No papel isso vira um bloco
+     sólido de tinta na A4 da reunião de Comando — então imprime em branco,
+     preservando a faixa institucional e a régua da assinatura, que são o que
+     identifica a peça. */
+  .rodape-inst { background: #fff !important; }
+  .rodape-inst *:not(.faixa-institucional):not(.regua-assinatura) {
+    color: #1b1a1f !important;
+    background-color: transparent !important;
+    border-color: rgba(29, 30, 36, 0.25) !important;
+  }
+  .rodape-inst .regua-assinatura { background: var(--vermelho-pm) !important; }
+
   a[href]::after { content: ""; }
 }
 
