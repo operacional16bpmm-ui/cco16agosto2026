@@ -220,6 +220,8 @@ export async function definirPaginas(
   }
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function registrarAuditoria(
   acao: string,
   id: string,
@@ -230,11 +232,17 @@ export async function registrarAuditoria(
 ): Promise<void> {
   try {
     const c = createAdminClient();
+    // entity_id é uuid na tabela (migration 006). Nem toda entidade é
+    // identificada por uuid — a lista de autorizados da COP tem o email como
+    // chave —, e mandar texto ali faz o insert falhar dentro do catch abaixo,
+    // ou seja, some a trilha sem ninguém notar. Quando o id não for uuid, ele
+    // vai para details.entity_ref, que é jsonb e aceita qualquer chave.
+    const ehUuid = UUID.test(id);
     await c.from("audit_events").insert({
       action: acao,
       entity_type: entityType,
-      entity_id: id,
-      details: detalhes,
+      entity_id: ehUuid ? id : null,
+      details: ehUuid ? detalhes : { ...detalhes, entity_ref: id },
     });
   } catch (erro) {
     // Auditoria não pode derrubar a operação já concluída, mas o silêncio
