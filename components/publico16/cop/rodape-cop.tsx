@@ -122,7 +122,14 @@ export function RodapeCop({
        isso deixa o rodapé ilegível — texto escuro sobre fundo escuro. Este
        escopo restaura os valores de :root só aqui dentro, que é exatamente para
        o que ele existe (mesmo recurso usado pela /dejem). */
-    <footer className="rodape-inst tema-vitrine relative overflow-hidden bg-azul-noite text-branco">
+    <footer
+      className="rodape-inst tema-vitrine relative overflow-hidden bg-azul-noite text-branco"
+      /* .tema-vitrine declara `color` fora de @layer, então vence o utilitário
+         text-branco na cascata. Hoje todo filho tem cor explícita e nada quebra,
+         mas o próximo <p> adicionado aqui sairia grafite sobre azul-noite. O
+         inline resolve de vez. */
+      style={{ color: "var(--branco)" }}
+    >
       <div className="faixa-institucional h-1.5" />
 
       {/* Brilho do vermelho institucional. Decorativo e sutil: dá profundidade
