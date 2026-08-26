@@ -22,49 +22,54 @@ export const DURACAO_ACESSO_SEGUNDOS = 60 * 60 * 12;
 
 /** Rotas que deixam de herdar o "público" de /cop2026. A página de acesso e as
  *  rotas de handshake precisam continuar abertas, senão o login não acontece. */
-export const ROTAS_RESTRITAS_COP = ["/cop2026/dashboard", "/cop2026/briefing"];
+export const ROTAS_RESTRITAS_COP = ["/cop2026/dashboard", "/cop2026/briefing", "/cop2026/admin"];
 
 export const ROTA_ACESSO_COP = "/cop2026/acesso";
 
 /**
- * A lista vive em variável de ambiente, não no código: incluir ou remover um
- * oficial não pode depender de deploy. Separadores aceitos: vírgula, ponto e
- * vírgula, espaço ou quebra de linha — o Comando manda a lista colada do
- * WhatsApp e ela precisa funcionar assim mesmo.
+ * Parser tolerante de lista de emails em variável de ambiente. Separadores
+ * aceitos: vírgula, ponto e vírgula, espaço ou quebra de linha — o Comando
+ * manda a lista colada do WhatsApp e ela precisa funcionar assim mesmo.
  */
-export function emailsAutorizados(): string[] {
-  return (process.env.COP2026_EMAILS_AUTORIZADOS ?? "")
+export function emailsDaEnv(bruto: string | undefined): string[] {
+  return (bruto ?? "")
     .split(/[\s,;]+/)
     .map((e) => e.trim().toLowerCase())
     .filter((e) => e.includes("@"));
 }
 
 /**
- * O Gmail ignora pontos no nome da caixa e tudo depois de um `+`:
- * `marcusvini.moreira@` e `marcusvinimoreira@` são a MESMA pessoa. A lista vem
- * digitada por gente diferente — o Comando manda pelo WhatsApp, o dono da
- * planilha convida pelo Drive — e as duas grafias já apareceram para o mesmo
- * policial. Comparar string crua barraria quem tem direito, com uma mensagem
- * dizendo que ele não está autorizado. Só Gmail: em outros provedores o ponto
- * pode distinguir caixas de verdade.
+ * A lista de autorizados MUDOU DE CASA: hoje vive na tabela
+ * cop2026_autorizados (migration 025), administrada em /cop2026/admin, para
+ * que incluir ou remover alguém não dependa de deploy. Esta variável continua
+ * valendo como semente da primeira carga e como plano B enquanto a tabela
+ * nunca foi semeada — a regra inteira está em lib/db/cop2026-autorizados.ts.
  */
-function canonizar(email: string): string {
-  const [local, dominio] = email.trim().toLowerCase().split("@");
-  if (!dominio) return email.trim().toLowerCase();
-  if (dominio === "gmail.com" || dominio === "googlemail.com") {
-    return `${local.split("+")[0].replace(/\./g, "")}@${dominio}`;
-  }
-  return `${local}@${dominio}`;
+export function emailsAutorizadosDaEnv(): string[] {
+  return emailsDaEnv(process.env.COP2026_EMAILS_AUTORIZADOS);
 }
 
-export function estaAutorizado(email: string): boolean {
-  const alvo = canonizar(email);
-  return emailsAutorizados().some((e) => comparacaoConstante(canonizar(e), alvo));
+/** Quem administra a lista. Deliberadamente FORA do banco: é o que impede o
+ *  administrador de se trancar do lado de fora ao se remover da lista, e o que
+ *  mantém a administração de pé se o Supabase cair. Mesma doutrina da
+ *  credencial de emergência do portal em lib/auth-usuarios.ts. */
+export function adminsDaEnv(): string[] {
+  return emailsDaEnv(process.env.COP2026_ADMINS);
+}
+
+/** Comparação em tempo constante contra uma lista já normalizada. */
+export function constaNaLista(email: string, lista: string[]): boolean {
+  const alvo = email.trim().toLowerCase();
+  return lista.some((e) => comparacaoConstante(e, alvo));
+}
+
+export function ehAdminCop(email: string | undefined | null): boolean {
+  return Boolean(email) && constaNaLista(email as string, adminsDaEnv());
 }
 
 /* --------------------------------------------------------------- sessão */
 
-type PayloadAcesso = { email: string; nome?: string; exp: number };
+export type PayloadAcesso = { email: string; nome?: string; exp: number };
 
 export async function assinarAcesso(email: string, nome?: string): Promise<string> {
   const exp = Date.now() + DURACAO_ACESSO_SEGUNDOS * 1000;
@@ -72,10 +77,20 @@ export async function assinarAcesso(email: string, nome?: string): Promise<strin
   return `${payload}.${await hmacHex(payload)}`;
 }
 
-/** Verifica assinatura, vencimento e — de novo — a lista. Rechecar a lista a
- *  cada requisição é o que faz a remoção de um autorizado valer na hora, sem
- *  esperar o cookie dele expirar. */
-export async function verificarAcesso(valor: string | undefined): Promise<PayloadAcesso | null> {
+/**
+ * Verifica APENAS assinatura e vencimento do cookie. Não consulta a lista de
+ * autorizados: esta função é chamada pelo proxy.ts, que roda na borda, e
+ * puxar o Supabase para cá arrastaria o cliente de service role para dentro do
+ * bundle da middleware.
+ *
+ * Quem precisa da checagem completa — "este email AINDA está autorizado?" —
+ * chama sessaoCop() de lib/db/cop2026-autorizados.ts, que é o que as páginas
+ * restritas fazem. É essa recheca por requisição que faz a revogação valer na
+ * hora, sem esperar o cookie de 12h vencer.
+ */
+export async function verificarAssinaturaAcesso(
+  valor: string | undefined
+): Promise<PayloadAcesso | null> {
   if (!valor) return null;
   const [payload, assinatura] = valor.split(".");
   if (!payload || !assinatura) return null;
@@ -87,7 +102,6 @@ export async function verificarAcesso(valor: string | undefined): Promise<Payloa
     const dados = JSON.parse(bruto) as PayloadAcesso;
     if (!dados?.email || typeof dados.exp !== "number") return null;
     if (Date.now() > dados.exp) return null;
-    if (!estaAutorizado(dados.email)) return null;
     return dados;
   } catch {
     return null;

@@ -223,13 +223,16 @@ export async function definirPaginas(
 export async function registrarAuditoria(
   acao: string,
   id: string,
-  detalhes: Record<string, unknown>
+  detalhes: Record<string, unknown>,
+  // Default preservado para os call sites de usuários; a tela de Autorizados
+  // da COP grava na mesma trilha passando o próprio tipo de entidade.
+  entityType = "usuarios_portal"
 ): Promise<void> {
   try {
     const c = createAdminClient();
     await c.from("audit_events").insert({
       action: acao,
-      entity_type: "usuarios_portal",
+      entity_type: entityType,
       entity_id: id,
       details: detalhes,
     });

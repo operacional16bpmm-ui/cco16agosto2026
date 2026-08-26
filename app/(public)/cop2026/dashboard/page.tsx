@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { cookies } from "next/headers";
-import { ChevronRight, Clock, FileText, LogOut } from "lucide-react";
+import { ChevronRight, Clock, FileText, LogOut, ShieldCheck } from "lucide-react";
 import { DashboardCop } from "@/components/publico16/cop/dashboard-cop";
 import { lerAuditoriaCop2026 } from "@/lib/cop2026";
 import { lerFiltros } from "@/lib/cop2026-metricas";
-import { COOKIE_ACESSO_COP, verificarAcesso } from "@/lib/cop2026-acesso";
+import { ehAdminCop } from "@/lib/cop2026-acesso";
+import { exigirAcessoCop } from "@/lib/db/cop2026-autorizados";
 
 export const metadata: Metadata = {
   title: "Dashboard de controle · Auditoria de COP 2026",
@@ -22,15 +22,17 @@ export default async function DashboardPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const [{ lancamentos, metas, erro, lidoEm }, sp, biscoitos] = await Promise.all([
+  /* Gate próprio, e não só o do proxy. A página carrega nome, RE e
+     justificativa de policial: se o matcher do proxy mudasse, ela renderizaria
+     o dado nominal assim mesmo. exigirAcessoCop recheca a lista no banco a
+     cada requisição — é isso que faz a revogação valer na hora, sem esperar o
+     cookie de 12h vencer. A sessão ainda serve para dizer QUEM está vendo:
+     saber sob qual conta o dado foi aberto é parte da trilha. */
+  const [{ lancamentos, metas, erro, lidoEm }, sp, acesso] = await Promise.all([
     lerAuditoriaCop2026(),
     searchParams,
-    cookies(),
+    exigirAcessoCop("/cop2026/dashboard"),
   ]);
-  /* O proxy já barrou quem não tem acesso; aqui a sessão serve só para a
-     página dizer QUEM está vendo — em tela de Comando, saber sob qual conta o
-     dado foi aberto é parte da trilha. */
-  const acesso = await verificarAcesso(biscoitos.get(COOKIE_ACESSO_COP)?.value);
 
   return (
     <div className="tema-institucional min-h-screen bg-tatico-fundo text-[15px] text-branco">
@@ -69,6 +71,14 @@ export default async function DashboardPage({
             >
               <FileText size={13} aria-hidden /> Diretriz PM3-001/02/25
             </a>
+            {ehAdminCop(acesso.email) && (
+              <Link
+                href="/cop2026/admin"
+                className="nao-imprime inline-flex items-center gap-1.5 font-semibold hover:text-vermelho"
+              >
+                <ShieldCheck size={13} aria-hidden /> Autorizados
+              </Link>
+            )}
             {acesso && (
               <span className="nao-imprime inline-flex items-center gap-2">
                 <span className="dados">{acesso.email}</span>

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
 import { BriefingSlides } from "@/components/publico16/briefing-slides";
 import { lerAuditoriaCop2026 } from "@/lib/cop2026";
-import { COOKIE_ACESSO_COP, verificarAcesso } from "@/lib/cop2026-acesso";
+import { ehAdminCop } from "@/lib/cop2026-acesso";
+import { exigirAcessoCop } from "@/lib/db/cop2026-autorizados";
 
 export const metadata: Metadata = {
   title: "Briefing executivo · Auditoria de COP 2026",
@@ -14,17 +14,19 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function BriefingPage() {
-  const [{ lancamentos, metas, lidoEm }, biscoitos] = await Promise.all([
+  // Gate próprio, como no dashboard: exigirAcessoCop recheca a lista no banco
+  // a cada requisição, então revogar alguém derruba o briefing dele na hora.
+  const [{ lancamentos, metas, lidoEm }, acesso] = await Promise.all([
     lerAuditoriaCop2026(),
-    cookies(),
+    exigirAcessoCop("/cop2026/briefing"),
   ]);
-  const acesso = await verificarAcesso(biscoitos.get(COOKIE_ACESSO_COP)?.value);
   return (
     <BriefingSlides
       lancamentos={lancamentos}
       metas={metas}
       lidoEm={lidoEm}
-      email={acesso?.email}
+      email={acesso.email}
+      ehAdmin={ehAdminCop(acesso.email)}
     />
   );
 }

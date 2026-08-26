@@ -5,10 +5,10 @@ import {
   DURACAO_ACESSO_SEGUNDOS,
   ROTA_ACESSO_COP,
   assinarAcesso,
-  estaAutorizado,
   trocarCodigoPorIdentidade,
   urlDeRetorno,
 } from "@/lib/cop2026-acesso";
+import { emailAutorizado } from "@/lib/db/cop2026-autorizados";
 
 export const dynamic = "force-dynamic";
 
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
     if (!identidade.emailVerificado) {
       return recusar(request, { negado: identidade.email, motivo: "nao-verificado" });
     }
-    if (!estaAutorizado(identidade.email)) {
+    if (!(await emailAutorizado(identidade.email))) {
       return recusar(request, { negado: identidade.email });
     }
 

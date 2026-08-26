@@ -4,7 +4,7 @@ import {
   COOKIE_ACESSO_COP,
   ROTAS_RESTRITAS_COP,
   ROTA_ACESSO_COP,
-  verificarAcesso,
+  verificarAssinaturaAcesso,
 } from "@/lib/cop2026-acesso";
 
 // Fail-closed: TODA rota exige sessão válida por padrão. Só as rotas listadas
@@ -84,8 +84,8 @@ const REESCRITA_RAIZ_POR_HOST: Record<string, string> = {
   "16bpmmcomando.vercel.app": "/login",
 };
 
-/* /cop2026 é público por prefixo, e o Dashboard e o Briefing herdavam esse
-   "aberto" sem ninguém decidir isso. Eles carregam nome, RE e justificativa de
+/* /cop2026 é público por prefixo, e o Dashboard, o Briefing e a tela de
+   Autorizados herdavam esse "aberto" sem ninguém decidir isso. Eles carregam nome, RE e justificativa de
    policial — são do Comando, não da tropa. Esta lista quebra a herança e é
    conferida ANTES da lista de públicas; a página de acesso e o handshake com o
    Google seguem abertos, senão não haveria como entrar. */
@@ -105,7 +105,11 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (ehRotaRestritaCop(pathname)) {
-    const acesso = await verificarAcesso(request.cookies.get(COOKIE_ACESSO_COP)?.value);
+    /* Só a assinatura: a borda não fala com o Supabase. A recheca da lista de
+       autorizados — que é o que faz a revogação valer na hora — acontece na
+       própria página, em sessaoCop()/exigirAcessoCop() de
+       lib/db/cop2026-autorizados.ts. */
+    const acesso = await verificarAssinaturaAcesso(request.cookies.get(COOKIE_ACESSO_COP)?.value);
     if (acesso) return NextResponse.next();
     const url = request.nextUrl.clone();
     url.pathname = ROTA_ACESSO_COP;

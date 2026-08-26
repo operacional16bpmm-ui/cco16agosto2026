@@ -17,11 +17,14 @@ export function BriefingSlides({
   metas,
   lidoEm,
   email,
+  ehAdmin = false,
 }: {
   lancamentos: LancamentoCop[];
   metas: MetaSubunidade[];
   lidoEm: string;
   email?: string;
+  /** Liga o atalho para a tela de Autorizados; só o administrador da COP o vê. */
+  ehAdmin?: boolean;
 }) {
   const [i, setI] = useState(0);
 
@@ -154,6 +157,11 @@ export function BriefingSlides({
         </p>
         {email && (
           <span className="ml-auto mr-3 hidden items-center gap-2 text-[12px] text-white/45 sm:inline-flex">
+            {ehAdmin && (
+              <a href="/cop2026/admin" className="font-bold hover:text-white">
+                Autorizados
+              </a>
+            )}
             {email}
             <a href="/api/cop2026/acesso/sair" className="font-bold hover:text-white">
               Sair
