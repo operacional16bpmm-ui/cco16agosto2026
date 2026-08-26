@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, Printer } from "lucide-react";
 import { ROTULO_SUBUNIDADE, type LancamentoCop, type MetaSubunidade } from "@/lib/cop2026";
+import { AssinaturaDesenvolvimento, SelosSeguranca } from "@/components/publico16/cop/rodape-cop";
 
 const FMT = new Intl.NumberFormat("pt-BR");
 const PCT = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 });
@@ -211,6 +212,14 @@ export function BriefingSlides({
         >
           <span className="hidden sm:inline">Próximo</span> <ArrowRight size={19} />
         </button>
+      </div>
+
+      {/* Assinatura e selos: o briefing é a peça que vira print de reunião, então
+          o crédito precisa viajar junto com ela. Tom escuro porque estes slides
+          não usam o tema institucional — as cores aqui são hardcoded. */}
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t border-white/10 px-6 py-4">
+        <SelosSeguranca tom="escuro" />
+        <AssinaturaDesenvolvimento tom="escuro" />
       </div>
 
       <style>{`@keyframes fade{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}`}</style>

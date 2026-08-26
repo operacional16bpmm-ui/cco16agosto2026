@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ChevronRight, LayoutDashboard, LogOut, Presentation } from "lucide-react";
 import { adminsDaEnv } from "@/lib/cop2026-acesso";
 import { exigirAdminCop, listarAutorizados } from "@/lib/db/cop2026-autorizados";
+import { RodapeCop } from "@/components/publico16/cop/rodape-cop";
 import { PainelAutorizados } from "./painel-autorizados";
 
 export const metadata: Metadata = {
@@ -86,13 +87,10 @@ export default async function AdminCopPage() {
         />
       </main>
 
-      <footer className="border-t border-borda bg-tatico-super">
-        <div className="faixa-institucional h-1" />
-        <div className="mx-auto flex max-w-[1100px] flex-wrap items-center justify-between gap-2 px-5 py-4 text-[11.5px] text-texto-suave">
-          <span>Portal CCO-16 · 16º BPM/M · uso restrito</span>
-          <span>Toda inclusão e revogação fica registrada na trilha de auditoria.</span>
-        </div>
-      </footer>
+      <RodapeCop
+        nota="Toda inclusão e revogação fica registrada na trilha de auditoria."
+        largura="max-w-[1100px]"
+      />
     </div>
   );
 }

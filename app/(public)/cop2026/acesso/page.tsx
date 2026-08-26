@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { AlertTriangle, ArrowLeft, LogIn, ShieldCheck } from "lucide-react";
 import { URL_FORMULARIO } from "@/lib/cop2026";
+import { RodapeCop } from "@/components/publico16/cop/rodape-cop";
 
 export const metadata: Metadata = {
   title: "Acesso restrito · Auditoria de COP 2026",
@@ -144,12 +145,7 @@ export default async function AcessoCopPage({
         </div>
       </main>
 
-      <footer className="border-t border-borda bg-tatico-super">
-        <div className="faixa-institucional h-1" />
-        <div className="mx-auto max-w-3xl px-5 py-4 text-[11.5px] text-texto-suave">
-          Portal CCO-16 · 16º BPM/M · uso restrito
-        </div>
-      </footer>
+      <RodapeCop largura="max-w-3xl" />
     </div>
   );
 }

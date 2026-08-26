@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { AcessoRapido } from "@/components/publico16/acesso-rapido";
 import { DiretrizCop } from "@/components/publico16/diretriz-cop";
 import { Instagram16 } from "@/components/publico16/instagram-16";
+import { RodapeCop } from "@/components/publico16/cop/rodape-cop";
 import {
   URL_FORMULARIO,
   URL_PLANILHA,
@@ -177,6 +178,8 @@ export default async function Cop2026Page() {
       </main>
 
       <Instagram16 />
+
+      <RodapeCop nota="Página aberta à tropa. Dashboard e Briefing são de acesso restrito." />
     </div>
   );
 }

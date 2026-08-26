@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight, Clock, FileText, LogOut, ShieldCheck } from "lucide-react";
 import { DashboardCop } from "@/components/publico16/cop/dashboard-cop";
+import { RodapeCop } from "@/components/publico16/cop/rodape-cop";
 import { lerAuditoriaCop2026 } from "@/lib/cop2026";
 import { lerFiltros } from "@/lib/cop2026-metricas";
 import { ehAdminCop } from "@/lib/cop2026-acesso";
@@ -105,13 +106,7 @@ export default async function DashboardPage({
         />
       </main>
 
-      <footer className="border-t border-borda bg-tatico-super">
-        <div className="faixa-institucional h-1" />
-        <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-2 px-5 py-4 text-[11.5px] text-texto-suave">
-          <span>Portal CCO-16 · 16º BPM/M · uso restrito</span>
-          <span>Documento operacional — não distribuir fora do Batalhão.</span>
-        </div>
-      </footer>
+      <RodapeCop nota="Documento operacional — não distribuir fora do Batalhão." />
     </div>
   );
 }
