@@ -117,7 +117,12 @@ export function RodapeCop({
   largura?: string;
 }) {
   return (
-    <footer className="rodape-inst relative overflow-hidden bg-azul-noite text-branco">
+    /* tema-vitrine: as páginas da COP rodam sob .tema-institucional, que redefine
+       --branco para grafite e --ouro para o vermelho PM. Numa faixa azul-noite
+       isso deixa o rodapé ilegível — texto escuro sobre fundo escuro. Este
+       escopo restaura os valores de :root só aqui dentro, que é exatamente para
+       o que ele existe (mesmo recurso usado pela /dejem). */
+    <footer className="rodape-inst tema-vitrine relative overflow-hidden bg-azul-noite text-branco">
       <div className="faixa-institucional h-1.5" />
 
       {/* Brilho do vermelho institucional. Decorativo e sutil: dá profundidade
