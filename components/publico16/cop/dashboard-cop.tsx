@@ -481,11 +481,12 @@ export function DashboardCop({
       <section aria-label="Onde agir" className="mb-6 grid gap-6 lg:grid-cols-[1.35fr_1fr]">
         <Cartao
           titulo="Onde agir · frações"
-          nota="ordenado da mais distante da meta para a mais próxima — clique para filtrar o painel"
+          nota="rateio proporcional ao quadro COP (570 PMs) · clique para filtrar o painel"
           ajuda={
             <p>
-              A barra mostra quanto da meta a fração já cumpriu. O texto abaixo diz quantas evidências
-              faltam e o ritmo por turno necessário para fechar no prazo.
+              A meta de cada fração é proporcional ao efetivo fixo que usa COP diariamente (universo de
+              570 PMs). A barra mostra o percentual já atingido, a cota em relação às 960 evidências do
+              Batalhão e o ritmo necessário por turno restante.
             </p>
           }
         >
@@ -928,8 +929,12 @@ export function DashboardCop({
           {[
             ["Evidência", "Cada mídia de COP auditada e registrada no formulário, com o ID informado."],
             [
-              "Meta do período",
-              `Auditores designados × ${p.minimo} evidências mínimas por turno × ${FMT.format(p.turnosPrevistos)} turnos.`,
+              "Meta global do Batalhão (960)",
+              "Universo total de 960 evidências distribuído de forma justa e proporcional ao quadro fixo com COP (570 PMs): 1ª Cia (195 / 20,32%), 2ª Cia (180 / 18,74%), 3ª Cia (210 / 21,97%), 4ª Cia (180 / 18,74%), FT (147 / 15,23%) e EM (48 / 5,00%).",
+            ],
+            [
+              "Matriz de Proporcionalidade",
+              "Critério técnico aprovado que pondera o efetivo real de cada subunidade para que a cobrança seja justa com a capacidade operacional de cada fração.",
             ],
             ["Turno 12x36", "Cada escala de 12 horas de serviço. A meta é contada por turno, não por dia corrido."],
             [
@@ -952,8 +957,8 @@ export function DashboardCop({
 
       <p className="mt-6 text-[12px] leading-relaxed text-texto-suave">
         Leitura direta da planilha de respostas do formulário da auditoria, revalidada a cada 60
-        segundos. Meta do período = auditores designados × {p.minimo} evidências mínimas por turno ×{" "}
-        {FMT.format(p.turnosPrevistos)} turnos. Uso interno do 16º BPM/M.
+        segundos. Meta global: 960 evidências rateadas proporcionalmente pelo quadro fixo operacional
+        com COP (570 PMs). Diretriz PM3-001/02/25. Uso interno do 16º BPM/M.
       </p>
     </div>
   );

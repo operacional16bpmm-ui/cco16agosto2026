@@ -225,16 +225,22 @@ export function RankingFracoes({
           <button
             type="button"
             onClick={() => onSelecionar?.(d.chave)}
-            className="w-full rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-branco/[0.04] focus-visible:outline-2 focus-visible:outline-vermelho"
+            className="w-full rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-branco/[0.04] focus-visible:outline-2 focus-visible:outline-vermelho"
             aria-label={`Filtrar por ${d.rotulo} — ${PCT.format(d.pct)}% da meta`}
           >
             <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
               <span className="flex items-center gap-2 text-[13.5px] font-bold text-branco">
                 {d.rotulo}
                 <Selo nivel={d.nivel} />
+                {d.pctBatalhao !== undefined && (
+                  <span className="rounded bg-branco/10 px-1.5 py-0.5 text-[10.5px] font-semibold text-texto-suave">
+                    Cota: {PCT.format(d.pctBatalhao)}% do Btl
+                  </span>
+                )}
               </span>
               <span className="dados text-[12.5px] text-texto-suave">
-                {FMT.format(d.feito)} / {FMT.format(d.meta)} · {PCT.format(d.pct)}%
+                <strong className="text-branco">{FMT.format(d.feito)}</strong> / {FMT.format(d.meta)} ·{" "}
+                <span className="font-semibold text-branco">{PCT.format(d.pct)}%</span>
               </span>
             </div>
             <div className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-branco/10">
@@ -243,15 +249,23 @@ export function RankingFracoes({
                 style={{ width: `${Math.min(100, d.pct)}%`, background: COR_NIVEL[d.nivel] }}
               />
             </div>
-            <p className="mt-1 text-[11.5px] text-texto-suave">
-              <span className="dados">{FMT.format(d.lancaram)}</span> de{" "}
-              <span className="dados">{FMT.format(d.efetivo)}</span> auditores lançaram ·{" "}
-              {d.falta > 0
-                ? `Faltam ${FMT.format(d.falta)} · ${FMT.format(
-                    Math.ceil(d.ritmoNecessario)
-                  )} por turno nos ${FMT.format(d.turnosRestantes)} restantes`
-                : "Meta cumprida."}
-            </p>
+            <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11.5px] text-texto-suave">
+              <span>
+                <span className="dados text-branco">{FMT.format(d.lancaram)}</span> de{" "}
+                <span className="dados">{FMT.format(d.efetivo)}</span> auditores lançaram
+                {d.efetivoQuadro ? ` (quadro: ${FMT.format(d.efetivoQuadro)} PMs)` : ""}
+              </span>
+              <span>
+                {d.falta > 0 ? (
+                  <>
+                    Faltam <span className="dados font-semibold text-branco">{FMT.format(d.falta)}</span> (
+                    {FMT.format(Math.ceil(d.ritmoNecessario))}/turno em {FMT.format(d.turnosRestantes)} rest.)
+                  </>
+                ) : (
+                  <span className="font-semibold text-sinal-conforme">Meta cumprida</span>
+                )}
+              </span>
+            </div>
           </button>
         </li>
       ))}

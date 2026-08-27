@@ -9,9 +9,14 @@
 import {
   ORDEM_SUBUNIDADES,
   ROTULO_SUBUNIDADE,
+  MATRIZ_PROPORCIONAL_2026,
+  META_TOTAL_BATALHAO,
+  EFETIVO_TOTAL_BATALHAO,
   type LancamentoCop,
   type MetaSubunidade,
 } from "@/lib/cop2026";
+
+export { MATRIZ_PROPORCIONAL_2026, META_TOTAL_BATALHAO, EFETIVO_TOTAL_BATALHAO };
 
 export const FMT = new Intl.NumberFormat("pt-BR");
 export const PCT = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 });
@@ -153,6 +158,10 @@ export type LinhaFracao = {
   /** Quantas evidências por turno restante essa fração precisa manter. */
   ritmoNecessario: number;
   turnosRestantes: number;
+  /** Proporção da meta desta fração em relação ao total do Batalhão (960). */
+  pctBatalhao?: number;
+  /** Efetivo do quadro fixo da fração (base: 570 PMs). */
+  efetivoQuadro?: number;
 };
 
 export type LinhaAuditor = {
@@ -236,6 +245,7 @@ export function calcularPainel(
       const p = m.meta > 0 ? (feito / m.meta) * 100 : 0;
       const fa = Math.max(0, m.meta - feito);
       const rest = Math.max(0, m.turnos - turnosCumpridos);
+      const mat = MATRIZ_PROPORCIONAL_2026[m.subunidade];
       return {
         chave: m.subunidade,
         rotulo: ROTULO_SUBUNIDADE[m.subunidade] ?? m.subunidade,
@@ -248,6 +258,8 @@ export function calcularPainel(
         nivel: nivelPorCumprimento(p, m.meta > 0),
         ritmoNecessario: rest > 0 ? fa / rest : fa,
         turnosRestantes: rest,
+        pctBatalhao: mat ? mat.pctMeta : meta > 0 ? (m.meta / meta) * 100 : 0,
+        efetivoQuadro: mat ? mat.efetivo : m.efetivo,
       };
     })
     .sort((a, b) => a.pct - b.pct);

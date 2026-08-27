@@ -75,6 +75,47 @@ export const ROTULO_SUBUNIDADE: Record<string, string> = {
   outros: "Não informada",
 };
 
+/**
+ * Matriz Operacional Proporcional do 16º BPM/M — Meta Total: 960 Evidências.
+ * Rateio por efetivo real com COP (universo de 570 policiais):
+ * - EM: 98 PMs (17,19% bruto) fixado em 5,00% (administrativo) = 48 evidências.
+ * - 1ª Cia: 102 PMs (17,89% + rateio) = 20,32% = 195 evidências.
+ * - 2ª Cia: 93 PMs (16,31% + rateio) = 18,74% = 180 evidências.
+ * - 3ª Cia: 111 PMs (19,47% + rateio) = 21,97% = 210 evidências.
+ * - 4ª Cia: 93 PMs (16,31% + rateio) = 18,74% = 180 evidências.
+ * - FT: 73 PMs (12,80% + rateio) = 15,23% = 147 evidências.
+ * Soma: 48 + 195 + 180 + 210 + 180 + 147 = 960 evidências (100,00%).
+ */
+export const MATRIZ_PROPORCIONAL_2026: Record<
+  string,
+  {
+    efetivo: number;
+    pctEfetivo: number;
+    pctMeta: number;
+    meta: number;
+    rotulo: string;
+  }
+> = {
+  em: { efetivo: 98, pctEfetivo: 17.19, pctMeta: 5.0, meta: 48, rotulo: "Estado-Maior" },
+  "1cia": { efetivo: 102, pctEfetivo: 17.89, pctMeta: 20.32, meta: 195, rotulo: "1ª Cia" },
+  "2cia": { efetivo: 93, pctEfetivo: 16.31, pctMeta: 18.74, meta: 180, rotulo: "2ª Cia" },
+  "3cia": { efetivo: 111, pctEfetivo: 19.47, pctMeta: 21.97, meta: 210, rotulo: "3ª Cia" },
+  "4cia": { efetivo: 93, pctEfetivo: 16.31, pctMeta: 18.74, meta: 180, rotulo: "4ª Cia" },
+  ft: { efetivo: 73, pctEfetivo: 12.8, pctMeta: 15.23, meta: 147, rotulo: "Força Tática" },
+};
+
+export const META_TOTAL_BATALHAO = 960;
+export const EFETIVO_TOTAL_BATALHAO = 570;
+
+export const METAS_PADRAO_2026: MetaSubunidade[] = [
+  { subunidade: "em", efetivo: 98, evidenciasPorTurno: 2, turnos: 12, dias: 24, meta: 48 },
+  { subunidade: "1cia", efetivo: 102, evidenciasPorTurno: 3, turnos: 15, dias: 30, meta: 195 },
+  { subunidade: "2cia", efetivo: 93, evidenciasPorTurno: 3, turnos: 15, dias: 30, meta: 180 },
+  { subunidade: "3cia", efetivo: 111, evidenciasPorTurno: 3, turnos: 15, dias: 30, meta: 210 },
+  { subunidade: "4cia", efetivo: 93, evidenciasPorTurno: 3, turnos: 15, dias: 30, meta: 180 },
+  { subunidade: "ft", efetivo: 73, evidenciasPorTurno: 3, turnos: 15, dias: 30, meta: 147 },
+];
+
 export function normalizar(texto: string): string {
   return texto
     .normalize("NFKD")
@@ -373,15 +414,16 @@ export async function lerAuditoriaCop2026(): Promise<LeituraCop2026> {
       lerPrimeiroQueResponder(urlsDaAba(GID_RESPOSTAS, "Respostas ao formulário 1")),
       lerPrimeiroQueResponder(urlsDaAba(GID_PARAMETROS, "Parametros")),
     ]);
+    const metasLidas = extrairMetas(parametros);
     return {
       lancamentos: extrairLancamentos(respostas),
-      metas: extrairMetas(parametros),
+      metas: metasLidas.length > 0 ? metasLidas : METAS_PADRAO_2026,
       lidoEm,
     };
   } catch (erro) {
     return {
       lancamentos: [],
-      metas: [],
+      metas: METAS_PADRAO_2026,
       erro: erro instanceof Error ? erro.message : "Não foi possível alcançar a planilha.",
       lidoEm,
     };
