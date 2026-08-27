@@ -26,7 +26,7 @@ const cinzel = Cinzel({
 const plexMono = IBM_Plex_Mono({
   variable: "--font-dados",
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 

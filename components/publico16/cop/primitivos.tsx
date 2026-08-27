@@ -1,17 +1,23 @@
 "use client";
 
 import { useId, useState } from "react";
-import { HelpCircle } from "lucide-react";
+import {
+  HelpCircle,
+  CheckCircle2,
+  AlertTriangle,
+  AlertCircle,
+  Minus,
+} from "lucide-react";
 import { ROTULO_NIVEL, type Nivel } from "@/lib/cop2026-metricas";
 import { cn } from "@/lib/utils";
 
-/** Semáforo sempre com rótulo e ponto: cor sozinha não sobrevive ao daltonismo
- *  nem à impressão em preto e branco da reunião de Comando. */
+/** Semáforo com rótulo, ponto e ícone SVG nativo: máxima acessibilidade
+ *  e leitura imediata para daltônicos e relatórios impressos em P&B. */
 const CLASSES_NIVEL: Record<Nivel, string> = {
-  conforme: "bg-sinal-conforme-suave text-sinal-conforme border-sinal-conforme/30",
-  atencao: "bg-sinal-atencao-suave text-sinal-atencao border-sinal-atencao/30",
-  critico: "bg-sinal-critico-suave text-sinal-critico border-sinal-critico/30",
-  neutro: "bg-sinal-neutro-suave text-sinal-neutro border-sinal-neutro/25",
+  conforme: "bg-sinal-conforme-suave text-sinal-conforme border-sinal-conforme/40 font-semibold",
+  atencao: "bg-sinal-atencao-suave text-sinal-atencao border-sinal-atencao/40 font-semibold",
+  critico: "bg-sinal-critico-suave text-sinal-critico border-sinal-critico/40 font-semibold",
+  neutro: "bg-sinal-neutro-suave text-sinal-neutro border-sinal-neutro/30 font-medium",
 };
 
 export const COR_NIVEL: Record<Nivel, string> = {
@@ -21,15 +27,30 @@ export const COR_NIVEL: Record<Nivel, string> = {
   neutro: "var(--sinal-neutro)",
 };
 
-export function Selo({ nivel, texto }: { nivel: Nivel; texto?: string }) {
+const ICONES_NIVEL = {
+  conforme: <CheckCircle2 size={12} className="shrink-0" aria-hidden />,
+  atencao: <AlertTriangle size={12} className="shrink-0" aria-hidden />,
+  critico: <AlertCircle size={12} className="shrink-0" aria-hidden />,
+  neutro: <Minus size={12} className="shrink-0" aria-hidden />,
+} as const;
+
+export function Selo({
+  nivel,
+  texto,
+  semIcone,
+}: {
+  nivel: Nivel;
+  texto?: string;
+  semIcone?: boolean;
+}) {
   return (
     <span
       className={cn(
-        "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold",
+        "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] shadow-xs tracking-tight",
         CLASSES_NIVEL[nivel]
       )}
     >
-      <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden />
+      {!semIcone && ICONES_NIVEL[nivel]}
       {texto ?? ROTULO_NIVEL[nivel]}
     </span>
   );

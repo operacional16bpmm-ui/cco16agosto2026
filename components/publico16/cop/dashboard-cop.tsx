@@ -476,13 +476,16 @@ export function DashboardCop({
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {kpis.map((k) => (
-            <div key={k.rotulo} className="cartao-painel rounded-xl border border-borda bg-tatico-super p-4 shadow-inst">
+            <div
+              key={k.rotulo}
+              className="card-interativo cartao-painel rounded-xl border border-borda bg-tatico-super p-4.5 shadow-inst"
+            >
               <div className="flex items-center justify-between text-texto-suave">
                 <span className="rotulo-dado">{k.rotulo}</span>
-                {k.icone}
+                <span className="text-vermelho/80">{k.icone}</span>
               </div>
-              <p className="dados-destaque mt-2 text-3xl leading-none text-branco">{k.valor}</p>
-              <p className="mt-1.5 text-[12px] text-texto-suave">{k.nota}</p>
+              <p className="metric-hero mt-2.5 text-3xl sm:text-4xl text-branco">{k.valor}</p>
+              <p className="mt-2 text-[12.5px] font-medium text-texto-suave">{k.nota}</p>
             </div>
           ))}
         </div>

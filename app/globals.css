@@ -208,14 +208,7 @@ body {
 }
 
 /* ----------------------------------------------------------------------------
-   Face de dados.
-
-   Regra do estudo: número que se lê COMPARANDO usa .dados; texto que se lê
-   CORRIDO usa Inter; título institucional usa Cinzel. Misturar as três sem
-   critério é o que faz um relatório parecer amador — cada uma tem um trabalho.
-
-   `zero` ativa o zero cortado do IBM Plex Mono, para não confundir com a letra
-   O numa coluna de RE ou de código de OPM.
+   Face de dados e métricas operacionais
    ---------------------------------------------------------------------------- */
 .dados {
   font-family: var(--font-dados), ui-monospace, "Cascadia Mono", Consolas, monospace;
@@ -229,18 +222,49 @@ body {
   font-family: var(--font-dados), ui-monospace, Consolas, monospace;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "zero" 1;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: -0.035em;
   line-height: 0.95;
+}
+
+/* Métrica Principal (Hero KPI): visualização imediata do número central */
+.metric-hero {
+  font-family: var(--font-dados), ui-monospace, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "zero" 1;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 0.92;
+}
+
+/* Métrica de Cartão Executivo */
+.metric-card {
+  font-family: var(--font-dados), ui-monospace, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "zero" 1;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1;
 }
 
 /* Rótulo de eixo, cabeçalho de coluna e legenda. */
 .rotulo-dado {
   font-family: var(--font-dados), ui-monospace, Consolas, monospace;
   font-size: 10px;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: 0.11em;
   text-transform: uppercase;
+}
+
+/* Cartões com elevação suave e micro-interação tátil */
+.card-interativo {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.2s ease;
+}
+.card-interativo:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(22, 41, 74, 0.15), 0 8px 10px -6px rgba(22, 41, 74, 0.1);
 }
 
 /* Faixa institucional (azul → vermelho → ouro) usada em cabeçalhos e divisores */
