@@ -189,11 +189,25 @@ export function calcularPainel(
     metas.find((m) => m.evidenciasPorTurno > 0)?.evidenciasPorTurno ?? MINIMO_PADRAO;
 
   const dados = aplicarFiltros(lancamentos, f, minimo);
-  const metasRecorte = f.fracao === "todas" ? metas : metas.filter((m) => m.subunidade === f.fracao);
+  
+  // Normaliza as metas aplicando a Matriz Operacional Proporcional (960 evidências / 570 PMs)
+  const metasNormalizadas = metas.map((m) => {
+    const mat = MATRIZ_PROPORCIONAL_2026[m.subunidade];
+    return {
+      ...m,
+      meta: mat ? mat.meta : m.meta,
+      efetivo: mat ? mat.efetivo : m.efetivo,
+    };
+  });
+
+  const metasRecorte =
+    f.fracao === "todas"
+      ? metasNormalizadas
+      : metasNormalizadas.filter((m) => m.subunidade === f.fracao);
 
   const meta = metasRecorte.reduce((s, m) => s + m.meta, 0);
   const auditores = metasRecorte.reduce((s, m) => s + m.efetivo, 0);
-  const turnosPrevistos = Math.max(...metasRecorte.map((m) => m.turnos), 0);
+  const turnosPrevistos = Math.max(...metasRecorte.map((m) => m.turnos), 15);
 
   const videosPorLanc = dados.filter((l) => l.auditou).map((l) => l.videos);
   const total = videosPorLanc.reduce((a, b) => a + b, 0);
@@ -242,23 +256,24 @@ export function calcularPainel(
       const daFracao = dados.filter((l) => l.subunidade === m.subunidade);
       const feito = daFracao.reduce((s, l) => s + l.videos, 0);
       const lancaram = new Set(daFracao.map((l) => l.re || l.nomeGuerra).filter(Boolean)).size;
-      const p = m.meta > 0 ? (feito / m.meta) * 100 : 0;
-      const fa = Math.max(0, m.meta - feito);
-      const rest = Math.max(0, m.turnos - turnosCumpridos);
       const mat = MATRIZ_PROPORCIONAL_2026[m.subunidade];
+      const metaReal = mat ? mat.meta : m.meta;
+      const p = metaReal > 0 ? (feito / metaReal) * 100 : 0;
+      const fa = Math.max(0, metaReal - feito);
+      const rest = Math.max(0, (m.turnos || 15) - turnosCumpridos);
       return {
         chave: m.subunidade,
         rotulo: ROTULO_SUBUNIDADE[m.subunidade] ?? m.subunidade,
-        meta: m.meta,
+        meta: metaReal,
         feito,
         pct: p,
         falta: fa,
         efetivo: m.efetivo,
         lancaram,
-        nivel: nivelPorCumprimento(p, m.meta > 0),
+        nivel: nivelPorCumprimento(p, metaReal > 0),
         ritmoNecessario: rest > 0 ? fa / rest : fa,
         turnosRestantes: rest,
-        pctBatalhao: mat ? mat.pctMeta : meta > 0 ? (m.meta / meta) * 100 : 0,
+        pctBatalhao: mat ? mat.pctMeta : meta > 0 ? (metaReal / meta) * 100 : 0,
         efetivoQuadro: mat ? mat.efetivo : m.efetivo,
       };
     })
