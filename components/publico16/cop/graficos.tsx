@@ -211,6 +211,133 @@ export function Pareto({
 }
 
 // ---------------------------------------------------------------------------
+// Agulhão Executivo (Velocímetro / Manômetro de Atingimento da Meta)
+// ---------------------------------------------------------------------------
+export function AgulhaoMetas({
+  pct,
+  total,
+  meta,
+  titulo = "Termômetro de Cumprimento",
+  subtitulo = "Atingimento relativo à meta do período",
+}: {
+  pct: number;
+  total: number;
+  meta: number;
+  titulo?: string;
+  subtitulo?: string;
+}) {
+  const pctClamped = Math.min(100, Math.max(0, pct));
+  const angulo = 180 - pctClamped * 1.8;
+  const rad = (angulo * Math.PI) / 180;
+  const cx = 140;
+  const cy = 125;
+  const needleLen = 78;
+  const nx = cx + needleLen * Math.cos(rad);
+  const ny = cy - needleLen * Math.sin(rad);
+
+  const nivel: Nivel = pct >= 80 ? "conforme" : pct >= 50 ? "atencao" : "critico";
+  const corAgulha = pct >= 80 ? "#16a34a" : pct >= 50 ? "#d97706" : "#ca0202";
+
+  return (
+    <div className="card-interativo flex flex-col items-center justify-between rounded-xl border border-borda bg-tatico-super p-5 shadow-inst">
+      <div className="w-full text-center">
+        <p className="font-serif text-[14px] font-bold uppercase tracking-wide text-branco">
+          {titulo}
+        </p>
+        <p className="mt-0.5 text-[11.5px] text-texto-suave">{subtitulo}</p>
+      </div>
+
+      <div className="relative mt-2 flex items-center justify-center">
+        <svg viewBox="0 0 280 150" className="h-36 w-68 overflow-visible">
+          <defs>
+            <filter id="needleShadow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.3" />
+            </filter>
+          </defs>
+
+          {/* Segmento 1: Vermelho (< 50% = 180° a 90°) */}
+          <path
+            d="M 45 125 A 95 95 0 0 1 140 30 L 140 57 A 68 68 0 0 0 72 125 Z"
+            fill="#ca0202"
+            opacity={0.9}
+          />
+
+          {/* Segmento 2: Amarelo (50% a 80% = 90° a 36°) */}
+          <path
+            d="M 140 30 A 95 95 0 0 1 216.85 69.16 L 195.01 85.03 A 68 68 0 0 0 140 57 Z"
+            fill="#d97706"
+            opacity={0.92}
+          />
+
+          {/* Segmento 3: Verde (>= 80% = 36° a 0°) */}
+          <path
+            d="M 216.85 69.16 A 95 95 0 0 1 235 125 L 208 125 A 68 68 0 0 0 195.01 85.03 Z"
+            fill="#16a34a"
+            opacity={0.92}
+          />
+
+          {/* Divisores sutis entre faixas */}
+          <line x1="140" y1="30" x2="140" y2="57" stroke="#ffffff" strokeWidth="2" opacity="0.6" />
+          <line x1="216.85" y1="69.16" x2="195.01" y2="85.03" stroke="#ffffff" strokeWidth="2" opacity="0.6" />
+
+          {/* Agulha Indicadora */}
+          <g filter="url(#needleShadow)" className="transition-all duration-700 ease-out">
+            <line
+              x1={cx}
+              y1={cy}
+              x2={nx}
+              y2={ny}
+              stroke={corAgulha}
+              strokeWidth="4"
+              strokeLinecap="round"
+            />
+            <circle cx={cx} cy={cy} r="8" fill="#1d1d1d" stroke={corAgulha} strokeWidth="3" />
+            <circle cx={cx} cy={cy} r="2.5" fill="#ffffff" />
+          </g>
+
+          {/* Rótulos dos marcos no arco */}
+          <text x="36" y="142" fontSize="10" fontWeight="600" fill="#55535e" textAnchor="middle" className="dados">0%</text>
+          <text x="140" y="20" fontSize="10" fontWeight="600" fill="#55535e" textAnchor="middle" className="dados">50%</text>
+          <text x="228" y="60" fontSize="10" fontWeight="600" fill="#55535e" textAnchor="middle" className="dados">80%</text>
+          <text x="244" y="142" fontSize="10" fontWeight="600" fill="#55535e" textAnchor="middle" className="dados">100%</text>
+        </svg>
+      </div>
+
+      {/* Painel Central de Leitura Numérica */}
+      <div className="mt-1 flex flex-col items-center">
+        <div className="flex items-baseline gap-1">
+          <span className="metric-hero text-3xl sm:text-4xl font-extrabold text-branco">
+            {PCT.format(pct)}%
+          </span>
+        </div>
+        <p className="dados mt-1 text-[12.5px] font-semibold text-texto-suave">
+          <strong className="text-branco">{FMT.format(total)}</strong> de {FMT.format(meta)} evidências
+        </p>
+        <div className="mt-2">
+          <Selo nivel={nivel} />
+        </div>
+      </div>
+
+      {/* Legenda Operacional Sóbria */}
+      <div className="mt-4 grid w-full grid-cols-3 gap-1.5 border-t border-borda/60 pt-3 text-center text-[10.5px]">
+        <div className="rounded border border-sinal-critico/30 bg-sinal-critico-suave p-1">
+          <span className="block font-bold text-sinal-critico">&lt; 50%</span>
+          <span className="text-[9.5px] text-texto-suave">Abaixo da Meta</span>
+        </div>
+        <div className="rounded border border-sinal-atencao/30 bg-sinal-atencao-suave p-1">
+          <span className="block font-bold text-sinal-atencao">50% a 79%</span>
+          <span className="text-[9.5px] text-texto-suave">Em Andamento</span>
+        </div>
+        <div className="rounded border border-sinal-conforme/30 bg-sinal-conforme-suave p-1">
+          <span className="block font-bold text-sinal-conforme">≥ 80%</span>
+          <span className="text-[9.5px] text-texto-suave">Meta Cumprida</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // CSS puro
 // ---------------------------------------------------------------------------
 export function RankingFracoes({
@@ -231,7 +358,7 @@ export function RankingFracoes({
               className="w-full text-left focus-visible:outline-2 focus-visible:outline-vermelho"
               aria-label={`Filtrar por ${d.rotulo} — ${PCT.format(d.pct)}% da meta`}
             >
-              <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1.5">
+              <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
                 <span className="flex items-center gap-2 text-[14px] font-bold text-branco">
                   {d.rotulo}
                   <Selo nivel={d.nivel} />
@@ -241,15 +368,23 @@ export function RankingFracoes({
                     </span>
                   )}
                 </span>
-                <span className="dados text-[13px] text-texto-suave">
-                  <strong className="text-base font-bold text-branco">{FMT.format(d.feito)}</strong> / {FMT.format(d.meta)} ·{" "}
-                  <span className={cn(
-                    "rounded px-1.5 py-0.5 text-xs font-bold",
-                    d.pct >= 90 ? "text-sinal-conforme bg-sinal-conforme-suave" : d.pct >= 70 ? "text-sinal-atencao bg-sinal-atencao-suave" : d.pct > 0 ? "text-sinal-critico bg-sinal-critico-suave" : "text-texto-suave bg-branco/5"
-                  )}>
-                    {PCT.format(d.pct)}%
+
+                {/* Caixa destacada com cores de semáforo (Verde >=80%, Amarelo 50-79%, Vermelho <50%) */}
+                <div
+                  className={cn(
+                    "dados rounded-lg border px-3 py-1 text-[13px] font-bold shadow-xs transition-colors",
+                    d.pct >= 80
+                      ? "border-sinal-conforme/40 bg-sinal-conforme-suave text-sinal-conforme"
+                      : d.pct >= 50
+                      ? "border-sinal-atencao/40 bg-sinal-atencao-suave text-sinal-atencao"
+                      : "border-sinal-critico/40 bg-sinal-critico-suave text-sinal-critico"
+                  )}
+                >
+                  <span>
+                    {FMT.format(d.feito)} / {FMT.format(d.meta)}
                   </span>
-                </span>
+                  <span className="ml-1.5 opacity-90">· {PCT.format(d.pct)}%</span>
+                </div>
               </div>
 
               <div className="mt-2.5 h-2.5 overflow-hidden rounded-full bg-branco/10">

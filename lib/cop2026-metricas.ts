@@ -152,19 +152,21 @@ export function aplicarFiltros(
 export type Nivel = "conforme" | "atencao" | "critico" | "neutro";
 
 export const ROTULO_NIVEL: Record<Nivel, string> = {
-  conforme: "No padrão",
-  atencao: "Atenção",
-  critico: "Crítico",
+  conforme: "Meta Cumprida",
+  atencao: "Em Andamento",
+  critico: "Abaixo da Meta",
   neutro: "Sem dados",
 };
 
-/** Um único lugar decide o que é verde, âmbar e vermelho. Espalhar esse
- *  julgamento por dez componentes é como dois relatórios discordarem sobre a
- *  mesma companhia. */
+/** Um único lugar decide o que é verde, âmbar e vermelho:
+ *  - Verde (conforme): somente a partir de 80% (>= 80%)
+ *  - Amarelo/Âmbar (atencao): entre 50% e 79,9%
+ *  - Vermelho (critico): abaixo de 50% (< 50%)
+ */
 export function nivelPorCumprimento(pct: number, temDados: boolean): Nivel {
   if (!temDados) return "neutro";
-  if (pct >= 90) return "conforme";
-  if (pct >= 70) return "atencao";
+  if (pct >= 80) return "conforme";
+  if (pct >= 50) return "atencao";
   return "critico";
 }
 
@@ -378,7 +380,12 @@ export function calcularPainel(
         semanas: semanasFracao,
       };
     })
-    .sort((a, b) => a.pct - b.pct);
+    .sort((a, b) => {
+      const ia = ORDEM_SUBUNIDADES.indexOf(a.chave as (typeof ORDEM_SUBUNIDADES)[number]);
+      const ib = ORDEM_SUBUNIDADES.indexOf(b.chave as (typeof ORDEM_SUBUNIDADES)[number]);
+      if (ia !== -1 && ib !== -1) return ia - ib;
+      return a.chave.localeCompare(b.chave);
+    });
 
   // ---- comparativos --------------------------------------------------------
   const porTurno = ["diurno", "noturno"].map((t) => ({
