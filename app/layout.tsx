@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Cinzel, IBM_Plex_Mono, Inter } from "next/font/google";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 const inter = Inter({
@@ -17,12 +18,6 @@ const cinzel = Cinzel({
 });
 
 // Face de DADOS: indicadores, tabelas numéricas e eixos de gráfico.
-// Cinzel é capitular romana de inscrição — desenhada para caixa alta em
-// monumento, com algarismos fracos e de larguras desiguais. Servia à
-// identidade institucional, mas era a escolha errada para número que se lê
-// comparando: coluna de valores em Cinzel não alinha e cansa. IBM Plex Mono
-// foi desenhada para leitura técnica, tem algarismos de largura fixa e
-// distingue zero de O e um de l, o que num relatório de escala importa.
 const plexMono = IBM_Plex_Mono({
   variable: "--font-dados",
   subsets: ["latin"],
@@ -31,9 +26,6 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  // Base para resolver caminhos relativos de metadata (og:image, canonical).
-  // Cada rota compartilhada por WhatsApp declara a própria imagem em URL
-  // absoluta do domínio que a serve, então este valor só cobre o resto.
   metadataBase: new URL("https://portal-cco16.vercel.app"),
   title: "SALA DE OPERAÇÕES · 16º BPM/M · Diretriz nº PM3-001/02/23",
   description:
@@ -55,6 +47,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
         {children}
+        <Toaster richColors position="bottom-right" theme="dark" />
       </body>
     </html>
   );

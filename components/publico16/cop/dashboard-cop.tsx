@@ -38,7 +38,9 @@ import {
   type LinhaAuditor,
 } from "@/lib/cop2026-metricas";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { Cartao, Selo, SemDados } from "./primitivos";
+import { PaletaComando } from "./paleta-comando";
 import {
   AgulhaoMetas,
   BarrasSimples,
@@ -321,23 +323,37 @@ export function DashboardCop({
   }, [p.auditoresLinhas, f.busca, ordem]);
 
   const baixarCsv = () => {
-    const blob = new Blob([auditoresParaCsv(tabela)], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `auditoria-cop-2026-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    try {
+      const blob = new Blob([auditoresParaCsv(tabela)], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `auditoria-cop-2026-auditores-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("CSV de Auditores exportado!", {
+        description: `${tabela.length} registros exportados com sucesso.`,
+      });
+    } catch {
+      toast.error("Erro ao gerar o arquivo CSV.");
+    }
   };
 
   const baixarLancamentosCsv = () => {
-    const blob = new Blob([lancamentosParaCsv(p.dados)], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `auditoria-cop-2026-respostas-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    try {
+      const blob = new Blob([lancamentosParaCsv(p.dados)], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `auditoria-cop-2026-respostas-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("CSV de Lançamentos exportado!", {
+        description: `${p.dados.length} registros brutos exportados com sucesso.`,
+      });
+    } catch {
+      toast.error("Erro ao gerar o arquivo CSV.");
+    }
   };
 
   const ordenarPor = (col: Coluna) =>
@@ -345,12 +361,25 @@ export function DashboardCop({
 
   return (
     <div className="mx-auto max-w-[1400px] px-5 pb-12">
-      {/* ---------------- Filtros ---------------- */}
+      {/* ---------------- Filtros & Paleta de Comando ---------------- */}
       <div className="nao-imprime sticky top-0 z-20 -mx-5 mb-6 border-b border-borda bg-tatico-fundo/95 px-5 py-3 backdrop-blur">
         <div className="flex flex-wrap items-center gap-2.5 text-[13px]">
           <span className="inline-flex items-center gap-1.5 font-semibold text-texto-suave">
             <Filter size={15} aria-hidden /> Recorte
           </span>
+
+          <PaletaComando
+            lancamentos={lancamentos}
+            onSelecionarFracao={(fracao) => {
+              definir({ fracao });
+              toast.info(`Filtro de fração aplicado: ${ROTULO_SUBUNIDADE[fracao] ?? fracao}`);
+            }}
+            onSelecionarSemana={(semana) => {
+              definir({ semana });
+              toast.info(`Filtro de semana aplicado: Semana ${semana}`);
+            }}
+            onExportarCsv={baixarLancamentosCsv}
+          />
           <select
             value={f.fracao}
             onChange={(e) => definir({ fracao: e.target.value })}
