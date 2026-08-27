@@ -30,6 +30,7 @@ import {
   FMT,
   PCT,
   type LinhaFracao,
+  type ProgressoSemana,
   type Nivel,
 } from "@/lib/cop2026-metricas";
 import { COR_NIVEL, Selo } from "./primitivos";
@@ -222,54 +223,160 @@ export function RankingFracoes({
     <ul className="space-y-3.5">
       {dados.map((d) => (
         <li key={d.chave}>
-          <button
-            type="button"
-            onClick={() => onSelecionar?.(d.chave)}
-            className="w-full rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-branco/[0.04] focus-visible:outline-2 focus-visible:outline-vermelho"
-            aria-label={`Filtrar por ${d.rotulo} — ${PCT.format(d.pct)}% da meta`}
-          >
-            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-              <span className="flex items-center gap-2 text-[13.5px] font-bold text-branco">
-                {d.rotulo}
-                <Selo nivel={d.nivel} />
-                {d.pctBatalhao !== undefined && (
-                  <span className="rounded bg-branco/10 px-1.5 py-0.5 text-[10.5px] font-semibold text-texto-suave">
-                    Cota: {PCT.format(d.pctBatalhao)}% do Btl
-                  </span>
-                )}
-              </span>
-              <span className="dados text-[12.5px] text-texto-suave">
-                <strong className="text-branco">{FMT.format(d.feito)}</strong> / {FMT.format(d.meta)} ·{" "}
-                <span className="font-semibold text-branco">{PCT.format(d.pct)}%</span>
-              </span>
-            </div>
-            <div className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-branco/10">
-              <div
-                className="h-full rounded-full transition-all duration-700"
-                style={{ width: `${Math.min(100, d.pct)}%`, background: COR_NIVEL[d.nivel] }}
-              />
-            </div>
-            <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11.5px] text-texto-suave">
-              <span>
-                <span className="dados text-branco">{FMT.format(d.lancaram)}</span> de{" "}
-                <span className="dados">{FMT.format(d.efetivo)}</span> auditores lançaram
-                {d.efetivoQuadro ? ` (quadro: ${FMT.format(d.efetivoQuadro)} PMs)` : ""}
-              </span>
-              <span>
-                {d.falta > 0 ? (
-                  <>
-                    Faltam <span className="dados font-semibold text-branco">{FMT.format(d.falta)}</span> (
-                    {FMT.format(Math.ceil(d.ritmoNecessario))}/turno em {FMT.format(d.turnosRestantes)} rest.)
-                  </>
-                ) : (
-                  <span className="font-semibold text-sinal-conforme">Meta cumprida</span>
-                )}
-              </span>
-            </div>
-          </button>
+          <div className="w-full rounded-lg border border-borda/40 bg-branco/[0.01] p-3 text-left transition-colors hover:bg-branco/[0.03]">
+            <button
+              type="button"
+              onClick={() => onSelecionar?.(d.chave)}
+              className="w-full text-left focus-visible:outline-2 focus-visible:outline-vermelho"
+              aria-label={`Filtrar por ${d.rotulo} — ${PCT.format(d.pct)}% da meta`}
+            >
+              <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                <span className="flex items-center gap-2 text-[13.5px] font-bold text-branco">
+                  {d.rotulo}
+                  <Selo nivel={d.nivel} />
+                  {d.pctBatalhao !== undefined && (
+                    <span className="rounded bg-branco/10 px-1.5 py-0.5 text-[10.5px] font-semibold text-texto-suave">
+                      Cota: {PCT.format(d.pctBatalhao)}% do Btl ({FMT.format(d.meta)})
+                    </span>
+                  )}
+                </span>
+                <span className="dados text-[12.5px] text-texto-suave">
+                  <strong className="text-branco">{FMT.format(d.feito)}</strong> / {FMT.format(d.meta)} ·{" "}
+                  <span className="font-semibold text-branco">{PCT.format(d.pct)}%</span>
+                </span>
+              </div>
+              <div className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-branco/10">
+                <div
+                  className="h-full rounded-full transition-all duration-700"
+                  style={{ width: `${Math.min(100, d.pct)}%`, background: COR_NIVEL[d.nivel] }}
+                />
+              </div>
+              <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11.5px] text-texto-suave">
+                <span>
+                  <span className="dados text-branco">{FMT.format(d.lancaram)}</span> de{" "}
+                  <span className="dados">{FMT.format(d.efetivo)}</span> auditores lançaram
+                  {d.efetivoQuadro ? ` (quadro: ${FMT.format(d.efetivoQuadro)} PMs)` : ""}
+                </span>
+                <span>
+                  {d.falta > 0 ? (
+                    <>
+                      Faltam <span className="dados font-semibold text-branco">{FMT.format(d.falta)}</span> (
+                      {FMT.format(Math.ceil(d.ritmoNecessario))}/turno em {FMT.format(d.turnosRestantes)} rest.)
+                    </>
+                  ) : (
+                    <span className="font-semibold text-sinal-conforme">Meta cumprida</span>
+                  )}
+                </span>
+              </div>
+            </button>
+
+            {/* Evolução semana a semana da Cia */}
+            {d.semanas && d.semanas.length > 0 && (
+              <div className="mt-3 grid grid-cols-4 gap-1.5 border-t border-borda/40 pt-2">
+                {d.semanas.map((s) => (
+                  <div
+                    key={s.semana}
+                    className="rounded border border-borda/50 bg-branco/[0.02] p-1.5 text-center"
+                    title={`${s.rotulo} (${s.diasRotulo}): ${FMT.format(s.feito)} de ${FMT.format(
+                      s.meta
+                    )} evidências (${PCT.format(s.pct)}%)`}
+                  >
+                    <div className="flex items-center justify-between text-[10px] text-texto-suave">
+                      <span className="font-semibold text-branco/90">S{s.semana}</span>
+                      <span className="dados font-medium text-[9.5px] text-texto-suave">
+                        {PCT.format(s.pct)}%
+                      </span>
+                    </div>
+                    <div className="mt-1 h-1 overflow-hidden rounded-full bg-branco/10">
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{
+                          width: `${Math.min(100, s.pct)}%`,
+                          background: COR_NIVEL[s.nivel],
+                        }}
+                      />
+                    </div>
+                    <div className="mt-0.5 dados text-[10px] text-texto-suave">
+                      <strong className="text-branco">{FMT.format(s.feito)}</strong>/{FMT.format(s.meta)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </li>
       ))}
     </ul>
+  );
+}
+
+export function QuadroSemanalBatalhao({
+  semanas,
+  semanaAtiva,
+  onSelecionarSemana,
+}: {
+  semanas: ProgressoSemana[];
+  semanaAtiva?: string;
+  onSelecionarSemana?: (semana: string) => void;
+}) {
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {semanas.map((s) => {
+        const ativa = semanaAtiva === String(s.semana);
+        return (
+          <button
+            key={s.semana}
+            type="button"
+            onClick={() => onSelecionarSemana?.(ativa ? "todas" : String(s.semana))}
+            className={`group rounded-xl border p-4 text-left transition-all ${
+              ativa
+                ? "border-vermelho bg-vermelho/10 shadow-inst ring-1 ring-vermelho"
+                : "border-borda bg-tatico-super hover:border-vermelho/50 hover:bg-branco/[0.03]"
+            }`}
+            aria-pressed={ativa}
+            aria-label={`Filtrar por ${s.rotulo} — ${PCT.format(s.pct)}% da meta`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="font-serif text-[13.5px] font-bold text-branco group-hover:text-vermelho">
+                {s.rotulo}
+              </span>
+              <Selo nivel={s.nivel} />
+            </div>
+            <p className="mt-0.5 text-[11.5px] text-texto-suave">Dias {s.diasRotulo}</p>
+
+            <div className="mt-3 flex items-baseline justify-between">
+              <span className="dados text-2xl font-bold text-branco">
+                {FMT.format(s.feito)}
+                <span className="text-[13px] font-normal text-texto-suave"> / {FMT.format(s.meta)}</span>
+              </span>
+              <span className="dados text-[13px] font-bold text-branco">
+                {PCT.format(s.pct)}%
+              </span>
+            </div>
+
+            <div className="mt-2 h-2 overflow-hidden rounded-full bg-branco/10">
+              <div
+                className="h-full rounded-full transition-all duration-700"
+                style={{
+                  width: `${Math.min(100, s.pct)}%`,
+                  background: COR_NIVEL[s.nivel],
+                }}
+              />
+            </div>
+
+            <p className="mt-2 text-[11.5px] text-texto-suave">
+              {s.falta > 0 ? (
+                <>
+                  Faltam <strong className="dados text-branco">{FMT.format(s.falta)}</strong> p/ meta
+                </>
+              ) : (
+                <span className="font-semibold text-sinal-conforme">Meta semanal atingida</span>
+              )}
+            </p>
+          </button>
+        );
+      })}
+    </div>
   );
 }
 

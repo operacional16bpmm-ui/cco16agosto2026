@@ -93,18 +93,69 @@ export const MATRIZ_PROPORCIONAL_2026: Record<
     pctEfetivo: number;
     pctMeta: number;
     meta: number;
+    metaSemanalMedia: number;
+    metasSemanais: [number, number, number, number];
     rotulo: string;
   }
 > = {
-  em: { efetivo: 98, pctEfetivo: 17.19, pctMeta: 5.0, meta: 48, rotulo: "Estado-Maior" },
-  "1cia": { efetivo: 102, pctEfetivo: 17.89, pctMeta: 20.32, meta: 195, rotulo: "1ª Cia" },
-  "2cia": { efetivo: 93, pctEfetivo: 16.31, pctMeta: 18.74, meta: 180, rotulo: "2ª Cia" },
-  "3cia": { efetivo: 111, pctEfetivo: 19.47, pctMeta: 21.97, meta: 210, rotulo: "3ª Cia" },
-  "4cia": { efetivo: 93, pctEfetivo: 16.31, pctMeta: 18.74, meta: 180, rotulo: "4ª Cia" },
-  ft: { efetivo: 73, pctEfetivo: 12.8, pctMeta: 15.23, meta: 147, rotulo: "Força Tática" },
+  em: {
+    efetivo: 98,
+    pctEfetivo: 17.19,
+    pctMeta: 5.0,
+    meta: 48,
+    metaSemanalMedia: 12,
+    metasSemanais: [12, 12, 12, 12],
+    rotulo: "Estado-Maior",
+  },
+  "1cia": {
+    efetivo: 102,
+    pctEfetivo: 17.89,
+    pctMeta: 20.32,
+    meta: 195,
+    metaSemanalMedia: 48.75,
+    metasSemanais: [49, 49, 49, 48],
+    rotulo: "1ª Cia",
+  },
+  "2cia": {
+    efetivo: 93,
+    pctEfetivo: 16.31,
+    pctMeta: 18.74,
+    meta: 180,
+    metaSemanalMedia: 45,
+    metasSemanais: [45, 45, 45, 45],
+    rotulo: "2ª Cia",
+  },
+  "3cia": {
+    efetivo: 111,
+    pctEfetivo: 19.47,
+    pctMeta: 21.97,
+    meta: 210,
+    metaSemanalMedia: 52.5,
+    metasSemanais: [53, 52, 53, 52],
+    rotulo: "3ª Cia",
+  },
+  "4cia": {
+    efetivo: 93,
+    pctEfetivo: 16.31,
+    pctMeta: 18.74,
+    meta: 180,
+    metaSemanalMedia: 45,
+    metasSemanais: [45, 45, 45, 45],
+    rotulo: "4ª Cia",
+  },
+  ft: {
+    efetivo: 73,
+    pctEfetivo: 12.8,
+    pctMeta: 15.23,
+    meta: 147,
+    metaSemanalMedia: 36.75,
+    metasSemanais: [37, 37, 37, 36],
+    rotulo: "Força Tática",
+  },
 };
 
 export const META_TOTAL_BATALHAO = 960;
+export const META_SEMANAL_BATALHAO = 240;
 export const EFETIVO_TOTAL_BATALHAO = 570;
 
 export const METAS_PADRAO_2026: MetaSubunidade[] = [

@@ -11,17 +11,35 @@ import {
   ROTULO_SUBUNIDADE,
   MATRIZ_PROPORCIONAL_2026,
   META_TOTAL_BATALHAO,
+  META_SEMANAL_BATALHAO,
   EFETIVO_TOTAL_BATALHAO,
   type LancamentoCop,
   type MetaSubunidade,
 } from "@/lib/cop2026";
 
-export { MATRIZ_PROPORCIONAL_2026, META_TOTAL_BATALHAO, EFETIVO_TOTAL_BATALHAO };
+export { MATRIZ_PROPORCIONAL_2026, META_TOTAL_BATALHAO, META_SEMANAL_BATALHAO, EFETIVO_TOTAL_BATALHAO };
 
 export const FMT = new Intl.NumberFormat("pt-BR");
 export const PCT = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 });
 export const DIAS = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
 export const FAIXAS_HORA = ["00–04", "04–08", "08–12", "12–16", "16–20", "20–24"];
+
+export const SEMANAS_ROTULOS = [
+  { semana: 1, rotulo: "Semana 1", dias: "01 a 07" },
+  { semana: 2, rotulo: "Semana 2", dias: "08 a 14" },
+  { semana: 3, rotulo: "Semana 3", dias: "15 a 21" },
+  { semana: 4, rotulo: "Semana 4", dias: "22 a 31" },
+] as const;
+
+export function identificarSemana(dataIso: string | undefined): number {
+  if (!dataIso) return 1;
+  const dia = parseInt(dataIso.slice(8, 10), 10);
+  if (isNaN(dia)) return 1;
+  if (dia <= 7) return 1;
+  if (dia <= 14) return 2;
+  if (dia <= 21) return 3;
+  return 4;
+}
 
 /** Mínimo do Batalhão por turno. A Diretriz PM3-001/02/25 pede 2; o Batalhão
  *  determinou 3. O valor real vem da aba Parâmetros — isto é só o piso de
@@ -54,6 +72,7 @@ export const desvio = (v: number[]) => {
 export type Filtros = {
   fracao: string;
   turno: string;
+  semana: string;
   de: string;
   ate: string;
   busca: string;
@@ -65,6 +84,7 @@ export type Filtros = {
 export const FILTROS_VAZIOS: Filtros = {
   fracao: "todas",
   turno: "todos",
+  semana: "todas",
   de: "",
   ate: "",
   busca: "",
@@ -77,9 +97,11 @@ export function lerFiltros(sp: Record<string, string | string[] | undefined>): F
     return (Array.isArray(v) ? v[0] : v) ?? "";
   };
   const excecao = um("excecao");
+  const semana = um("semana");
   return {
     fracao: um("fracao") || "todas",
     turno: um("turno") || "todos",
+    semana: ["1", "2", "3", "4"].includes(semana) ? semana : "todas",
     de: um("de"),
     ate: um("ate"),
     busca: um("busca"),
@@ -95,6 +117,7 @@ export function escreverFiltros(f: Filtros): string {
   const p = new URLSearchParams();
   if (f.fracao !== "todas") p.set("fracao", f.fracao);
   if (f.turno !== "todos") p.set("turno", f.turno);
+  if (f.semana && f.semana !== "todas") p.set("semana", f.semana);
   if (f.de) p.set("de", f.de);
   if (f.ate) p.set("ate", f.ate);
   if (f.busca) p.set("busca", f.busca);
@@ -111,6 +134,9 @@ export function aplicarFiltros(
   return lancamentos.filter((l) => {
     if (f.fracao !== "todas" && l.subunidade !== f.fracao) return false;
     if (f.turno !== "todos" && !(l.turno || "").toLowerCase().startsWith(f.turno)) return false;
+    if (f.semana && f.semana !== "todas" && identificarSemana(l.data) !== parseInt(f.semana, 10)) {
+      return false;
+    }
     if (f.de && (!l.data || l.data < f.de)) return false;
     if (f.ate && (!l.data || l.data > f.ate)) return false;
     if (f.excecao === "naoauditou" && l.auditou) return false;
@@ -145,6 +171,17 @@ export function nivelPorCumprimento(pct: number, temDados: boolean): Nivel {
 // ---------------------------------------------------------------------------
 // Painel
 // ---------------------------------------------------------------------------
+export type ProgressoSemana = {
+  semana: number;
+  rotulo: string;
+  diasRotulo: string;
+  meta: number;
+  feito: number;
+  pct: number;
+  falta: number;
+  nivel: Nivel;
+};
+
 export type LinhaFracao = {
   chave: string;
   rotulo: string;
@@ -162,6 +199,10 @@ export type LinhaFracao = {
   pctBatalhao?: number;
   /** Efetivo do quadro fixo da fração (base: 570 PMs). */
   efetivoQuadro?: number;
+  /** Média semanal da meta da fração. */
+  metaSemanalMedia: number;
+  /** Desempenho semana a semana (S1, S2, S3, S4). */
+  semanas: ProgressoSemana[];
 };
 
 export type LinhaAuditor = {
@@ -193,9 +234,18 @@ export function calcularPainel(
   // Normaliza as metas aplicando a Matriz Operacional Proporcional (960 evidências / 570 PMs)
   const metasNormalizadas = metas.map((m) => {
     const mat = MATRIZ_PROPORCIONAL_2026[m.subunidade];
+    const metaBase = mat ? mat.meta : m.meta;
+    // Se o filtro estiver em uma semana específica, a meta do recorte é a meta daquela semana
+    const metaAjustada =
+      f.semana !== "todas" && mat
+        ? mat.metasSemanais[parseInt(f.semana, 10) - 1]
+        : f.semana !== "todas"
+          ? Math.round(metaBase / 4)
+          : metaBase;
+
     return {
       ...m,
-      meta: mat ? mat.meta : m.meta,
+      meta: metaAjustada,
       efetivo: mat ? mat.efetivo : m.efetivo,
     };
   });
@@ -250,6 +300,35 @@ export function calcularPainel(
   const turnosRestantes = Math.max(0, turnosPrevistos - turnosCumpridos);
   const ritmoNecessario = turnosRestantes > 0 ? falta / turnosRestantes : falta;
 
+  // ---- semanas consolidadas do Batalhão / Recorte --------------------------
+  const lancamentosSemanaisBase = lancamentos.filter((l) => {
+    if (f.fracao !== "todas" && l.subunidade !== f.fracao) return false;
+    if (f.turno !== "todos" && !(l.turno || "").toLowerCase().startsWith(f.turno)) return false;
+    return true;
+  });
+
+  const semanasBatalhao: ProgressoSemana[] = SEMANAS_ROTULOS.map((s) => {
+    const daSemana = lancamentosSemanaisBase.filter(
+      (l) => l.auditou && identificarSemana(l.data) === s.semana
+    );
+    const feito = daSemana.reduce((sum, l) => sum + l.videos, 0);
+    const metaSem =
+      f.fracao === "todas"
+        ? META_SEMANAL_BATALHAO
+        : (MATRIZ_PROPORCIONAL_2026[f.fracao]?.metasSemanais[s.semana - 1] ?? 60);
+    const p = metaSem > 0 ? (feito / metaSem) * 100 : 0;
+    return {
+      semana: s.semana,
+      rotulo: s.rotulo,
+      diasRotulo: s.dias,
+      meta: metaSem,
+      feito,
+      pct: p,
+      falta: Math.max(0, metaSem - feito),
+      nivel: nivelPorCumprimento(p, feito > 0),
+    };
+  });
+
   // ---- ranking de frações --------------------------------------------------
   const fracoes: LinhaFracao[] = metasRecorte
     .map((m) => {
@@ -261,6 +340,26 @@ export function calcularPainel(
       const p = metaReal > 0 ? (feito / metaReal) * 100 : 0;
       const fa = Math.max(0, metaReal - feito);
       const rest = Math.max(0, (m.turnos || 15) - turnosCumpridos);
+
+      // Desempenho semana a semana da fração
+      const todosDaFracao = lancamentos.filter((l) => l.subunidade === m.subunidade && l.auditou);
+      const semanasFracao: ProgressoSemana[] = SEMANAS_ROTULOS.map((s) => {
+        const lancsSem = todosDaFracao.filter((l) => identificarSemana(l.data) === s.semana);
+        const feitoSem = lancsSem.reduce((sum, l) => sum + l.videos, 0);
+        const metaSem = mat ? mat.metasSemanais[s.semana - 1] : Math.round(metaReal / 4);
+        const pSem = metaSem > 0 ? (feitoSem / metaSem) * 100 : 0;
+        return {
+          semana: s.semana,
+          rotulo: s.rotulo,
+          diasRotulo: s.dias,
+          meta: metaSem,
+          feito: feitoSem,
+          pct: pSem,
+          falta: Math.max(0, metaSem - feitoSem),
+          nivel: nivelPorCumprimento(pSem, feitoSem > 0),
+        };
+      });
+
       return {
         chave: m.subunidade,
         rotulo: ROTULO_SUBUNIDADE[m.subunidade] ?? m.subunidade,
@@ -275,6 +374,8 @@ export function calcularPainel(
         turnosRestantes: rest,
         pctBatalhao: mat ? mat.pctMeta : meta > 0 ? (metaReal / meta) * 100 : 0,
         efetivoQuadro: mat ? mat.efetivo : m.efetivo,
+        metaSemanalMedia: mat ? mat.metaSemanalMedia : metaReal / 4,
+        semanas: semanasFracao,
       };
     })
     .sort((a, b) => a.pct - b.pct);
@@ -467,6 +568,7 @@ export function calcularPainel(
     turnosRestantes,
     ritmoNecessario,
     fracoes,
+    semanasBatalhao,
     porTurno,
     porFuncao,
     porPosto,

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
   ArrowUpDown,
+  Calendar,
   CheckCircle2,
   Download,
   FileWarning,
@@ -46,6 +47,7 @@ import {
   Histograma,
   Pareto,
   ProducaoDiaria,
+  QuadroSemanalBatalhao,
   RankingFracoes,
 } from "./graficos";
 
@@ -219,6 +221,11 @@ export function DashboardCop({
       t: ROTULO_SUBUNIDADE[f.fracao] ?? f.fracao,
       limpar: () => definir({ fracao: "todas" }),
     },
+    f.semana !== "todas" && {
+      k: "semana",
+      t: `Semana ${f.semana} (${f.semana === "1" ? "01–07" : f.semana === "2" ? "08–14" : f.semana === "3" ? "15–21" : "22–31"})`,
+      limpar: () => definir({ semana: "todas" }),
+    },
     f.turno !== "todos" && {
       k: "turno",
       t: f.turno === "diurno" ? "Diurno" : "Noturno",
@@ -246,13 +253,19 @@ export function DashboardCop({
     {
       rotulo: "Cumprimento da meta",
       valor: `${PCT.format(p.pct)}%`,
-      nota: `${FMT.format(p.falta)} evidências a realizar`,
+      nota:
+        f.semana !== "todas"
+          ? `${FMT.format(p.falta)} a realizar na Sem. ${f.semana}`
+          : `${FMT.format(p.falta)} evidências a realizar`,
       icone: <TrendingUp size={17} aria-hidden />,
     },
     {
       rotulo: "Evidências auditadas",
       valor: FMT.format(p.total),
-      nota: `meta do período: ${FMT.format(p.meta)}`,
+      nota:
+        f.semana !== "todas"
+          ? `meta da semana ${f.semana}: ${FMT.format(p.meta)}`
+          : `meta do período: ${FMT.format(p.meta)}`,
       icone: <Target size={17} aria-hidden />,
     },
     {
@@ -349,6 +362,18 @@ export function DashboardCop({
                 {ROTULO_SUBUNIDADE[m.subunidade] ?? m.subunidade}
               </option>
             ))}
+          </select>
+          <select
+            value={f.semana}
+            onChange={(e) => definir({ semana: e.target.value })}
+            aria-label="Filtrar por semana"
+            className="rounded-md border border-borda bg-tatico-super px-3 py-2 font-semibold text-branco"
+          >
+            <option value="todas">Todas as semanas (Mês)</option>
+            <option value="1">Semana 1 (01 a 07)</option>
+            <option value="2">Semana 2 (08 a 14)</option>
+            <option value="3">Semana 3 (15 a 21)</option>
+            <option value="4">Semana 4 (22 a 31)</option>
           </select>
           <select
             value={f.turno}
@@ -475,6 +500,35 @@ export function DashboardCop({
             Partes confeccionadas <strong className="dados text-branco">{FMT.format(p.partes)}</strong>
           </span>
         </div>
+      </section>
+
+      {/* ---------------- Camada Semanal: Metas por Semana ---------------- */}
+      <section aria-label="Evolução Semanal" className="mb-6">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 className="font-serif text-base font-bold text-branco">
+              Meta Semanal · {f.fracao === "todas" ? "240 Evidências / Semana (Btl)" : `${FMT.format(p.meta)} Evidências / Semana (${ROTULO_SUBUNIDADE[f.fracao] ?? f.fracao})`}
+            </h2>
+            <p className="text-[12.5px] text-texto-suave">
+              Divisão do ciclo de auditoria em 4 semanas operacionais · clique no card de uma semana para isolar o recorte
+            </p>
+          </div>
+          {f.semana !== "todas" && (
+            <button
+              type="button"
+              onClick={() => definir({ semana: "todas" })}
+              className="rounded-md border border-vermelho/30 bg-vermelho/5 px-2.5 py-1 text-[12px] font-semibold text-vermelho hover:bg-vermelho/10"
+            >
+              Exibindo Semana {f.semana} · Ver Todas as Semanas
+            </button>
+          )}
+        </div>
+
+        <QuadroSemanalBatalhao
+          semanas={p.semanasBatalhao}
+          semanaAtiva={f.semana}
+          onSelecionarSemana={(sem) => definir({ semana: sem })}
+        />
       </section>
 
       {/* ---------------- Camada 2: Onde agir ---------------- */}
@@ -931,6 +985,10 @@ export function DashboardCop({
             [
               "Meta global do Batalhão (960)",
               "Universo total de 960 evidências distribuído de forma justa e proporcional ao quadro fixo com COP (570 PMs): 1ª Cia (195 / 20,32%), 2ª Cia (180 / 18,74%), 3ª Cia (210 / 21,97%), 4ª Cia (180 / 18,74%), FT (147 / 15,23%) e EM (48 / 5,00%).",
+            ],
+            [
+              "Metas Semanais (240/sem)",
+              "Divisão do universo mensal em 4 semanas operacionais (240 evidências/semana para o Batalhão). O rateio semanal proporcional é: 1ª Cia (49/sem), 2ª Cia (45/sem), 3ª Cia (53/sem), 4ª Cia (45/sem), FT (37/sem) e EM (12/sem).",
             ],
             [
               "Matriz de Proporcionalidade",

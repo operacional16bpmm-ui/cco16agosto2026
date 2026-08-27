@@ -49,6 +49,8 @@ import {
    acrescido dos Reels do Instagram oficial e do acesso à Sala de Operações.
    ============================================================================ */
 
+export const dynamic = "force-dynamic";
+
 // Esta rota é o que 16bpmm-pmesp.vercel.app serve na raiz (reescrita por host
 // em proxy.ts), então o cartão de compartilhamento aponta para aquele domínio.
 // URL absoluta de propósito: o metadataBase do layout raiz é portal-cco16, e
