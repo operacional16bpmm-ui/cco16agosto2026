@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { ShieldCheck } from "lucide-react";
+import { BarChart3, ShieldCheck } from "lucide-react";
 
 export function FundamentacaoCop() {
   return (
@@ -81,9 +81,14 @@ export function FundamentacaoCop() {
 
         <div className="rounded-2xl border-2 border-slate-300/85 bg-gradient-to-b from-[#ffffff] via-[#f8fafc] to-[#edf3f8] p-5 shadow-[0_4px_16px_rgba(15,23,42,0.06)] sm:p-6">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-borda pb-3">
-            <h3 className="font-serif text-xl font-black uppercase tracking-wider text-[#07182d] sm:text-2xl">
-              Critério de Classificação das Faixas de Desempenho
-            </h3>
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#ca0202] text-white shadow-[0_5px_14px_rgba(202,2,2,0.25)]">
+                <BarChart3 className="h-5 w-5" aria-hidden="true" />
+              </span>
+              <h3 className="font-serif text-xl font-black uppercase tracking-wider text-[#07182d] sm:text-2xl">
+                Critério de Classificação das Faixas de Desempenho
+              </h3>
+            </div>
             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#15304c]/70 sm:text-xs">
               Regra Sistêmica de Classificação
             </span>
