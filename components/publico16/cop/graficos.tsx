@@ -239,7 +239,7 @@ export function AgulhaoMetas({
   const corAgulha = pct >= 80 ? "#16a34a" : pct >= 50 ? "#d97706" : "#ca0202";
 
   return (
-    <div className="card-interativo flex flex-col items-center justify-between rounded-2xl border border-borda/80 bg-gradient-to-b from-[#ffffff] via-[#fcfdff] to-[#f3f7fa] p-5 sm:p-6 shadow-md">
+    <div className="card-interativo flex flex-col items-center justify-between rounded-2xl border-2 border-slate-300/85 bg-gradient-to-b from-[#ffffff] via-[#f8fafc] to-[#edf3f8] p-5 sm:p-6 shadow-[0_4px_16px_rgba(15,23,42,0.06)]">
       <div className="w-full text-center">
         <p className="font-serif text-base font-bold text-branco tracking-wide">
           {titulo}
@@ -350,7 +350,7 @@ export function RankingFracoes({
     <ul className="space-y-3.5">
       {dados.map((d) => (
         <li key={d.chave}>
-          <div className="card-interativo w-full rounded-2xl border border-borda/80 bg-gradient-to-r from-[#ffffff] via-[#fcfdff] to-[#f5f8fc] p-4 text-left shadow-sm">
+          <div className="card-interativo w-full rounded-2xl border-2 border-slate-300/85 bg-gradient-to-r from-[#ffffff] via-[#f8fafc] to-[#edf3f8] p-4 text-left shadow-[0_2px_10px_rgba(15,23,42,0.04)]">
             <button
               type="button"
               onClick={() => onSelecionar?.(d.chave)}
@@ -472,10 +472,10 @@ export function QuadroSemanalBatalhao({
             type="button"
             onClick={() => onSelecionarSemana?.(ativa ? "todas" : String(s.semana))}
             className={cn(
-              "card-interativo group rounded-2xl border p-3.5 sm:p-4 text-left shadow-sm",
+              "card-interativo group rounded-2xl border-2 p-3.5 sm:p-4 text-left shadow-[0_2px_8px_rgba(15,23,42,0.04)]",
               ativa
-                ? "border-vermelho bg-gradient-to-b from-vermelho/15 via-[#fcfdff] to-[#f4f7fb] shadow-md ring-2 ring-vermelho/80"
-                : "border-borda/80 bg-gradient-to-b from-[#ffffff] via-[#fcfdff] to-[#f3f7fa] hover:border-vermelho/50"
+                ? "border-vermelho bg-gradient-to-b from-vermelho/15 via-[#f8fafc] to-[#edf3f8] shadow-md ring-2 ring-vermelho/80"
+                : "border-slate-300/85 bg-gradient-to-b from-[#ffffff] via-[#f8fafc] to-[#edf3f8] hover:border-vermelho/60"
             )}
             aria-pressed={ativa}
             aria-label={`Filtrar por ${s.rotulo} — ${PCT.format(s.pct)}% da meta`}

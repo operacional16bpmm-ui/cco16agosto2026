@@ -79,23 +79,30 @@ export function NavegacaoCop({
             <ArrowLeft className="h-4 w-4" />
           </Link>
 
-          <Link href="/cop2026" className="flex items-center gap-3 group">
-            <Image
-              src="/brand/16bpmm.png"
-              alt="Brasão do 16º BPM/M"
-              width={48}
-              height={48}
-              className="h-10 w-auto transition-transform group-hover:scale-105 sm:h-12"
-              priority
-            />
+          <Link href="/cop2026" className="flex items-center gap-3.5 group">
+            <div className="relative flex items-center justify-center rounded-xl bg-white/95 p-1.5 shadow-[0_4px_16px_rgba(202,2,2,0.22)] border-2 border-vermelho/40 transition-all duration-300 group-hover:scale-105 group-hover:border-vermelho group-hover:shadow-[0_6px_20px_rgba(202,2,2,0.35)]">
+              <Image
+                src="/brand/16bpmm.png"
+                alt="Brasão do 16º BPM/M"
+                width={56}
+                height={56}
+                className="h-10 w-auto sm:h-12 drop-shadow-md"
+                priority
+              />
+            </div>
             <div>
-              <p className="font-serif text-[15px] font-bold uppercase leading-tight tracking-wide text-branco sm:text-lg">
-                16º BPM/M · COP 2026
-              </p>
-              <div className="hidden items-center gap-1.5 text-[11.5px] text-texto-suave sm:flex">
+              <div className="flex items-center gap-2">
+                <p className="font-serif text-[16px] font-extrabold uppercase leading-tight tracking-wider text-branco sm:text-xl">
+                  16º BPM/M
+                </p>
+                <span className="rounded-md bg-vermelho/10 border border-vermelho/30 px-1.5 py-0.5 text-[10.5px] font-black text-vermelho uppercase tracking-wider">
+                  COP 2026
+                </span>
+              </div>
+              <div className="hidden items-center gap-1.5 text-[12px] text-texto-suave sm:flex">
                 <span>Auditoria de Câmeras</span>
                 <ChevronRight className="h-3 w-3" />
-                <span className="font-semibold text-branco">{tituloPagina}</span>
+                <span className="font-bold text-branco">{tituloPagina}</span>
               </div>
             </div>
           </Link>

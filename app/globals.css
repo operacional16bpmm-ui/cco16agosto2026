@@ -116,13 +116,13 @@ body {
    ficam fora do escopo e não são afetados.
    ============================================================================ */
 .tema-institucional {
-  --tatico-fundo: #f0f5f9;   /* fundo geral claro */
+  --tatico-fundo: #edf2f7;   /* fundo tático cinza-ardósia suave de alto contraste */
   --tatico-super: #ffffff;   /* superfícies/cards brancos */
   --branco: #1d1d1d;         /* "branco" vira grafite: é o token de TEXTO do comando */
   --ouro-claro: #ca0202;     /* acentos/títulos de seção: vermelho institucional PMESP */
   --ouro-velho: #a3121d;
   --vermelho-pm: #ca0202;
-  --borda: rgba(29, 29, 29, 0.14);
+  --borda: rgba(29, 29, 29, 0.16);
   --background: var(--tatico-fundo);
   --foreground: var(--branco);
   font-family: var(--font-poppins), var(--font-inter), system-ui, sans-serif;

@@ -12,6 +12,7 @@ import {
   Filter,
   Printer,
   RefreshCw,
+  SlidersHorizontal,
   Target,
   TrendingUp,
   Users,
@@ -356,19 +357,21 @@ export function DashboardCop({
     }
   };
 
+  const [gavetaFiltrosAberta, setGavetaFiltrosAberta] = useState(false);
+  const totalFiltrosAtivos = chips.length;
+
   const ordenarPor = (col: Coluna) =>
     setOrdem((o) => ({ col, desc: o.col === col ? !o.desc : true }));
 
   return (
     <div className="mx-auto max-w-[1400px] px-3.5 sm:px-5 pb-12">
-      {/* ---------------- Filtros & Paleta de Comando Responsivos ---------------- */}
-      <div className="nao-imprime sticky top-[54px] sm:top-[64px] z-20 -mx-3.5 sm:-mx-5 mb-5 sm:mb-6 border-b border-borda bg-tatico-fundo/95 px-3.5 sm:px-5 py-2.5 sm:py-3 backdrop-blur shadow-xs">
-        <div className="flex flex-wrap items-center gap-2 text-[12.5px] sm:text-[13px]">
-          <span className="hidden sm:inline-flex items-center gap-1.5 font-semibold text-texto-suave">
-            <Filter size={14} aria-hidden /> Recorte:
-          </span>
-
-          <div className="w-full sm:w-auto flex-1 sm:flex-none">
+      {/* ---------------- BARRA DE FILTROS RESPONSIVA SÊNIOR ---------------- */}
+      <div className="nao-imprime sticky top-[54px] sm:top-[64px] z-30 -mx-3.5 sm:-mx-5 mb-6 border-b-2 border-slate-300/80 bg-white/95 px-3.5 sm:px-5 py-2.5 backdrop-blur-md shadow-sm transition-all">
+        
+        {/* MOBILE (linha única 48px, carrossel de semanas e gaveta tática) */}
+        <div className="flex items-center justify-between gap-2 lg:hidden">
+          {/* Busca Rápida */}
+          <div className="shrink-0">
             <PaletaComando
               lancamentos={lancamentos}
               onSelecionarFracao={(fracao) => {
@@ -383,78 +386,151 @@ export function DashboardCop({
             />
           </div>
 
-          <select
-            value={f.fracao}
-            onChange={(e) => definir({ fracao: e.target.value })}
-            aria-label="Filtrar por fração"
-            className="w-full sm:w-auto rounded-lg border border-borda bg-tatico-super px-2.5 py-1.5 font-semibold text-branco text-xs sm:text-sm"
-          >
-            <option value="todas">Todas as frações</option>
-            {metas.map((m) => (
-              <option key={m.subunidade} value={m.subunidade}>
-                {ROTULO_SUBUNIDADE[m.subunidade] ?? m.subunidade}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={f.semana}
-            onChange={(e) => definir({ semana: e.target.value })}
-            aria-label="Filtrar por semana"
-            className="w-full sm:w-auto rounded-lg border border-borda bg-tatico-super px-2.5 py-1.5 font-semibold text-branco text-xs sm:text-sm"
-          >
-            <option value="todas">Todas as semanas (Mês)</option>
-            <option value="1">Semana 1 (01 a 07)</option>
-            <option value="2">Semana 2 (08 a 14)</option>
-            <option value="3">Semana 3 (15 a 21)</option>
-            <option value="4">Semana 4 (22 a 31)</option>
-          </select>
-
-          <select
-            value={f.turno}
-            onChange={(e) => definir({ turno: e.target.value })}
-            aria-label="Filtrar por turno"
-            className="w-full sm:w-auto rounded-lg border border-borda bg-tatico-super px-2.5 py-1.5 font-semibold text-branco text-xs sm:text-sm"
-          >
-            <option value="todos">Todos os turnos</option>
-            <option value="diurno">Diurno</option>
-            <option value="noturno">Noturno</option>
-          </select>
-
-          <div className="flex w-full sm:w-auto items-center gap-1.5 text-xs text-texto-suave">
-            <label className="flex items-center gap-1">
-              De
-              <input
-                type="date"
-                value={f.de}
-                onChange={(e) => definir({ de: e.target.value })}
-                className="dados rounded-lg border border-borda bg-tatico-super px-2 py-1 text-branco text-xs"
-              />
-            </label>
-            <label className="flex items-center gap-1">
-              Até
-              <input
-                type="date"
-                value={f.ate}
-                onChange={(e) => definir({ ate: e.target.value })}
-                className="dados rounded-lg border border-borda bg-tatico-super px-2 py-1 text-branco text-xs"
-              />
-            </label>
+          {/* Pílulas Rápidas de Semanas (Scroll Horizontal Suave) */}
+          <div className="flex flex-1 items-center gap-1.5 overflow-x-auto py-0.5 scrollbar-none">
+            {[
+              { id: "todas", label: "Mês" },
+              { id: "1", label: "Sem 1" },
+              { id: "2", label: "Sem 2" },
+              { id: "3", label: "Sem 3" },
+              { id: "4", label: "Sem 4" },
+            ].map((item) => {
+              const ativo = f.semana === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => definir({ semana: item.id })}
+                  className={cn(
+                    "shrink-0 rounded-full px-3 py-1.5 text-xs font-bold transition-all",
+                    ativo
+                      ? "bg-vermelho text-white shadow-xs"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200"
+                  )}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
           </div>
 
+          {/* Botão Gaveta de Filtros */}
           <button
             type="button"
-            onClick={() => setF(FILTROS_VAZIOS)}
-            className="rounded-lg border border-borda px-2.5 py-1.5 font-semibold text-texto-suave hover:border-vermelho/40 hover:text-vermelho text-xs"
+            onClick={() => setGavetaFiltrosAberta(true)}
+            className={cn(
+              "relative shrink-0 inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all",
+              totalFiltrosAtivos > 0
+                ? "border-vermelho bg-vermelho/10 text-vermelho shadow-xs"
+                : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
+            )}
+            aria-label="Abrir filtros avançados"
           >
-            Limpar
+            <SlidersHorizontal size={14} />
+            <span>Filtros</span>
+            {totalFiltrosAtivos > 0 && (
+              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-vermelho text-[10px] font-black text-white">
+                {totalFiltrosAtivos}
+              </span>
+            )}
           </button>
+        </div>
 
-          <div className="ml-auto flex items-center gap-2">
+        {/* DESKTOP (Linha completa e espaçosa) */}
+        <div className="hidden lg:flex items-center justify-between gap-3 text-xs sm:text-sm">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 font-bold uppercase tracking-wider text-slate-600 text-xs">
+              <Filter size={14} aria-hidden /> Recorte:
+            </span>
+
+            <PaletaComando
+              lancamentos={lancamentos}
+              onSelecionarFracao={(fracao) => {
+                definir({ fracao });
+                toast.info(`Filtro aplicado: ${ROTULO_SUBUNIDADE[fracao] ?? fracao}`);
+              }}
+              onSelecionarSemana={(semana) => {
+                definir({ semana });
+                toast.info(`Filtro aplicado: Semana ${semana}`);
+              }}
+              onExportarCsv={baixarLancamentosCsv}
+            />
+
+            <select
+              value={f.fracao}
+              onChange={(e) => definir({ fracao: e.target.value })}
+              aria-label="Filtrar por fração"
+              className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 font-bold text-branco shadow-xs focus:border-vermelho"
+            >
+              <option value="todas">Todas as frações (Batalhão)</option>
+              {metas.map((m) => (
+                <option key={m.subunidade} value={m.subunidade}>
+                  {ROTULO_SUBUNIDADE[m.subunidade] ?? m.subunidade}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={f.semana}
+              onChange={(e) => definir({ semana: e.target.value })}
+              aria-label="Filtrar por semana"
+              className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 font-bold text-branco shadow-xs focus:border-vermelho"
+            >
+              <option value="todas">Todas as semanas (Mês)</option>
+              <option value="1">Semana 1 (01 a 07)</option>
+              <option value="2">Semana 2 (08 a 14)</option>
+              <option value="3">Semana 3 (15 a 21)</option>
+              <option value="4">Semana 4 (22 a 31)</option>
+            </select>
+
+            <select
+              value={f.turno}
+              onChange={(e) => definir({ turno: e.target.value })}
+              aria-label="Filtrar por turno"
+              className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 font-bold text-branco shadow-xs focus:border-vermelho"
+            >
+              <option value="todos">Todos os turnos</option>
+              <option value="diurno">Diurno</option>
+              <option value="noturno">Noturno</option>
+            </select>
+
+            <div className="flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-2.5 py-1 text-xs text-slate-600 shadow-xs">
+              <label className="flex items-center gap-1">
+                De
+                <input
+                  type="date"
+                  value={f.de}
+                  onChange={(e) => definir({ de: e.target.value })}
+                  className="dados rounded bg-slate-50 px-1.5 py-0.5 text-branco text-xs"
+                />
+              </label>
+              <label className="flex items-center gap-1">
+                Até
+                <input
+                  type="date"
+                  value={f.ate}
+                  onChange={(e) => definir({ ate: e.target.value })}
+                  className="dados rounded bg-slate-50 px-1.5 py-0.5 text-branco text-xs"
+                />
+              </label>
+            </div>
+
+            {totalFiltrosAtivos > 0 && (
+              <button
+                type="button"
+                onClick={() => setF(FILTROS_VAZIOS)}
+                className="rounded-xl border border-slate-300 bg-slate-100 px-3 py-1.5 font-bold text-slate-700 hover:border-vermelho hover:text-vermelho transition-colors text-xs"
+              >
+                Limpar ({totalFiltrosAtivos})
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={atualizar}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-borda px-2.5 py-1.5 font-semibold text-texto-suave hover:border-vermelho/40 hover:text-vermelho text-xs"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 py-1.5 font-bold text-slate-700 hover:border-vermelho hover:text-vermelho shadow-xs transition-colors text-xs"
             >
               <RefreshCw size={13} className={cn(atualizando && "animate-spin")} aria-hidden />
               Atualizar
@@ -462,29 +538,193 @@ export function DashboardCop({
             <button
               type="button"
               onClick={() => window.print()}
-              className="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-borda px-2.5 py-1.5 font-semibold text-texto-suave hover:border-vermelho/40 hover:text-vermelho text-xs"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 py-1.5 font-bold text-slate-700 hover:border-vermelho hover:text-vermelho shadow-xs transition-colors text-xs"
             >
               <Printer size={13} aria-hidden /> Imprimir
             </button>
           </div>
         </div>
 
+        {/* Chips de Filtros Ativos (Exibição Dinâmica) */}
         {chips.length > 0 && (
-          <div className="mt-2 flex flex-wrap items-center gap-2">
+          <div className="mt-2 flex flex-wrap items-center gap-1.5 pt-1 border-t border-slate-200/80">
+            <span className="text-[11px] font-bold text-slate-500 uppercase">Ativos:</span>
             {chips.map((c) => (
               <button
                 key={c.k}
                 type="button"
                 onClick={c.limpar}
-                className="inline-flex items-center gap-1.5 rounded-full border border-vermelho/30 bg-vermelho/5 px-2.5 py-1 text-[11.5px] font-semibold text-vermelho"
+                className="inline-flex items-center gap-1 rounded-full border border-vermelho/40 bg-vermelho/10 px-2.5 py-0.5 text-[11px] font-extrabold text-vermelho hover:bg-vermelho/20 transition-colors"
               >
                 {c.t}
-                <X size={12} aria-hidden />
+                <X size={11} aria-hidden />
               </button>
             ))}
           </div>
         )}
       </div>
+
+      {/* ---------------- GAVETA TÁTICA MOBILE (BOTTOM SHEET) ---------------- */}
+      {gavetaFiltrosAberta && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex flex-col justify-end bg-black/60 backdrop-blur-xs lg:hidden animate-in fade-in"
+        >
+          <div
+            className="fixed inset-0"
+            onClick={() => setGavetaFiltrosAberta(false)}
+            aria-hidden="true"
+          />
+          <div className="relative z-10 max-h-[85vh] overflow-y-auto rounded-t-3xl border-t-4 border-vermelho bg-white p-5 shadow-2xl">
+            <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-slate-300" />
+            
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+              <div>
+                <p className="font-serif text-lg font-extrabold uppercase tracking-wide text-branco">
+                  Filtros & Recortes
+                </p>
+                <p className="text-xs text-slate-500">Isole frações, semanas e turnos de auditoria</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setGavetaFiltrosAberta(false)}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200"
+                aria-label="Fechar gaveta"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-4 py-4">
+              {/* Fração */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                  Fração / Subunidade
+                </label>
+                <select
+                  value={f.fracao}
+                  onChange={(e) => definir({ fracao: e.target.value })}
+                  className="w-full rounded-xl border-2 border-slate-300 bg-slate-50 p-3 font-bold text-branco text-sm"
+                >
+                  <option value="todas">Todas as frações (Batalhão)</option>
+                  {metas.map((m) => (
+                    <option key={m.subunidade} value={m.subunidade}>
+                      {ROTULO_SUBUNIDADE[m.subunidade] ?? m.subunidade}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Semana */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                  Semana Operacional
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { id: "todas", label: "Todas (Mês)" },
+                    { id: "1", label: "Semana 1 (01–07)" },
+                    { id: "2", label: "Semana 2 (08–14)" },
+                    { id: "3", label: "Semana 3 (15–21)" },
+                    { id: "4", label: "Semana 4 (22–31)" },
+                  ].map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => definir({ semana: s.id })}
+                      className={cn(
+                        "rounded-xl border p-2.5 text-center text-xs font-bold transition-all",
+                        f.semana === s.id
+                          ? "border-vermelho bg-vermelho text-white shadow-xs"
+                          : "border-slate-300 bg-slate-50 text-slate-700"
+                      )}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Turno */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                  Turno
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { id: "todos", label: "Todos" },
+                    { id: "diurno", label: "Diurno" },
+                    { id: "noturno", label: "Noturno" },
+                  ].map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => definir({ turno: t.id })}
+                      className={cn(
+                        "rounded-xl border p-2.5 text-center text-xs font-bold transition-all",
+                        f.turno === t.id
+                          ? "border-vermelho bg-vermelho text-white shadow-xs"
+                          : "border-slate-300 bg-slate-50 text-slate-700"
+                      )}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Intervalo de Datas */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                  Período de Datas
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <span className="block text-[11px] text-slate-500">De:</span>
+                    <input
+                      type="date"
+                      value={f.de}
+                      onChange={(e) => definir({ de: e.target.value })}
+                      className="w-full rounded-xl border-2 border-slate-300 bg-slate-50 p-2.5 font-bold text-branco text-xs"
+                    />
+                  </div>
+                  <div>
+                    <span className="block text-[11px] text-slate-500">Até:</span>
+                    <input
+                      type="date"
+                      value={f.ate}
+                      onChange={(e) => definir({ ate: e.target.value })}
+                      className="w-full rounded-xl border-2 border-slate-300 bg-slate-50 p-2.5 font-bold text-branco text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Ações da Gaveta */}
+            <div className="mt-4 grid grid-cols-2 gap-3 border-t border-slate-200 pt-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setF(FILTROS_VAZIOS);
+                  setGavetaFiltrosAberta(false);
+                }}
+                className="rounded-xl border-2 border-slate-300 bg-slate-100 py-3 text-center text-sm font-bold text-slate-700 hover:bg-slate-200"
+              >
+                Limpar Tudo
+              </button>
+              <button
+                type="button"
+                onClick={() => setGavetaFiltrosAberta(false)}
+                className="rounded-xl bg-vermelho py-3 text-center text-sm font-extrabold text-white shadow-md hover:bg-vermelho-escuro"
+              >
+                Aplicar Recorte
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {erro && (
         <p
@@ -506,7 +746,7 @@ export function DashboardCop({
           {/* Lado Esquerdo: Diagnóstico e KPIs */}
           <div className="flex flex-col justify-between gap-4">
             <div
-              className="flex flex-wrap items-start gap-3.5 rounded-2xl border-l-4 border-borda/80 bg-gradient-to-r from-[#ffffff] via-[#fcfdff] to-[#f4f7fb] p-5 sm:p-6 shadow-md"
+              className="flex flex-wrap items-start gap-3.5 rounded-2xl border-l-4 border-2 border-slate-300/85 bg-gradient-to-r from-[#ffffff] via-[#f8fafc] to-[#edf3f8] p-5 sm:p-6 shadow-[0_4px_16px_rgba(15,23,42,0.06)]"
               style={{ borderLeftColor: `var(--sinal-${v.nivel})` }}
             >
               <Selo nivel={v.nivel} />
@@ -520,7 +760,7 @@ export function DashboardCop({
               {kpis.map((k) => (
                 <div
                   key={k.rotulo}
-                  className="card-interativo cartao-painel rounded-2xl border border-borda/80 bg-gradient-to-b from-[#ffffff] via-[#fcfdff] to-[#f4f7fb] p-5 shadow-sm"
+                  className="card-interativo cartao-painel rounded-2xl border-2 border-slate-300/85 bg-gradient-to-b from-[#ffffff] via-[#f8fafc] to-[#edf3f8] p-5 shadow-[0_4px_16px_rgba(15,23,42,0.06)]"
                 >
                   <div className="flex items-center justify-between text-texto-suave">
                     <span className="rotulo-dado font-bold uppercase tracking-wider text-xs">{k.rotulo}</span>
@@ -532,7 +772,7 @@ export function DashboardCop({
               ))}
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-borda/80 bg-gradient-to-r from-[#ffffff] to-[#f4f7fb] px-4 py-3 text-[12.5px] text-texto-suave shadow-xs">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border-2 border-slate-300/85 bg-gradient-to-r from-[#ffffff] via-[#f8fafc] to-[#edf3f8] px-4 py-3 text-[12.5px] text-texto-suave shadow-xs">
               <span>
                 Mediana por lançamento: <strong className="dados text-branco font-bold">{FMT.format(p.mediana)}</strong> · p90{" "}
                 <strong className="dados text-branco font-bold">{FMT.format(p.p90)}</strong>

@@ -105,7 +105,7 @@ export function Cartao({
   return (
     <section
       className={cn(
-        "cartao-painel flex flex-col rounded-2xl border border-borda/80 bg-gradient-to-b from-[#ffffff] via-[#fcfdff] to-[#f3f7fa] p-5 sm:p-6 shadow-md transition-all",
+        "cartao-painel flex flex-col rounded-2xl border-2 border-slate-300/85 bg-gradient-to-b from-[#ffffff] via-[#f8fafc] to-[#edf3f8] p-5 sm:p-6 shadow-[0_4px_16px_rgba(15,23,42,0.06)] transition-all",
         className
       )}
     >
