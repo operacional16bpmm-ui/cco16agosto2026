@@ -90,15 +90,16 @@ export function BriefingSlides({
           {/* Brasão Monumental com efeito de destaque */}
           <div className="relative group">
             <div className="absolute -inset-4 rounded-full bg-gradient-to-r from-[#ca0202]/30 via-amber-500/20 to-[#ca0202]/30 blur-xl opacity-75 animate-pulse" />
-            <div className="relative flex items-center justify-center h-28 w-28 sm:h-36 sm:w-36 rounded-2xl bg-white/95 p-2 shadow-2xl border-2 border-white/40">
+            <div className="relative w-64 sm:w-96 aspect-[3/2] overflow-hidden rounded-2xl bg-black/60 shadow-2xl ring-1 ring-white/20">
               <Image
-                src="/media/brasao-16bpm.png"
-                alt="Brasão do 16º BPM/M"
-                width={120}
-                height={120}
-                className="h-auto w-auto max-h-full object-contain"
+                src="/cop2026/cop-colete-pmesp.webp"
+                alt="Câmera operacional portátil Motorola acoplada ao uniforme da Polícia Militar do Estado de São Paulo"
+                width={1200}
+                height={800}
+                className="h-full w-full object-cover"
                 priority
               />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/30" />
             </div>
           </div>
 
@@ -112,7 +113,7 @@ export function BriefingSlides({
             <div className="inline-flex items-center gap-2 rounded-xl bg-white/10 border border-white/20 px-4 py-1.5 backdrop-blur-md">
               <span className="h-2.5 w-2.5 rounded-full bg-[#ca0202] animate-ping" />
               <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-white">
-                SALA DE CONTROLE OPERACIONAL — COP 2026
+                AMBIENTE EXECUTIVO DE GESTÃO E CONTROLE
               </span>
             </div>
           </div>
@@ -147,10 +148,10 @@ export function BriefingSlides({
       ),
     },
 
-    // ---------------- SLIDE 1: MANÔMETRO & ATINGIMENTO GLOBAL ----------------
+    // ---------------- SLIDE 1: CONFORMIDADE & RITMO OPERACIONAL ----------------
     {
       selo: "Desempenho Geral do 16º BPM/M",
-      titulo: "Manômetro de Conformidade & Ritmo Operacional",
+      titulo: "Conformidade e Ritmo da Gestão Operacional da Meta",
       subtitulo: "Aferição em tempo real da meta mensal de 960 evidências",
       corpo: (
         <div className="grid lg:grid-cols-[380px_1fr] gap-6 items-center">
@@ -217,7 +218,7 @@ export function BriefingSlides({
     // ---------------- SLIDE 2: MATRIZ OPERACIONAL POR FRAÇÃO ----------------
     {
       selo: "Distribuição Proporcional por Matriz Operacional",
-      titulo: "Desempenho Comparativo das 6 Companhias",
+      titulo: "Desempenho Comparativo",
       subtitulo: "Rateio proporcional com base no efetivo de auditores designados",
       corpo: (
         <div className="space-y-3">
@@ -431,6 +432,75 @@ export function BriefingSlides({
             <p className="text-xs text-white/60 mt-1">
               Painel Integrado de Governança e Inteligência Operacional · COP 2026
             </p>
+          </div>
+        </div>
+      ),
+    },
+
+    // ---------------- SLIDE 7: POR QUE AUDITAMOS? (FINALIDADES INSTITUCIONAIS) ----------------
+    {
+      selo: "Diretriz PM3-001/02/25 · Item 6.1.6",
+      titulo: "Por que Auditamos?",
+      subtitulo: "Cinco finalidades institucionais orientam toda a auditoria das evidências digitais obtidas por COP",
+      corpo: (
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-white/15 bg-gradient-to-br from-white/[0.08] to-white/[0.02] p-5 backdrop-blur-md">
+            <p className="text-sm sm:text-base text-white/90 leading-relaxed font-serif">
+              A <strong className="text-white font-bold">Auditoria das Evidências Digitais (COP)</strong> é o exame sistemático, independente e documentado dos registros captados, realizada por meio de credencial pessoal no SiGCED.
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {[
+              {
+                num: "01",
+                rotulo: "CONFORMIDADE",
+                desc: "Verificar a conformidade com critérios técnicos estabelecidos.",
+                cor: "text-emerald-400 border-emerald-500/30 bg-emerald-950/20",
+              },
+              {
+                num: "02",
+                rotulo: "FISCALIZAÇÃO E ORIENTAÇÃO",
+                desc: "Realizar fiscalização de natureza pedagógica, disciplinar e procedimental.",
+                cor: "text-blue-400 border-blue-500/30 bg-blue-950/20",
+              },
+              {
+                num: "03",
+                rotulo: "BOAS PRÁTICAS",
+                desc: "Identificar condutas, procedimentos e soluções que possam ser reconhecidos e difundidos.",
+                cor: "text-amber-400 border-amber-500/30 bg-amber-950/20",
+              },
+              {
+                num: "04",
+                rotulo: "MELHORIA CONTÍNUA",
+                desc: "Promover melhorias contínuas nos processos operacionais.",
+                cor: "text-rose-400 border-rose-500/30 bg-rose-950/20",
+              },
+              {
+                num: "05",
+                rotulo: "INTELIGÊNCIA GERENCIAL",
+                desc: "Propiciar a extração de indicadores institucionais para subsidiar a gestão.",
+                cor: "text-purple-400 border-purple-500/30 bg-purple-950/20",
+              },
+            ].map((item) => (
+              <div
+                key={item.num}
+                className={`rounded-xl border p-4 backdrop-blur-sm transition-all hover:scale-[1.02] ${item.cor}`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-mono text-2xl font-black opacity-80">{item.num}</span>
+                  <span className="text-[11px] font-black tracking-wider uppercase px-2 py-0.5 rounded-md bg-white/10 text-white">
+                    Finalidade
+                  </span>
+                </div>
+                <h4 className="font-serif font-black text-sm sm:text-base text-white tracking-wide mb-1">
+                  {item.rotulo}
+                </h4>
+                <p className="text-xs text-white/75 leading-relaxed">
+                  {item.desc}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       ),

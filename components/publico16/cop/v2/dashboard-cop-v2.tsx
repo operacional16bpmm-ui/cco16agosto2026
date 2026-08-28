@@ -10,16 +10,20 @@ import {
   CheckCircle2,
   Clock,
   Download,
+  Eye,
   Filter,
   Layers,
+  Lightbulb,
   Printer,
   RefreshCw,
   Search,
   Shield,
   SlidersHorizontal,
+  Target,
   TrendingUp,
   Users,
   X,
+  Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -39,7 +43,6 @@ import {
 } from "@/lib/cop2026-metricas";
 import { PaletaComando } from "@/components/publico16/cop/paleta-comando";
 import {
-  AgulhaoMetasV2,
   BarrasSimplesV2,
   ProducaoDiariaV2,
   QuadroSemanalV2,
@@ -179,23 +182,30 @@ export function DashboardCopV2({
 
   // Diagnóstico humano
   const getDiagnostico = () => {
+    if (p.pct > 100) {
+      return {
+        titulo: "Superação Quantitativa da Meta",
+        detalhe: `O 16º BPM/M registrou ${FMT.format(p.total)} evidências (${PCT.format(p.pct)}% da meta global de ${FMT.format(p.meta)}). Superação quantitativa da referência prevista na Diretriz PM3-001/02/25.`,
+        nivel: "superacao" as Nivel,
+      };
+    }
     if (p.pct >= 80) {
       return {
-        titulo: "Meta Geral Atingida pelo Batalhão",
-        detalhe: `O 16º BPM/M registrou ${FMT.format(p.total)} evidências (${PCT.format(p.pct)}% da meta global de 960). O ritmo operacional está em total conformidade com a Diretriz PM3-001/02/25.`,
+        titulo: "Faixa de Conformidade — Meta Atingida",
+        detalhe: `O 16º BPM/M registrou ${FMT.format(p.total)} evidências (${PCT.format(p.pct)}% da meta global de ${FMT.format(p.meta)}). O ritmo operacional está em conformidade com a Diretriz PM3-001/02/25.`,
         nivel: "conforme" as Nivel,
       };
     }
     if (p.pct >= 50) {
       return {
-        titulo: "Ciclo de Auditorias em Andamento",
+        titulo: "Faixa de Atenção — Ciclo em Andamento",
         detalhe: `Foram lançadas ${FMT.format(p.total)} de ${FMT.format(p.meta)} evidências previstas (${PCT.format(p.pct)}%). Faltam ${FMT.format(p.falta)} evidências para a conclusão do período.`,
         nivel: "atencao" as Nivel,
       };
     }
     return {
-      titulo: "Abaixo da Meta Prevista para o Período",
-      detalhe: `Apenas ${FMT.format(p.total)} de ${FMT.format(p.meta)} evidências auditadas (${PCT.format(p.pct)}%). É necessário intensificar o cumprimento da cota mínima de 3 evidências por turno.`,
+      titulo: "Faixa Crítica — Abaixo da Meta",
+      detalhe: `Apenas ${FMT.format(p.total)} de ${FMT.format(p.meta)} evidências auditadas (${PCT.format(p.pct)}%). É necessário intensificar o cumprimento da cota mínima de ${p.minimo} evidências por turno.`,
       nivel: "critico" as Nivel,
     };
   };
@@ -565,7 +575,9 @@ export function DashboardCopV2({
             <div
               className={cn(
                 "rounded-2xl border p-5 shadow-2xl backdrop-blur-md bg-gradient-to-r",
-                diag.nivel === "conforme"
+                diag.nivel === "superacao"
+                  ? "border-blue-500/30 from-blue-950/40 via-[#0d1627] to-[#070b14]"
+                  : diag.nivel === "conforme"
                   ? "border-emerald-500/30 from-emerald-950/40 via-[#0d1627] to-[#070b14]"
                   : diag.nivel === "atencao"
                   ? "border-amber-500/30 from-amber-950/40 via-[#0d1627] to-[#070b14]"
@@ -617,14 +629,102 @@ export function DashboardCopV2({
             </div>
           </div>
 
-          {/* Lado Direito: Agulhão / Manômetro Escuro */}
-          <AgulhaoMetasV2
-            pct={p.pct}
-            total={p.total}
-            meta={p.meta}
-            titulo={f.fracao === "todas" ? '16º BPM/M — "1º Ten PM Fernão"' : `Ritmo Operacional · ${ROTULO_SUBUNIDADE[f.fracao] ?? f.fracao}`}
-            subtitulo={f.semana !== "todas" ? `Recorte da Semana ${f.semana}` : "Ciclo completo de 960 evidências"}
-          />
+          {/* Lado Direito: Barra de Progresso de Faixas + Ritmo */}
+          <div className="flex flex-col gap-4">
+            {/* Card principal de progresso */}
+            <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-[#131d31]/90 via-[#0d1627]/90 to-[#080e1b]/95 p-5 shadow-2xl backdrop-blur-md">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
+                Conformidade e Ritmo da Gestão Operacional da Meta
+              </p>
+              <p className="text-[10px] text-slate-500 mb-4">
+                {f.fracao === "todas" ? '16º BPM/M — "1º Ten PM Fernão"' : `${ROTULO_SUBUNIDADE[f.fracao] ?? f.fracao}`}
+                {f.semana !== "todas" ? ` · Semana ${f.semana}` : " · Ciclo completo"}
+              </p>
+
+              {/* Percentual grande */}
+              <div className="text-center mb-4">
+                <span
+                  className={cn(
+                    "text-5xl font-black tracking-tight",
+                    p.pct > 100 ? "text-blue-400" : p.pct >= 80 ? "text-emerald-400" : p.pct >= 50 ? "text-amber-300" : "text-red-400"
+                  )}
+                >
+                  {PCT.format(p.pct)}%
+                </span>
+                <p className="text-xs text-slate-400 mt-1">
+                  {FMT.format(p.total)} de {FMT.format(p.meta)} evidências
+                </p>
+              </div>
+
+              {/* Barra de progresso com faixas */}
+              <div className="relative w-full h-5 rounded-full overflow-hidden bg-[#1a2333] border border-white/10">
+                {/* Zonas de fundo */}
+                <div className="absolute inset-0 flex">
+                  <div className="w-[50%] bg-red-950/40 border-r border-white/10" />
+                  <div className="w-[30%] bg-amber-950/40 border-r border-white/10" />
+                  <div className="w-[20%] bg-emerald-950/40" />
+                </div>
+                {/* Preenchimento real */}
+                <div
+                  className={cn(
+                    "absolute inset-y-0 left-0 rounded-full transition-all duration-700 ease-out",
+                    p.pct > 100 ? "bg-gradient-to-r from-blue-600 to-blue-400" : p.pct >= 80 ? "bg-gradient-to-r from-emerald-600 to-emerald-400" : p.pct >= 50 ? "bg-gradient-to-r from-amber-600 to-amber-400" : "bg-gradient-to-r from-red-600 to-red-400"
+                  )}
+                  style={{ width: `${Math.min(p.pct, 100)}%` }}
+                />
+                {/* Marcadores de faixa */}
+                <div className="absolute top-0 bottom-0 left-[50%] w-px bg-white/30" />
+                <div className="absolute top-0 bottom-0 left-[80%] w-px bg-white/30" />
+              </div>
+              {/* Labels das faixas */}
+              <div className="flex mt-1.5 text-[9px] text-slate-500">
+                <span className="w-[50%] text-center">Crítica</span>
+                <span className="w-[30%] text-center">Atenção</span>
+                <span className="w-[20%] text-center">Conformidade</span>
+              </div>
+
+              {/* Selo */}
+              <div className="flex justify-center mt-3">
+                <SeloV2 nivel={p.nivelGeral} />
+              </div>
+            </div>
+
+            {/* Cards de Ritmo e Saldo */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-xl border border-amber-500/20 bg-amber-950/20 p-3.5 text-center">
+                <Zap className="h-4 w-4 text-amber-400 mx-auto mb-1" />
+                <p className="text-[10px] font-bold uppercase tracking-wider text-amber-300/70">Ritmo Necessário</p>
+                <p className="text-xl font-black text-amber-300 mt-0.5">{FMT.format(Math.ceil(p.ritmoNecessario))}</p>
+                <p className="text-[9px] text-slate-400">evidências/turno</p>
+              </div>
+              <div className="rounded-xl border border-rose-500/20 bg-rose-950/20 p-3.5 text-center">
+                <Target className="h-4 w-4 text-rose-400 mx-auto mb-1" />
+                <p className="text-[10px] font-bold uppercase tracking-wider text-rose-300/70">Saldo Restante</p>
+                <p className="text-xl font-black text-rose-300 mt-0.5">{FMT.format(p.falta)}</p>
+                <p className="text-[9px] text-slate-400">evidências para 100%</p>
+              </div>
+            </div>
+
+            {/* Régua de Faixas */}
+            <div className="grid grid-cols-4 gap-1 text-center">
+              <div className="rounded-lg border border-red-500/20 bg-red-950/40 p-1.5">
+                <span className="block text-[11px] font-bold text-red-400">Crítica</span>
+                <span className="text-[9px] text-slate-400">&lt; 50%</span>
+              </div>
+              <div className="rounded-lg border border-amber-500/20 bg-amber-950/40 p-1.5">
+                <span className="block text-[11px] font-bold text-amber-300">Atenção</span>
+                <span className="text-[9px] text-slate-400">50–80%</span>
+              </div>
+              <div className="rounded-lg border border-emerald-500/20 bg-emerald-950/40 p-1.5">
+                <span className="block text-[11px] font-bold text-emerald-400">Conformidade</span>
+                <span className="text-[9px] text-slate-400">80–100%</span>
+              </div>
+              <div className="rounded-lg border border-blue-500/20 bg-blue-950/40 p-1.5">
+                <span className="block text-[11px] font-bold text-blue-400">Superação</span>
+                <span className="text-[9px] text-slate-400">&gt; 100%</span>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -661,7 +761,7 @@ export function DashboardCopV2({
           <div className="flex items-center gap-2">
             <Layers className="h-5 w-5 text-emerald-400" />
             <h2 className="font-serif text-lg font-bold uppercase tracking-wider text-white">
-              Desempenho por Companhia e Fração
+              Desempenho Comparativo
             </h2>
           </div>
           <span className="text-xs text-slate-400 font-medium hidden sm:inline">
@@ -851,6 +951,143 @@ export function DashboardCopV2({
               Nenhum auditor encontrado no recorte atual.
             </p>
           )}
+        </div>
+      </section>
+
+      {/* ---------------- SEÇÃO 6: FUNDAMENTAÇÃO INSTITUCIONAL & DIRETRIZ ---------------- */}
+      <section className="mt-10 space-y-6" aria-label="Fundamentação Institucional">
+        {/* Bloco 1: Por que Auditamos? */}
+        <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-[#131d31]/90 via-[#0d1627]/90 to-[#080e1b]/95 p-6 shadow-2xl backdrop-blur-md">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
+            <div className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-ouro" />
+              <h2 className="font-serif text-lg font-bold uppercase tracking-wider text-white">
+                Por que Auditamos?
+              </h2>
+            </div>
+            <span className="rounded-full bg-white/10 px-3 py-1 text-[11px] font-bold text-slate-300 uppercase tracking-wider">
+              Diretriz PM3-001/02/25 · Item 6.1.6
+            </span>
+          </div>
+
+          <p className="text-xs sm:text-sm text-slate-300 mb-5 leading-relaxed font-serif">
+            A <strong className="text-white font-bold">Auditoria das Evidências Digitais (COP)</strong> é o exame sistemático, independente e documentado dos registros captados por Câmeras Operacionais Corporais, realizada por meio de credencial pessoal de acesso ao SiGCED, com cinco finalidades institucionais:
+          </p>
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            {[
+              {
+                num: "01",
+                rotulo: "CONFORMIDADE",
+                desc: "Verificar a conformidade com critérios técnicos estabelecidos.",
+                borda: "border-emerald-500/30 bg-emerald-950/20 text-emerald-400",
+              },
+              {
+                num: "02",
+                rotulo: "FISCALIZAÇÃO E ORIENTAÇÃO",
+                desc: "Realizar fiscalização de natureza pedagógica, disciplinar e procedimental.",
+                borda: "border-blue-500/30 bg-blue-950/20 text-blue-400",
+              },
+              {
+                num: "03",
+                rotulo: "BOAS PRÁTICAS",
+                desc: "Identificar condutas, procedimentos e soluções que possam ser reconhecidos e difundidos.",
+                borda: "border-amber-500/30 bg-amber-950/20 text-amber-400",
+              },
+              {
+                num: "04",
+                rotulo: "MELHORIA CONTÍNUA",
+                desc: "Promover melhorias nos processos operacionais.",
+                borda: "border-rose-500/30 bg-rose-950/20 text-rose-400",
+              },
+              {
+                num: "05",
+                rotulo: "INTELIGÊNCIA GERENCIAL",
+                desc: "Propiciar a extração de indicadores institucionais para subsidiar a gestão.",
+                borda: "border-purple-500/30 bg-purple-950/20 text-purple-400",
+              },
+            ].map((item) => (
+              <div
+                key={item.num}
+                className={`rounded-xl border p-4 backdrop-blur-sm transition-all hover:scale-[1.02] flex flex-col justify-between ${item.borda}`}
+              >
+                <div>
+                  <span className="font-mono text-xl font-black opacity-80 block mb-1">{item.num}</span>
+                  <h3 className="font-serif font-black text-xs sm:text-sm text-white tracking-wide mb-1.5">
+                    {item.rotulo}
+                  </h3>
+                </div>
+                <p className="text-[11.5px] text-slate-300 leading-relaxed">
+                  {item.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Bloco 2: Critério de Classificação das Faixas de Desempenho */}
+        <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-[#131d31]/90 via-[#0d1627]/90 to-[#080e1b]/95 p-6 shadow-2xl backdrop-blur-md">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
+            <div className="flex items-center gap-2">
+              <Layers className="h-5 w-5 text-ouro" />
+              <h2 className="font-serif text-lg font-bold uppercase tracking-wider text-white">
+                Critério de Classificação das Faixas de Desempenho
+              </h2>
+            </div>
+            <span className="text-xs text-slate-400 font-medium">
+              Regra Sistêmica de Governança
+            </span>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 mb-4">
+            <div className="rounded-xl border border-red-500/30 bg-red-950/20 p-3.5">
+              <span className="inline-block px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-red-500/20 text-red-400 border border-red-500/30 mb-2">
+                0 ≤ resultado &lt; 50%
+              </span>
+              <h3 className="font-serif font-black text-sm text-white">FAIXA CRÍTICA</h3>
+              <p className="text-xs font-semibold text-red-400 mt-0.5">Abaixo da Meta</p>
+              <p className="text-[11px] text-slate-400 mt-1.5">
+                Cumprimento insuficiente severo; exige intervenção imediata da gestão de frações.
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-amber-500/30 bg-amber-950/20 p-3.5">
+              <span className="inline-block px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30 mb-2">
+                50% ≤ resultado &lt; 80%
+              </span>
+              <h3 className="font-serif font-black text-sm text-white">FAIXA DE ATENÇÃO</h3>
+              <p className="text-xs font-semibold text-amber-300 mt-0.5">Cumprimento Insuficiente</p>
+              <p className="text-[11px] text-slate-400 mt-1.5">
+                Ciclo em andamento mas abaixo do limiar institucional de conformidade.
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-3.5">
+              <span className="inline-block px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 mb-2">
+                80% ≤ resultado ≤ 100%
+              </span>
+              <h3 className="font-serif font-black text-sm text-white">FAIXA DE CONFORMIDADE</h3>
+              <p className="text-xs font-semibold text-emerald-400 mt-0.5">Meta Cumprida</p>
+              <p className="text-[11px] text-slate-400 mt-1.5">
+                Atingimento do limiar institucional de conformidade ou cumprimento integral da referência.
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-blue-500/30 bg-blue-950/20 p-3.5">
+              <span className="inline-block px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-blue-500/20 text-blue-400 border border-blue-500/30 mb-2">
+                resultado &gt; 100%
+              </span>
+              <h3 className="font-serif font-black text-sm text-white">FAIXA DE SUPERAÇÃO</h3>
+              <p className="text-xs font-semibold text-blue-400 mt-0.5">Meta Superada</p>
+              <p className="text-[11px] text-slate-400 mt-1.5">
+                Superação quantitativa da referência prevista no ciclo mensal.
+              </p>
+            </div>
+          </div>
+
+          <p className="text-[11px] text-slate-400 italic">
+            * A classificação é realizada sobre o valor numérico original antes de qualquer arredondamento gráfico. 80% equivale ao limiar institucional de conformidade; 100% equivale ao cumprimento integral da referência quantitativa.
+          </p>
         </div>
       </section>
     </div>

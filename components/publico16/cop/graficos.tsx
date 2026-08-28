@@ -519,7 +519,7 @@ export function QuadroSemanalBatalhao({
             type="button"
             onClick={() => onSelecionarSemana?.(ativa ? "todas" : String(s.semana))}
             className={cn(
-              "card-interativo group rounded-2xl border-2 p-3.5 sm:p-4 text-left shadow-[0_2px_8px_rgba(15,23,42,0.04)]",
+              "card-semana card-interativo group rounded-2xl border-2 p-3.5 sm:p-4 text-left",
               ativa
                 ? "border-vermelho bg-gradient-to-b from-red-50 via-white to-red-50/50 shadow-md ring-2 ring-vermelho"
                 : "border-slate-300/85 bg-gradient-to-b from-[#ffffff] via-[#f8fafc] to-[#edf3f8] hover:border-vermelho/60"

@@ -910,6 +910,36 @@ export function DashboardCop({
           )}
         </div>
 
+        {/* Faixa de apoio: registro visual do ciclo semanal, em degrade */}
+        <div className="mb-3.5 grid grid-cols-2 gap-2.5 sm:gap-3.5 lg:grid-cols-4 nao-imprime">
+          {[
+            { src: "/media/reel-patrulha.jpg", etiqueta: "Ciclo", legenda: "Patrulhamento Diario" },
+            { src: "/media/controle-bg-poster.jpg", etiqueta: "Coleta", legenda: "Evidencias Gravadas" },
+            { src: "/media/reel-operacao.jpg", etiqueta: "Ritmo", legenda: "Empenho Operacional" },
+            { src: "/media/foto_cpchq.jpg", etiqueta: "Fechamento", legenda: "Auditoria da Semana" },
+          ].map((img) => (
+            <div
+              key={img.src}
+              className="group relative h-20 overflow-hidden rounded-xl border border-slate-300/85 bg-slate-900 shadow-sm sm:h-24"
+            >
+              <Image
+                src={img.src}
+                alt=""
+                aria-hidden
+                width={400}
+                height={200}
+                className="h-full w-full object-cover opacity-80 transition-transform duration-500 group-hover:scale-105 group-hover:opacity-100"
+              />
+              <div className="pointer-events-none absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/90 via-black/30 to-transparent p-2.5">
+                <span className="text-[9.5px] font-black uppercase tracking-wider text-vermelho">
+                  {img.etiqueta}
+                </span>
+                <p className="text-[11px] font-bold leading-snug text-white">{img.legenda}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
         <QuadroSemanalBatalhao
           semanas={p.semanasBatalhao}
           semanaAtiva={f.semana}
@@ -1432,6 +1462,115 @@ export function DashboardCop({
               <p className="text-xs font-bold text-white leading-snug">Sala de Operações</p>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* ---------------- Fundamentação e Diretriz ---------------- */}
+      <section className="mt-8 space-y-5" aria-label="Fundamentação e Diretriz">
+        {/* Por que Auditamos? */}
+        <div className="rounded-2xl border-2 border-slate-300/85 bg-white p-6 shadow-md">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3 mb-4">
+            <h3 className="font-serif text-lg font-black uppercase tracking-wider text-slate-900">
+              Por que Auditamos?
+            </h3>
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700 border border-slate-300">
+              Diretriz PM3-001/02/25 · Item 6.1.6
+            </span>
+          </div>
+
+          <p className="text-sm text-slate-700 leading-relaxed mb-4">
+            A <strong>Auditoria das Evidências Digitais (COP)</strong> é o exame sistemático, independente e documentado dos registros captados por Câmeras Operacionais Corporais, realizada por meio de credencial pessoal no SiGCED, orientada por <strong>cinco finalidades institucionais</strong>:
+          </p>
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            {[
+              {
+                num: "01",
+                rotulo: "Conformidade",
+                desc: "Verificar a conformidade com critérios técnicos estabelecidos.",
+              },
+              {
+                num: "02",
+                rotulo: "Fiscalização e Orientação",
+                desc: "Realizar fiscalização de natureza pedagógica, disciplinar e procedimental.",
+              },
+              {
+                num: "03",
+                rotulo: "Boas Práticas",
+                desc: "Identificar condutas, procedimentos e soluções que possam ser reconhecidos e difundidos.",
+              },
+              {
+                num: "04",
+                rotulo: "Melhoria Contínua",
+                desc: "Promover melhorias nos processos operacionais.",
+              },
+              {
+                num: "05",
+                rotulo: "Inteligência Gerencial",
+                desc: "Propiciar a extração de indicadores institucionais para subsidiar a gestão.",
+              },
+            ].map((item) => (
+              <div key={item.num} className="rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 flex flex-col justify-between">
+                <div>
+                  <span className="font-mono text-base font-black text-vermelho">{item.num}</span>
+                  <h4 className="font-serif font-bold text-xs uppercase tracking-wide text-slate-900 mt-1 mb-1">
+                    {item.rotulo}
+                  </h4>
+                </div>
+                <p className="text-[11.5px] text-slate-600 leading-relaxed">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Critério de Classificação das Faixas de Desempenho */}
+        <div className="rounded-2xl border-2 border-slate-300/85 bg-white p-6 shadow-md">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3 mb-4">
+            <h3 className="font-serif text-lg font-black uppercase tracking-wider text-slate-900">
+              Critério de Classificação das Faixas de Desempenho
+            </h3>
+            <span className="text-xs font-semibold text-slate-500">
+              Regra Sistêmica de Classificação
+            </span>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 mb-3">
+            <div className="rounded-xl border border-sinal-critico/40 bg-sinal-critico-suave/50 p-3">
+              <span className="text-[10px] font-black uppercase tracking-wider text-sinal-critico block mb-1">
+                0 ≤ resultado &lt; 50%
+              </span>
+              <h4 className="font-serif font-bold text-xs uppercase text-slate-900">Faixa Crítica</h4>
+              <p className="text-[11px] font-bold text-sinal-critico">Abaixo da Meta</p>
+            </div>
+
+            <div className="rounded-xl border border-sinal-atencao/40 bg-sinal-atencao-suave/50 p-3">
+              <span className="text-[10px] font-black uppercase tracking-wider text-sinal-atencao block mb-1">
+                50% ≤ resultado &lt; 80%
+              </span>
+              <h4 className="font-serif font-bold text-xs uppercase text-slate-900">Faixa de Atenção</h4>
+              <p className="text-[11px] font-bold text-sinal-atencao">Cumprimento Insuficiente</p>
+            </div>
+
+            <div className="rounded-xl border border-sinal-conforme/40 bg-sinal-conforme-suave/50 p-3">
+              <span className="text-[10px] font-black uppercase tracking-wider text-sinal-conforme block mb-1">
+                80% ≤ resultado ≤ 100%
+              </span>
+              <h4 className="font-serif font-bold text-xs uppercase text-slate-900">Faixa de Conformidade</h4>
+              <p className="text-[11px] font-bold text-sinal-conforme">Meta Cumprida</p>
+            </div>
+
+            <div className="rounded-xl border border-sinal-superacao/40 bg-sinal-superacao-suave/50 p-3">
+              <span className="text-[10px] font-black uppercase tracking-wider text-sinal-superacao block mb-1">
+                resultado &gt; 100%
+              </span>
+              <h4 className="font-serif font-bold text-xs uppercase text-slate-900">Faixa de Superação</h4>
+              <p className="text-[11px] font-bold text-sinal-superacao">Meta Superada</p>
+            </div>
+          </div>
+
+          <p className="text-[11.5px] text-slate-500 italic">
+            * 80% equivale ao atingimento do limiar institucional de conformidade; 100% equivale ao cumprimento integral da referência quantitativa; acima de 100% equivale à superação quantitativa.
+          </p>
         </div>
       </section>
 

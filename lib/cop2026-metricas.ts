@@ -149,22 +149,39 @@ export function aplicarFiltros(
 // ---------------------------------------------------------------------------
 // Semáforo
 // ---------------------------------------------------------------------------
-export type Nivel = "conforme" | "atencao" | "critico" | "neutro";
+export type Nivel = "superacao" | "conforme" | "atencao" | "critico" | "neutro";
 
 export const ROTULO_NIVEL: Record<Nivel, string> = {
-  conforme: "Meta Cumprida",
-  atencao: "Em Andamento",
-  critico: "Abaixo da Meta",
+  superacao: "Superação",
+  conforme: "Conformidade",
+  atencao: "Atenção",
+  critico: "Crítica",
   neutro: "Sem dados",
 };
 
-/** Um único lugar decide o que é verde, âmbar e vermelho:
- *  - Verde (conforme): somente a partir de 80% (>= 80%)
- *  - Amarelo/Âmbar (atencao): entre 50% e 79,9%
- *  - Vermelho (critico): abaixo de 50% (< 50%)
+/** Subtítulo semântico das faixas conforme definição do Comando.
+ *  Sequência: Abaixo da Meta → Cumprimento Insuficiente → Meta Cumprida → Meta Superada */
+export const SUBTITULO_NIVEL: Record<Nivel, string> = {
+  superacao: "Meta Superada",
+  conforme: "Meta Cumprida",
+  atencao: "Cumprimento Insuficiente",
+  critico: "Abaixo da Meta",
+  neutro: "",
+};
+
+/** Regra sistêmica de classificação por faixa de cumprimento:
+ *  - Superação (>100%): superou quantitativamente a referência
+ *  - Conformidade (80–100%): limiar mínimo de conformidade atingido
+ *  - Atenção (50–80%): em andamento, abaixo do limiar
+ *  - Crítica (<50%): abaixo da meta
+ *  - Não Aferível: valor inválido, negativo, NaN ou sem base de cálculo
+ *
+ *  A classificação opera sobre o valor bruto, ANTES de arredondamento.
+ *  "Excelência" é reservada para indicador composto (quantidade + qualidade).
  */
 export function nivelPorCumprimento(pct: number, temDados: boolean): Nivel {
-  if (!temDados) return "neutro";
+  if (!temDados || !Number.isFinite(pct) || pct < 0) return "neutro";
+  if (pct > 100) return "superacao";
   if (pct >= 80) return "conforme";
   if (pct >= 50) return "atencao";
   return "critico";
@@ -621,17 +638,21 @@ export function veredito(p: Painel): { titulo: string; detalhe: string; nivel: N
           p.turnosPrevistos
         )} turnos previstos já foram cumpridos.`;
 
-  const titulo =
-    p.nivelGeral === "conforme"
-      ? "CUMPRIDA a Métrica para Monitoramento e Controle de Vídeos (Evidências / Ocorrências)"
-      : p.nivelGeral === "atencao"
-        ? "FAIXA DE ATENÇÃO da Métrica para Monitoramento e Controle de Vídeos (Evidências / Ocorrências)"
-        : "ABAIXO da Métrica para Monitoramento e Controle de Vídeos (Evidências / Ocorrências)";
+  const TITULO_POR_NIVEL: Record<Nivel, string> = {
+    superacao: "ACIMA da Métrica para Monitoramento e Controle de Vídeos (Evidências / Ocorrências)",
+    conforme: "CUMPRIDA a Métrica para Monitoramento e Controle de Vídeos (Evidências / Ocorrências)",
+    atencao: "FAIXA DE ATENÇÃO da Métrica para Monitoramento e Controle de Vídeos (Evidências / Ocorrências)",
+    critico: "ABAIXO da Métrica para Monitoramento e Controle de Vídeos (Evidências / Ocorrências)",
+    neutro: "Métrica para Monitoramento e Controle de Vídeos (Evidências / Ocorrências)",
+  };
+  const titulo = TITULO_POR_NIVEL[p.nivelGeral];
 
   const detalhe =
-    p.falta > 0
-      ? `Auditoria em ${PCT.format(p.pct)}% da meta. ${ritmo}`
-      : `Auditoria em ${PCT.format(p.pct)}% da meta — meta do período já cumprida no 16º BPM/M.`;
+    p.pct > 100
+      ? `Auditoria em ${PCT.format(p.pct)}% da meta — superação quantitativa da referência no 16º BPM/M.`
+      : p.falta > 0
+        ? `Auditoria em ${PCT.format(p.pct)}% da meta. ${ritmo}`
+        : `Auditoria em ${PCT.format(p.pct)}% da meta — meta do período já cumprida no 16º BPM/M.`;
 
   return { titulo, detalhe, nivel: p.nivelGeral };
 }

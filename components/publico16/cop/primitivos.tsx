@@ -7,6 +7,7 @@ import {
   AlertTriangle,
   AlertCircle,
   Minus,
+  Trophy,
 } from "lucide-react";
 import { ROTULO_NIVEL, type Nivel } from "@/lib/cop2026-metricas";
 import { cn } from "@/lib/utils";
@@ -14,6 +15,7 @@ import { cn } from "@/lib/utils";
 /** Semáforo com rótulo, ponto e ícone SVG nativo: máxima acessibilidade
  *  e leitura imediata para daltônicos e relatórios impressos em P&B. */
 const CLASSES_NIVEL: Record<Nivel, string> = {
+  superacao: "bg-sinal-superacao-suave text-sinal-superacao border-sinal-superacao/40 font-semibold",
   conforme: "bg-sinal-conforme-suave text-sinal-conforme border-sinal-conforme/40 font-semibold",
   atencao: "bg-sinal-atencao-suave text-sinal-atencao border-sinal-atencao/40 font-semibold",
   critico: "bg-sinal-critico-suave text-sinal-critico border-sinal-critico/40 font-semibold",
@@ -21,6 +23,7 @@ const CLASSES_NIVEL: Record<Nivel, string> = {
 };
 
 export const COR_NIVEL: Record<Nivel, string> = {
+  superacao: "var(--sinal-superacao)",
   conforme: "var(--sinal-conforme)",
   atencao: "var(--sinal-atencao)",
   critico: "var(--sinal-critico)",
@@ -28,6 +31,7 @@ export const COR_NIVEL: Record<Nivel, string> = {
 };
 
 const ICONES_NIVEL = {
+  superacao: <Trophy size={12} className="shrink-0" aria-hidden />,
   conforme: <CheckCircle2 size={12} className="shrink-0" aria-hidden />,
   atencao: <AlertTriangle size={12} className="shrink-0" aria-hidden />,
   critico: <AlertCircle size={12} className="shrink-0" aria-hidden />,

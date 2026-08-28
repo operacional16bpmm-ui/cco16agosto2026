@@ -20,6 +20,7 @@ const FMT = new Intl.NumberFormat("pt-BR");
 const PCT = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 });
 
 const COR_NIVEL: Record<Nivel, string> = {
+  superacao: "#3b82f6",
   critico: "#ef4444",
   atencao: "#f59e0b",
   conforme: "#10b981",
@@ -27,9 +28,10 @@ const COR_NIVEL: Record<Nivel, string> = {
 };
 
 const ROTULO_NIVEL: Record<Nivel, string> = {
-  critico: "Abaixo da Meta",
-  atencao: "Em Andamento",
-  conforme: "Meta Cumprida",
+  superacao: "Superação",
+  critico: "Crítica",
+  atencao: "Atenção",
+  conforme: "Conformidade",
   neutro: "Sem Dados",
 };
 
@@ -48,6 +50,7 @@ const TOOLTIP_DARK = {
 
 export function SeloV2({ nivel }: { nivel: Nivel }) {
   const styles: Record<Nivel, string> = {
+    superacao: "border-blue-500/40 bg-blue-500/10 text-blue-300 shadow-[0_0_10px_rgba(59,130,246,0.15)]",
     critico: "border-red-500/40 bg-red-500/10 text-red-400 shadow-[0_0_10px_rgba(239,68,68,0.15)]",
     atencao: "border-amber-500/40 bg-amber-500/10 text-amber-300 shadow-[0_0_10px_rgba(245,158,11,0.15)]",
     conforme: "border-emerald-500/40 bg-emerald-500/10 text-emerald-300 shadow-[0_0_10px_rgba(16,185,129,0.15)]",
@@ -92,7 +95,7 @@ export function AgulhaoMetasV2({
     return -90 + (lim / 100) * 180;
   }, [pct]);
 
-  const nivel: Nivel = pct >= 80 ? "conforme" : pct >= 50 ? "atencao" : "critico";
+  const nivel: Nivel = pct > 100 ? "superacao" : pct >= 80 ? "conforme" : pct >= 50 ? "atencao" : "critico";
 
   const polarParaCartesiano = (cx: number, cy: number, r: number, angGraus: number) => {
     const rad = ((angGraus - 90) * Math.PI) / 180;
@@ -219,19 +222,23 @@ export function AgulhaoMetasV2({
         </div>
       </div>
 
-      {/* Régua de Zonas Semafóricas */}
-      <div className="mt-4 grid w-full grid-cols-3 gap-1.5 border-t border-white/10 pt-3 text-center">
+      {/* Régua de Faixas de Desempenho */}
+      <div className="mt-4 grid w-full grid-cols-4 gap-1 border-t border-white/10 pt-3 text-center">
         <div className="rounded-lg border border-red-500/20 bg-red-950/40 p-1.5">
-          <span className="block text-[11px] font-bold text-red-400">&lt; 50%</span>
-          <span className="text-[9.5px] text-slate-400">Abaixo da Meta</span>
+          <span className="block text-[11px] font-bold text-red-400">Crítica</span>
+          <span className="text-[9px] text-slate-400">&lt; 50% · Abaixo da Meta</span>
         </div>
         <div className="rounded-lg border border-amber-500/20 bg-amber-950/40 p-1.5">
           <span className="block text-[11px] font-bold text-amber-300">50% a 79%</span>
-          <span className="text-[9.5px] text-slate-400">Em Andamento</span>
+          <span className="text-[9px] text-slate-400">Atenção</span>
         </div>
         <div className="rounded-lg border border-emerald-500/20 bg-emerald-950/40 p-1.5">
-          <span className="block text-[11px] font-bold text-emerald-400">≥ 80%</span>
-          <span className="text-[9.5px] text-slate-400">Meta Cumprida</span>
+          <span className="block text-[11px] font-bold text-emerald-400">80% a 100%</span>
+          <span className="text-[9px] text-slate-400">Conformidade</span>
+        </div>
+        <div className="rounded-lg border border-blue-500/20 bg-blue-950/40 p-1.5">
+          <span className="block text-[11px] font-bold text-blue-400">&gt; 100%</span>
+          <span className="text-[9px] text-slate-400">Superação</span>
         </div>
       </div>
     </div>
@@ -283,7 +290,9 @@ export function QuadroSemanalV2({
               <span
                 className={cn(
                   "rounded-md px-2 py-0.5 text-xs font-extrabold",
-                  s.pct >= 80
+                  s.pct > 100
+                    ? "bg-blue-500/15 text-blue-300 border border-blue-500/30"
+                    : s.pct >= 80
                     ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30"
                     : s.pct >= 50
                     ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
@@ -364,7 +373,9 @@ export function RankingFracoesV2({
                 <div
                   className={cn(
                     "rounded-xl border px-3 py-1 text-sm font-black shadow-md transition-colors",
-                    d.pct >= 80
+                    d.pct > 100
+                      ? "border-blue-500/40 bg-blue-500/15 text-blue-300"
+                      : d.pct >= 80
                       ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-300"
                       : d.pct >= 50
                       ? "border-amber-500/40 bg-amber-500/15 text-amber-300"
@@ -425,7 +436,7 @@ export function RankingFracoesV2({
                     <span
                       className={cn(
                         "mt-0.5 inline-block text-[10px] font-bold",
-                        s.pct >= 80 ? "text-emerald-400" : s.pct >= 50 ? "text-amber-400" : s.pct > 0 ? "text-red-400" : "text-slate-500"
+                        s.pct > 100 ? "text-blue-400" : s.pct >= 80 ? "text-emerald-400" : s.pct >= 50 ? "text-amber-400" : s.pct > 0 ? "text-red-400" : "text-slate-500"
                       )}
                     >
                       {PCT.format(s.pct)}%

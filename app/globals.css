@@ -41,6 +41,8 @@
   --sinal-atencao-suave: #fdf1dd;
   --sinal-critico:       #b3261e;
   --sinal-critico-suave: #fdeceb;
+  --sinal-superacao:    #2563eb;
+  --sinal-superacao-suave:#eef2ff;
   --sinal-neutro:        #55535e;
   --sinal-neutro-suave:  #eef1f5;
 
@@ -77,6 +79,8 @@
   --color-sinal-atencao-suave: var(--sinal-atencao-suave);
   --color-sinal-critico: var(--sinal-critico);
   --color-sinal-critico-suave: var(--sinal-critico-suave);
+  --color-sinal-superacao: var(--sinal-superacao);
+  --color-sinal-superacao-suave: var(--sinal-superacao-suave);
   --color-sinal-neutro: var(--sinal-neutro);
   --color-sinal-neutro-suave: var(--sinal-neutro-suave);
 
@@ -476,3 +480,64 @@ body {
 }
 
 .so-impressao { display: none; }
+
+/* ============================================================================
+   Cards da Meta Semanal — destaque em relação aos demais quadros do painel.
+   A borda é um degradê institucional que gira em volta do card (mask com duas
+   camadas: só a moldura fica visível). A sombra é mais funda que a do
+   `.card-interativo` para o bloco saltar da grade.
+   ============================================================================ */
+@keyframes girar-borda {
+  to { transform: rotate(1turn); }
+}
+
+.card-semana {
+  position: relative;
+  isolation: isolate;
+  box-shadow: 0 10px 24px -8px rgba(22, 41, 74, 0.28),
+              0 4px 10px -4px rgba(22, 41, 74, 0.18);
+}
+
+/* Moldura girando: um cone cônico recortado pela máscara, deixando só a borda */
+.card-semana::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  z-index: -1;
+  border-radius: inherit;
+  padding: 2px;
+  background: conic-gradient(
+    from 0deg,
+    var(--vermelho-pm),
+    var(--ouro-claro),
+    var(--azul-bandeira),
+    var(--vermelho-pm)
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          mask-composite: exclude;
+  opacity: 0.55;
+  animation: girar-borda 6s linear infinite;
+  transition: opacity 0.25s ease;
+}
+
+.card-semana:hover::before,
+.card-semana[aria-pressed="true"]::before {
+  opacity: 1;
+  animation-duration: 2.5s;
+}
+
+.card-semana:hover {
+  box-shadow: 0 18px 38px -10px rgba(22, 41, 74, 0.34),
+              0 8px 16px -6px rgba(22, 41, 74, 0.22);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-semana::before { animation: none; }
+}
+
+@media print {
+  .card-semana::before { display: none; }
+  .card-semana { box-shadow: none; }
+}
