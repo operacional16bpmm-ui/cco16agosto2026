@@ -971,7 +971,7 @@ export function DashboardCopV2({
           </div>
 
           <p className="text-xs sm:text-sm text-slate-300 mb-5 leading-relaxed font-serif">
-            A <strong className="text-white font-bold">Auditoria das Evidências Digitais (COP)</strong> é o exame sistemático, independente e documentado dos registros captados por Câmeras Operacionais Corporais, realizada por meio de credencial pessoal de acesso ao SiGCED, com base nas <strong class="text-white font-bold">cinco finalidades institucionais</strong> que orientam toda a auditoria das evidências digitais obtidas por COP:
+            A <strong className="text-white font-bold">Auditoria das Evidências Digitais (COP)</strong> é o exame sistemático, independente e documentado dos registros captados por Câmeras Operacionais Corporais, realizada por meio de credencial pessoal de acesso ao SiGCED, com base nas <strong className="text-white font-bold">cinco finalidades institucionais</strong> que orientam toda a auditoria das evidências digitais obtidas por COP:
           </p>
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
