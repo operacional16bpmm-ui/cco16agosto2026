@@ -260,12 +260,20 @@ export function DashboardCop({
           copia.remove();
         }
       }
+      const nomeArquivo = `briefing-estatico-cop-2026-${new Date().toISOString().slice(0, 10)}.png`;
+      const blob = await (await fetch(dataUrl)).blob();
+      const urlDownload = URL.createObjectURL(blob);
       const link = document.createElement("a");
-      link.download = `briefing-estatico-cop-2026-${new Date().toISOString().slice(0, 10)}.png`;
-      link.href = dataUrl;
+      link.download = nomeArquivo;
+      link.href = urlDownload;
+      link.rel = "noopener";
+      link.style.display = "none";
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
+      window.setTimeout(() => {
+        URL.revokeObjectURL(urlDownload);
+        link.remove();
+      }, 1000);
       toast.success("Briefing estático exportado em PNG.");
     } catch {
       toast.error("Não foi possível gerar o briefing em PNG. Tente novamente.");
