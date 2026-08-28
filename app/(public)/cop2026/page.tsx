@@ -1,5 +1,14 @@
 import Image from "next/image";
-import { AlertTriangle, ArrowRight, CalendarDays, ExternalLink, RefreshCw } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowRight,
+  BarChart3,
+  CalendarDays,
+  ExternalLink,
+  FileCheck2,
+  Presentation,
+  RefreshCw,
+} from "lucide-react";
 import type { Metadata } from "next";
 import { AcessoRapido } from "@/components/publico16/acesso-rapido";
 import { DiretrizCop } from "@/components/publico16/diretriz-cop";
@@ -145,20 +154,30 @@ export default async function Cop2026Page() {
             Controle e fiscalização das Câmeras Operacionais Portáteis · Lançamento diário obrigatório de no mínimo 3 evidências por turno.
           </p>
 
-          <div className="mt-7 flex flex-wrap items-center justify-center gap-3.5">
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3.5">
             <a
               href={URL_FORMULARIO}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl bg-vermelho px-8 py-4 text-sm sm:text-base font-black uppercase tracking-wider text-white shadow-[0_8px_30px_rgba(202,2,2,0.5)] transition-all duration-300 hover:scale-105 hover:bg-vermelho-escuro"
+              className="group relative inline-flex items-center gap-2.5 rounded-xl bg-gradient-to-r from-[#ca0202] via-[#e40707] to-[#ca0202] px-8 py-4 text-sm sm:text-base font-black uppercase tracking-wider text-white shadow-[0_8px_30px_rgba(202,2,2,0.55)] transition-all duration-300 hover:scale-105 hover:shadow-[0_12px_40px_rgba(202,2,2,0.7)]"
             >
-              Preencher Auditoria do Turno →
+              <FileCheck2 className="h-5 w-5 transition-transform duration-300 group-hover:scale-110" />
+              <span>Preencher Auditoria do Turno</span>
+              <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
             </a>
             <a
               href="/cop2026/dashboard"
-              className="inline-flex items-center gap-2 rounded-xl border-2 border-white/30 bg-white/10 px-6 py-3.5 text-sm font-bold uppercase tracking-wider text-white backdrop-blur-md transition-all hover:bg-white/20 hover:border-white"
+              className="group inline-flex items-center gap-2.5 rounded-xl border-2 border-white/30 bg-white/10 px-6 py-4 text-sm sm:text-base font-bold uppercase tracking-wider text-white backdrop-blur-md transition-all duration-300 hover:bg-white/20 hover:border-white hover:scale-105"
             >
-              Ver Dashboard de Metas
+              <BarChart3 className="h-5 w-5 text-red-400 transition-transform duration-300 group-hover:scale-110" />
+              <span>Ver Dashboard de Metas</span>
+            </a>
+            <a
+              href="/cop2026/briefing"
+              className="group inline-flex items-center gap-2.5 rounded-xl border-2 border-white/20 bg-black/40 px-5 py-4 text-sm sm:text-base font-bold uppercase tracking-wider text-slate-200 backdrop-blur-md transition-all duration-300 hover:bg-black/60 hover:text-white hover:border-white/40"
+            >
+              <Presentation className="h-5 w-5 text-amber-400 transition-transform duration-300 group-hover:scale-110" />
+              <span>Briefing Executivo</span>
             </a>
           </div>
         </div>

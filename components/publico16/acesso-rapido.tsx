@@ -1,26 +1,30 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
-  IconeBriefing,
-  IconeDashboard,
-  IconeLancarAuditoria,
-  IconePlanilha,
-  IconeRestrito,
-} from "@/components/publico16/icones-cop";
+  FileSpreadsheet,
+  BarChart3,
+  Presentation,
+  FileCheck2,
+  Lock,
+  ArrowRight,
+  ExternalLink,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
 import { AjudaWhatsApp } from "@/components/publico16/ajuda-whatsapp";
+import { cn } from "@/lib/utils";
 
-/**
- * Barra de ações da página da auditoria, no padrão do portal institucional da
- * PMESP: cartões de borda fina com ícone vazado em vermelho. O primeiro é a
- * ação diária da tropa — preto com vermelho, para ninguém ter dúvida de onde
- * se preenche o formulário. Os demais seguem branco e vermelho.
- */
 type Atalho = {
   rotulo: string;
+  subtitulo: string;
   nota: string;
   href: string;
+  botaoTexto: string;
+  foto: string;
   icone: React.ReactNode;
   externo?: boolean;
   restrito?: boolean;
+  destaque?: boolean;
 };
 
 export function AcessoRapido({
@@ -32,112 +36,194 @@ export function AcessoRapido({
 }) {
   const atalhos: Atalho[] = [
     {
-      rotulo: "Planilha de controle",
-      nota: "Acesso restrito a autorizados",
+      rotulo: "Lançar Auditoria do Turno",
+      subtitulo: "Registro obrigatório das mídias auditadas com mínimo de 3 IDs por turno.",
+      nota: "Formulário da Auditoria",
+      href: urlFormulario,
+      botaoTexto: "Preencher Agora",
+      foto: "/media/foto_operacao.jpg",
+      icone: <FileCheck2 className="h-6 w-6 text-white" />,
+      externo: true,
+      destaque: true,
+    },
+    {
+      rotulo: "Dashboard de Controle",
+      subtitulo: "Metas por fração, evolução semanal, ranking de Cias e carta de controle ±3σ.",
+      nota: "Painel em Tempo Real",
+      href: "/cop2026/dashboard",
+      botaoTexto: "Acessar Dashboard",
+      foto: "/media/foto-viatura.jpg",
+      icone: <BarChart3 className="h-6 w-6 text-white" />,
+      restrito: true,
+    },
+    {
+      rotulo: "Planilha de Controle",
+      subtitulo: "Base oficial de respostas no Google Sheets com fórmulas e conferência.",
+      nota: "Planilha de Respostas",
       href: urlPlanilha,
-      icone: <IconePlanilha size={44} />,
+      botaoTexto: "Abrir no Sheets",
+      foto: "/media/foto-rua.jpg",
+      icone: <FileSpreadsheet className="h-6 w-6 text-white" />,
       externo: true,
       restrito: true,
     },
     {
-      rotulo: "Dashboard de controle",
-      nota: "Acesso restrito a autorizados",
-      href: "/cop2026/dashboard",
-      icone: <IconeDashboard size={44} />,
-      restrito: true,
-    },
-    {
-      rotulo: "Gerar briefing executivo",
-      nota: "Resultados e metas em slides",
+      rotulo: "Briefing Executivo",
+      subtitulo: "Apresentação executiva em slides com métricas e diagnóstico consolidado.",
+      nota: "Relatório em Slides",
       href: "/cop2026/briefing",
-      icone: <IconeBriefing size={44} />,
+      botaoTexto: "Abrir Apresentação",
+      foto: "/media/foto-oficial.jpg",
+      icone: <Presentation className="h-6 w-6 text-white" />,
     },
   ];
 
-  const classeCartao =
-    "group flex h-full flex-col justify-between rounded-lg border-2 border-[#ca0202]/20 bg-white p-6 shadow-[0_2px_10px_rgba(0,0,0,0.07)] transition-all duration-300 hover:-translate-y-1 hover:border-[#ca0202] hover:shadow-[0_10px_28px_rgba(202,2,2,0.18)]";
-
   return (
-    <section className="border-b border-black/10 bg-white">
-      <div className="mx-auto max-w-6xl px-4 py-12">
-        <h2 className="font-serif text-2xl font-bold uppercase tracking-[0.05em] text-[#111] sm:text-[26px]">
-          Acesso rápido
-        </h2>
-        <div className="mt-3 mb-9 flex items-center">
-          <span className="h-[3px] w-24 bg-[#ca0202]" />
-          <span className="h-[3px] w-72 max-w-full bg-black/10" />
+    <section className="border-b border-black/10 bg-[#f8fafc] py-12 sm:py-16">
+      <div className="mx-auto max-w-6xl px-4">
+        {/* Cabeçalho de Seção */}
+        <div className="mb-8">
+          <div className="flex items-center gap-2">
+            <span className="h-3.5 w-1.5 bg-vermelho rounded-full" />
+            <span className="text-xs font-black uppercase tracking-[0.2em] text-[#ca0202]">
+              Sistemas Oficiais · 16º BPM/M
+            </span>
+          </div>
+          <h2 className="font-serif text-2xl sm:text-3xl font-black uppercase tracking-wider text-[#1d1d1d] mt-1.5">
+            Acesso Rápido Operacional
+          </h2>
+          <div className="mt-2.5 flex items-center">
+            <span className="h-1 w-20 bg-vermelho rounded-full" />
+            <span className="h-0.5 w-48 bg-slate-300 rounded-full ml-1" />
+          </div>
         </div>
 
+        {/* Grid dos 4 Cards com Imagens em Degradê e Botões PMESP */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {/* AÇÃO DIÁRIA — preto e vermelho, o botão que a tropa procura. O
-              wrapper existe só para pendurar o socorro do WhatsApp no canto:
-              botão dentro de link seria HTML inválido. */}
-          <div className="relative h-full">
-            <AjudaWhatsApp />
-            <a
-              href={urlFormulario}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group relative flex h-full flex-col justify-between overflow-hidden rounded-lg border-2 border-[#ca0202] bg-[#111] p-6 shadow-[0_10px_28px_rgba(0,0,0,0.28)] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_16px_38px_rgba(202,2,2,0.35)]"
-            >
-              {/* brilho que corre no hover: dá vida sem poluir */}
-              <span className="pointer-events-none absolute -inset-x-10 -top-16 h-24 rotate-12 bg-[#ca0202]/25 blur-2xl transition-transform duration-700 group-hover:translate-y-40" />
-              <span className="relative">
-                <span className="flex h-14 w-14 items-center justify-center rounded-lg bg-[#ca0202] text-white shadow-lg transition-transform duration-300 group-hover:scale-110">
-                  <IconeLancarAuditoria size={30} />
-                </span>
-                <span className="mt-4 block text-[11px] font-black uppercase tracking-[0.18em] text-[#ff5a5a]">
-                  Formulário da auditoria
-                </span>
-                <span className="mt-1 block font-serif text-xl font-bold leading-snug text-white">
-                  Lançar auditoria do turno
-                </span>
-                <span className="mt-2 block text-[14px] leading-snug text-white/65">
-                  É aqui que você preenche. Mínimo de 3 ID&apos;s de mídia por
-                  turno.
-                </span>
-              </span>
-              <span className="relative mt-5 inline-flex items-center justify-center rounded-md bg-[#ca0202] px-5 py-3.5 text-[15px] font-bold uppercase tracking-wide text-white transition-colors group-hover:bg-[#e40707]">
-                Preencher agora
-              </span>
-            </a>
-          </div>
-
           {atalhos.map((a) => {
-            const conteudo = (
-              <>
-                <span>
-                  <span className="flex h-12 w-12 items-center justify-center text-[#ca0202] transition-transform duration-300 group-hover:scale-110">
-                    {a.icone}
-                  </span>
-                  <span className="mt-3 block font-serif text-[17px] font-bold leading-snug text-[#111]">
-                    {a.rotulo}
-                  </span>
-                </span>
-                <span
-                  className={`mt-4 inline-flex items-center gap-2 text-[13px] font-black uppercase tracking-wide ${
-                    a.restrito ? "text-[#ca0202]" : "text-black/50"
-                  }`}
-                >
-                  {a.restrito && <IconeRestrito size={17} />}
-                  {a.nota}
-                </span>
-              </>
-            );
-            return a.externo ? (
-              <a
-                key={a.rotulo}
-                href={a.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={classeCartao}
+            const isDestaque = a.destaque;
+
+            const cardContent = (
+              <div
+                className={cn(
+                  "group relative flex h-full flex-col justify-between overflow-hidden rounded-2xl border-2 transition-all duration-500 hover:-translate-y-2",
+                  isDestaque
+                    ? "border-[#ca0202] shadow-[0_12px_32px_rgba(202,2,2,0.3)] hover:shadow-[0_20px_48px_rgba(202,2,2,0.45)]"
+                    : "border-slate-300/85 shadow-[0_6px_20px_rgba(15,23,42,0.08)] hover:border-[#ca0202] hover:shadow-[0_16px_36px_rgba(202,2,2,0.22)]"
+                )}
               >
-                {conteudo}
-              </a>
-            ) : (
-              <Link key={a.rotulo} href={a.href} className={classeCartao}>
-                {conteudo}
-              </Link>
+                {/* 1. Imagem Real da Operação em Background com Zoom no Hover */}
+                <div className="absolute inset-0 z-0 overflow-hidden">
+                  <Image
+                    src={a.foto}
+                    alt={a.rotulo}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 25vw"
+                    className="object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                  />
+                  {/* 2. Degradê Tático Escuro para Contraste Absoluto dos Textos e Botões */}
+                  <div
+                    className={cn(
+                      "absolute inset-0 transition-opacity duration-500",
+                      isDestaque
+                        ? "bg-gradient-to-t from-[#09090b] via-[#09090b]/85 to-[#09090b]/60"
+                        : "bg-gradient-to-t from-[#090b10] via-[#0b1222]/90 to-[#0b1222]/70 group-hover:via-[#0b1222]/80"
+                    )}
+                  />
+                  {/* Linha vermelha no topo */}
+                  <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-vermelho to-transparent opacity-80" />
+                </div>
+
+                {/* 3. Conteúdo Sobreposto */}
+                <div className="relative z-10 p-6 flex flex-col justify-between h-full min-h-[340px]">
+                  <div>
+                    {/* Topo do Card: Ícone em Destaque + Badges */}
+                    <div className="flex items-center justify-between">
+                      <div
+                        className={cn(
+                          "flex h-12 w-12 items-center justify-center rounded-xl shadow-md transition-all duration-500 group-hover:scale-110 group-hover:rotate-2",
+                          isDestaque
+                            ? "bg-vermelho shadow-[0_4px_16px_rgba(202,2,2,0.5)] border border-red-400/40"
+                            : "bg-white/10 backdrop-blur-md border border-white/20 group-hover:bg-vermelho group-hover:border-vermelho"
+                        )}
+                      >
+                        {a.icone}
+                      </div>
+
+                      {a.restrito && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-black/60 border border-white/15 px-2.5 py-1 text-[11px] font-bold text-slate-200 backdrop-blur-md">
+                          <Lock size={11} className="text-amber-400" /> Restrito
+                        </span>
+                      )}
+
+                      {isDestaque && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-vermelho/30 border border-vermelho px-2.5 py-1 text-[10.5px] font-black uppercase tracking-wider text-white shadow-xs backdrop-blur-md animate-pulse">
+                          <Sparkles size={11} className="text-amber-300" /> Obrigatório
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Categoria / Nota */}
+                    <span className="mt-5 block text-[11px] font-black uppercase tracking-[0.18em] text-red-400 drop-shadow">
+                      {a.nota}
+                    </span>
+
+                    {/* Título Principal */}
+                    <h3 className="mt-1 font-serif text-xl font-black uppercase leading-snug tracking-wide text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]">
+                      {a.rotulo}
+                    </h3>
+
+                    {/* Subtítulo / Descrição */}
+                    <p className="mt-2 text-xs sm:text-[13px] leading-relaxed text-slate-200 font-medium drop-shadow">
+                      {a.subtitulo}
+                    </p>
+                  </div>
+
+                  {/* 4. Botão Animado no Padrão Institucional PMESP (COPOM / CCOMSOC) */}
+                  <div className="mt-6 pt-4 border-t border-white/15">
+                    <div
+                      className={cn(
+                        "relative flex w-full items-center justify-center gap-2 rounded-xl py-3.5 px-4 text-xs sm:text-sm font-black uppercase tracking-wider text-white shadow-lg transition-all duration-300 group-hover:scale-102",
+                        isDestaque
+                          ? "bg-gradient-to-r from-[#ca0202] via-[#e40707] to-[#ca0202] shadow-[0_6px_20px_rgba(202,2,2,0.45)] group-hover:shadow-[0_8px_28px_rgba(202,2,2,0.65)]"
+                          : "bg-gradient-to-r from-white/20 via-white/10 to-white/20 border border-white/30 backdrop-blur-md group-hover:bg-vermelho group-hover:border-vermelho group-hover:shadow-[0_6px_22px_rgba(202,2,2,0.5)]"
+                      )}
+                    >
+                      {/* Efeito de brilho que corre no hover */}
+                      <span className="pointer-events-none absolute inset-0 overflow-hidden rounded-xl">
+                        <span className="absolute -inset-full top-0 block h-full w-1/2 -skew-x-12 bg-gradient-to-r from-transparent to-white/25 opacity-0 transition-all duration-700 group-hover:animate-shine group-hover:opacity-100" />
+                      </span>
+
+                      <span className="relative z-10">{a.botaoTexto}</span>
+                      {a.externo ? (
+                        <ExternalLink size={15} className="relative z-10 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                      ) : (
+                        <ArrowRight size={15} className="relative z-10 transition-transform duration-300 group-hover:translate-x-1" />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+
+            return (
+              <div key={a.rotulo} className="relative h-full">
+                {isDestaque && <AjudaWhatsApp />}
+                {a.externo ? (
+                  <a
+                    href={a.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block h-full"
+                  >
+                    {cardContent}
+                  </a>
+                ) : (
+                  <Link href={a.href} className="block h-full">
+                    {cardContent}
+                  </Link>
+                )}
+              </div>
             );
           })}
         </div>
