@@ -231,14 +231,35 @@ export function DashboardCop({
     if (!painelBriefingRef.current || exportandoBriefing) return;
 
     setExportandoBriefing(true);
+    const node = painelBriefingRef.current;
     try {
-      const dataUrl = await toPng(painelBriefingRef.current, {
+      await document.fonts?.ready;
+      const captureOptions = {
         cacheBust: true,
         pixelRatio: 2.5,
         backgroundColor: "#edf2f7",
         filter: (child: HTMLElement) =>
           child.tagName !== "VIDEO" && child.dataset.noBriefing !== "true",
-      });
+      } as const;
+      let dataUrl: string;
+      try {
+        dataUrl = await toPng(node, captureOptions);
+      } catch {
+        // Fallback: captura uma cópia sem vídeos e controles, caso o navegador
+        // não consiga rasterizar algum elemento animado do painel original.
+        const copia = node.cloneNode(true) as HTMLElement;
+        copia.querySelectorAll("video, button").forEach((elemento) => elemento.remove());
+        copia.style.position = "fixed";
+        copia.style.left = "-100000px";
+        copia.style.top = "0";
+        copia.style.width = `${node.getBoundingClientRect().width}px`;
+        document.body.appendChild(copia);
+        try {
+          dataUrl = await toPng(copia, captureOptions);
+        } finally {
+          copia.remove();
+        }
+      }
       const link = document.createElement("a");
       link.download = `briefing-estatico-cop-2026-${new Date().toISOString().slice(0, 10)}.png`;
       link.href = dataUrl;
@@ -298,7 +319,7 @@ export function DashboardCop({
           ? `${FMT.format(p.falta)} a realizar na Sem. ${f.semana}`
           : `${FMT.format(p.falta)} evidências a realizar`,
       foto: "/media/foto-viatura.jpg",
-      icone: <TrendingUp size={18} aria-hidden />,
+      icone: <Target size={22} strokeWidth={2.4} aria-hidden />,
     },
     {
       rotulo: "Evidências auditadas",
@@ -329,7 +350,7 @@ export function DashboardCop({
       valor: FMT.format(RITMO_GLOBAL_RESTANTE),
       nota: `evidências/turno · ${FMT.format(TURNOS_RESTANTES_GLOBAL)} turnos restantes`,
       foto: "/media/reel-operacao.jpg",
-      icone: <TrendingUp size={18} aria-hidden />,
+      icone: <TrendingUp size={22} strokeWidth={2.4} aria-hidden />,
     },
   ];
 
@@ -342,7 +363,7 @@ export function DashboardCop({
       className={cn(
         "group relative overflow-hidden rounded-2xl border-2 border-slate-300/85 bg-white shadow-[0_4px_16px_rgba(15,23,42,0.06)] transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_12px_28px_rgba(202,2,2,0.22)] hover:border-vermelho",
         principal
-          ? "min-h-[220px] p-6 sm:min-h-[250px] sm:p-7"
+          ? "min-h-[220px] border-[#ca0202]/45 p-6 shadow-[0_10px_26px_rgba(202,2,2,0.12)] sm:min-h-[250px] sm:p-7"
           : "min-h-[148px] p-4 sm:min-h-[164px] sm:p-5",
         className
       )}
@@ -363,7 +384,12 @@ export function DashboardCop({
           <span className="font-serif text-xs font-black uppercase tracking-wider text-[#1d1d1d] sm:text-sm">
             {k.rotulo}
           </span>
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-[#ca0202] shadow-xs transition-transform duration-300 group-hover:scale-110 group-hover:bg-vermelho group-hover:text-white">
+          <div className={cn(
+            "flex items-center justify-center border transition-transform duration-300 group-hover:scale-110 group-hover:bg-vermelho group-hover:text-white",
+            principal
+              ? "h-11 w-11 rounded-xl border-[#ca0202]/40 bg-[#ca0202]/10 text-[#ca0202] shadow-[0_5px_14px_rgba(202,2,2,0.16)]"
+              : "h-8 w-8 rounded-lg border-red-200 bg-red-50 text-[#ca0202] shadow-xs"
+          )}>
             {k.icone}
           </div>
         </div>
@@ -912,54 +938,28 @@ export function DashboardCop({
         <div className="grid gap-5 lg:grid-cols-12 lg:items-stretch">
           {/* Faixa superior: diagnóstico executivo ocupando toda a largura */}
           <div
-            className="relative flex min-h-[122px] flex-wrap items-center gap-3.5 overflow-hidden rounded-2xl border-2 border-l-4 border-slate-300/85 bg-gradient-to-r from-[#ffffff] via-[#f8fafc] to-[#edf3f8] p-5 shadow-[0_8px_22px_rgba(15,23,42,0.10)] sm:p-6 lg:col-span-12 lg:-mr-4"
+            className="relative flex min-h-[122px] flex-wrap items-center gap-3.5 overflow-hidden rounded-2xl border-2 border-l-4 border-slate-700/80 bg-[#071225] p-5 shadow-[0_12px_30px_rgba(7,18,37,0.28)] sm:p-6 lg:col-span-12 lg:-mr-4"
             style={{ borderLeftColor: `var(--sinal-${v.nivel})` }}
           >
-            <Image
-              src="/media/cop-camera.jpg"
-              alt=""
-              aria-hidden
-              fill
-              priority
-              sizes="100vw"
-              className="pointer-events-none absolute inset-0 h-full w-full origin-left scale-110 object-cover object-left opacity-90 brightness-50 contrast-125"
-            />
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-slate-950/75 via-slate-900/40 to-white/95" />
-
-            <button
-              type="button"
-              onClick={exportarBriefingPng}
-              disabled={exportandoBriefing}
-              data-no-briefing="true"
-              aria-label="Exportar briefing estático em PNG"
-              className="group absolute right-3 top-3 z-20 inline-flex items-center gap-2 overflow-hidden rounded-xl border border-[#ca0202]/60 bg-[#07182d] px-3 py-2 text-left text-white shadow-[0_8px_20px_rgba(7,24,45,0.28)] transition-all duration-300 hover:-translate-y-0.5 hover:border-[#ca0202] hover:bg-[#ca0202] hover:shadow-[0_12px_24px_rgba(202,2,2,0.30)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ca0202] disabled:cursor-wait disabled:opacity-80 sm:right-4 sm:top-4 sm:px-3.5"
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="metadata"
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-65 saturate-110 contrast-110"
             >
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/25 bg-white/10 transition-transform duration-300 group-hover:scale-110 group-hover:bg-white/20">
-                {exportandoBriefing ? (
-                  <Loader2 size={17} className="animate-spin" aria-hidden="true" />
-                ) : (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className="h-[18px] w-[18px]" aria-hidden="true">
-                    <path d="M6.5 3.5h7l4 4v13h-11z" />
-                    <path d="M13.5 3.5v4h4" />
-                    <path d="M8.5 15.5h7" />
-                    <path d="M12 10.5v5" />
-                    <path d="m9.8 13.3 2.2 2.2 2.2-2.2" />
-                  </svg>
-                )}
-              </span>
-              <span className="leading-tight">
-                <span className="block text-[9px] font-bold uppercase tracking-[0.16em] text-white/70 group-hover:text-white/85">Modelo estático</span>
-                <span className="mt-0.5 block text-[11px] font-black uppercase tracking-[0.06em] sm:text-xs">
-                  {exportandoBriefing ? "Gerando PNG..." : "Exportar briefing PNG"}
-                </span>
-              </span>
-            </button>
+              <source src="/media/clip_patrulha_noturna.mp4" type="video/mp4" />
+            </video>
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#050c1a]/92 via-[#071225]/80 to-[#071225]/88" />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-[#ca0202]/20" />
 
-            <div className="relative z-10 ml-[18%] flex w-[82%] flex-wrap items-center gap-3.5 pr-28 md:ml-[24%] md:w-[76%] lg:ml-[22%] lg:w-[76%]">
+            <div className="relative z-10 ml-[18%] flex w-[82%] flex-wrap items-center gap-3.5 pr-4 md:ml-[24%] md:w-[76%] lg:ml-[22%] lg:w-[76%]">
               <Selo nivel={v.nivel} />
-              <div className="min-w-0 flex-1 rounded-xl border border-white/80 bg-white/[0.92] px-4 py-3 shadow-lg backdrop-blur-sm">
-                <p className="font-serif text-lg font-black leading-snug text-slate-950 drop-shadow-sm sm:text-xl">{v.titulo}</p>
-                <p className="mt-1 text-[13.5px] font-semibold leading-relaxed text-slate-800 sm:text-sm">{v.detalhe}</p>
+              <div className="min-w-0 flex-1 px-1 py-1 text-white">
+                <p className="font-serif text-lg font-black leading-snug text-white drop-shadow-[0_2px_5px_rgba(0,0,0,0.65)] sm:text-xl">{v.titulo}</p>
+                <p className="mt-1 text-[13.5px] font-semibold leading-relaxed text-white/85 drop-shadow-[0_1px_3px_rgba(0,0,0,0.7)] sm:text-sm">{v.detalhe}</p>
               </div>
             </div>
           </div>
@@ -1003,6 +1003,29 @@ export function DashboardCop({
               Partes confeccionadas: <strong className="dados font-black text-slate-950">{FMT.format(p.partes)}</strong>
             </span>
           </div>
+
+          <button
+            type="button"
+            onClick={exportarBriefingPng}
+            disabled={exportandoBriefing}
+            data-no-briefing="true"
+            aria-label="Exportar briefing estático em PNG"
+            title="Exportar briefing estático em PNG"
+            className="group absolute right-[-16px] top-3 z-30 flex h-14 w-14 items-center justify-center rounded-full border-2 border-white bg-[#ca0202] text-white shadow-[0_10px_24px_rgba(202,2,2,0.38)] transition-all duration-300 hover:scale-110 hover:bg-[#a80000] hover:shadow-[0_14px_30px_rgba(202,2,2,0.48)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ca0202] disabled:cursor-wait disabled:opacity-80 lg:right-[-70px] lg:top-5"
+          >
+            {exportandoBriefing ? (
+              <Loader2 size={20} className="animate-spin" aria-hidden="true" />
+            ) : (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 transition-transform duration-300 group-hover:-translate-y-0.5" aria-hidden="true">
+                <path d="M6.5 3.5h7l4 4v13h-11z" />
+                <path d="M13.5 3.5v4h4" />
+                <path d="M8.5 15.5h7" />
+                <path d="M12 10.5v5" />
+                <path d="m9.8 13.3 2.2 2.2 2.2-2.2" />
+              </svg>
+            )}
+            <span className="sr-only">Exportar briefing PNG</span>
+          </button>
         </div>
       </section>
 
