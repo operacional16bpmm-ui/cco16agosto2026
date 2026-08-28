@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import type { Metadata } from "next";
 import { AcessoRapido } from "@/components/publico16/acesso-rapido";
+import { FundamentacaoCop } from "@/components/publico16/cop/fundamentacao-cop";
 import { DiretrizCop } from "@/components/publico16/diretriz-cop";
 import { DiretrizEmFoco } from "@/components/publico16/diretriz-em-foco";
 import { Instagram16 } from "@/components/publico16/instagram-16";
@@ -183,7 +184,7 @@ export default async function Cop2026Page() {
               href={URL_FORMULARIO}
               target="_blank"
               rel="noopener noreferrer"
-              className="group inline-flex items-center justify-center gap-2.5 rounded-md bg-[#ca0202] px-7 py-3.5 text-[15px] font-bold text-white shadow-sm transition-colors hover:bg-[#e40707] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+              className="group inline-flex min-h-12 items-center justify-center gap-2.5 rounded-xl border border-red-300/30 bg-gradient-to-br from-[#d50909] to-[#a90000] px-7 py-3.5 text-[15px] font-bold text-white shadow-[0_10px_24px_rgba(126,0,0,0.28)] transition-all duration-200 hover:-translate-y-0.5 hover:from-[#e40707] hover:to-[#bd0000] hover:shadow-[0_14px_28px_rgba(126,0,0,0.36)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white active:translate-y-0"
             >
               <FileCheck2 className="h-[18px] w-[18px]" />
               Preencher a auditoria do turno
@@ -231,6 +232,8 @@ export default async function Cop2026Page() {
       <DiretrizEmFoco />
 
       <AcessoRapido urlFormulario={URL_FORMULARIO} urlPlanilha={URL_PLANILHA} />
+
+      <FundamentacaoCop />
 
       <main className="mx-auto max-w-6xl px-4 py-8">
         <h1 className="sr-only">Auditoria de COP 2026 · 16º BPM/M</h1>

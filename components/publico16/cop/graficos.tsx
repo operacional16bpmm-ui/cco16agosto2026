@@ -636,7 +636,7 @@ export function RankingFracoes({
                   {d.falta > 0 ? (
                     <>
                       Faltam <strong className="dados font-black text-[#ca0202]">{FMT.format(d.falta)}</strong> (
-                      {FMT.format(Math.ceil(d.ritmoNecessario))}/turno em {FMT.format(d.turnosRestantes)} rest.)
+                      {FMT.format(d.ritmoProporcional ?? Math.ceil(d.ritmoNecessario))}/turno proporcional em {FMT.format(d.turnosRestantes)} rest.)
                     </>
                   ) : (
                     <span className={cn("font-black", TEXTO_FAIXA[nivelDeFecho(d.nivel)])}>

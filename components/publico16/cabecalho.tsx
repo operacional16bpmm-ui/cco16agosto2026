@@ -21,20 +21,27 @@ const SECOES = [
 
 export function Cabecalho() {
   const [aberto, setAberto] = useState(false);
+  const [usarBrasaoFallback, setUsarBrasaoFallback] = useState(false);
 
   return (
     <header className="sticky top-0 z-50 border-b border-branco/10 bg-azul-noite/95 backdrop-blur">
       <div className="faixa-institucional h-1 w-full" />
       <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-4 px-4 py-2.5 md:px-6">
         <a href="#inicio" className="flex items-center gap-3.5">
-          <Image
-            src="/16bpmm/geral/brasao.png"
-            alt="Brasão do 16º BPM/M"
-            width={64}
-            height={90}
-            className="h-14 w-auto md:h-16"
-            priority
-          />
+          <span className="relative block h-14 w-[94px] shrink-0 overflow-hidden rounded-sm border border-branco/20 bg-preto/40 shadow-lg md:h-16 md:w-[108px]">
+            <Image
+              src={usarBrasaoFallback ? "/16bpmm/geral/brasao.png" : "/16bpmm/geral/moeda-versao-16.jpg"}
+              alt={usarBrasaoFallback ? "Brasão do 16º BPM/M" : "Moeda comemorativa do 16º BPM/M"}
+              fill
+              sizes="108px"
+              className="object-cover"
+              onError={() => setUsarBrasaoFallback(true)}
+              priority
+            />
+            <span className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 px-1 text-center font-serif text-[10px] font-bold tracking-[0.08em] text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)] md:text-xs">
+              versão 16.0
+            </span>
+          </span>
           {/* As duas linhas de subordinação ocupam duas linhas cada no celular e
               inchavam o cabeçalho fixo — só aparecem a partir de sm. */}
           <span className="leading-tight">

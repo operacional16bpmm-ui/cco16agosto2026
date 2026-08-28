@@ -13,11 +13,20 @@ import {
   META_TOTAL_BATALHAO,
   META_SEMANAL_BATALHAO,
   EFETIVO_TOTAL_BATALHAO,
+  RITMO_GLOBAL_RESTANTE,
+  TURNOS_RESTANTES_GLOBAL,
   type LancamentoCop,
   type MetaSubunidade,
 } from "@/lib/cop2026";
 
-export { MATRIZ_PROPORCIONAL_2026, META_TOTAL_BATALHAO, META_SEMANAL_BATALHAO, EFETIVO_TOTAL_BATALHAO };
+export {
+  MATRIZ_PROPORCIONAL_2026,
+  META_TOTAL_BATALHAO,
+  META_SEMANAL_BATALHAO,
+  EFETIVO_TOTAL_BATALHAO,
+  RITMO_GLOBAL_RESTANTE,
+  TURNOS_RESTANTES_GLOBAL,
+};
 
 export const FMT = new Intl.NumberFormat("pt-BR");
 export const PCT = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 });
@@ -216,6 +225,8 @@ export type LinhaFracao = {
   turnosRestantes: number;
   /** Proporção da meta desta fração em relação ao total do Batalhão (960). */
   pctBatalhao?: number;
+  /** Rateio inteiro do ritmo global de 73 evidências por turno. */
+  ritmoProporcional?: number;
   /** Efetivo do quadro fixo da fração (base: 570 PMs). */
   efetivoQuadro?: number;
   /** Média semanal da meta da fração. */
@@ -392,6 +403,7 @@ export function calcularPainel(
         ritmoNecessario: rest > 0 ? fa / rest : fa,
         turnosRestantes: rest,
         pctBatalhao: mat ? mat.pctMeta : meta > 0 ? (metaReal / meta) * 100 : 0,
+        ritmoProporcional: mat?.ritmoProporcional,
         efetivoQuadro: mat ? mat.efetivo : m.efetivo,
         metaSemanalMedia: mat ? mat.metaSemanalMedia : metaReal / 4,
         semanas: semanasFracao,

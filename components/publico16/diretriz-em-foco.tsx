@@ -1,30 +1,49 @@
+import Image from "next/image";
 import Link from "next/link";
-import {
-  Crosshair,
-  Tags,
-  Fingerprint,
-  Radar,
-  Video,
-  ShieldCheck,
-  Send,
-} from "lucide-react";
 
-/**
- * Painel de 7 pilares da Diretriz PM3-001/02/25 ("Diretriz em Foco").
- * Fixado na entrada da COP 2026 e replicado como primeiro slide do briefing
- * executivo — decidido em 27ago26 (o Major queria a diretriz visível antes
- * dos KPIs, para servir de índice, não de nota de rodapé).
- * Cada tile ancora no visor do PDF da diretriz (`#diretriz-pdf`) quando a
- * página o inclui; nas demais telas, o link cai direto no PDF.
- */
-const PILARES = [
-  { n: 1, icon: Crosshair,  titulo: "Fatos de interesse policial", desc: "Eventos e registros relevantes" },
-  { n: 2, icon: Tags,       titulo: "Etiquetas digitais",          desc: "Classificação das evidências" },
-  { n: 3, icon: Fingerprint,titulo: "Cadeia de custódia",          desc: "Integridade, registro e rastreabilidade" },
-  { n: 4, icon: Radar,      titulo: "Monitoramento & controle",    desc: "Aferição, conformidade e auditoria" },
-  { n: 5, icon: Video,      titulo: "Modos & transmissão",         desc: "Funcionalidades da COP" },
-  { n: 6, icon: ShieldCheck,titulo: "Obrigações do operador",      desc: "Acionamento, uso e encerramento" },
-  { n: 7, icon: Send,       titulo: "Entrega imediata",            desc: "Repercussão e indícios de desvios de conduta" },
+const PONTOS_DIRETRIZ = [
+  {
+    numero: "01",
+    titulo: "FATOS DE INTERESSE POLICIAL",
+    texto: "Eventos e registros relevantes",
+    imagem: "/16bpmm/carrossel/slide-3.jpg",
+  },
+  {
+    numero: "02",
+    titulo: "ETIQUETAS DIGITAIS",
+    texto: "Classificação das evidências",
+    imagem: "/16bpmm/carrossel/slide-4.jpg",
+  },
+  {
+    numero: "03",
+    titulo: "CADEIA DE CUSTÓDIA",
+    texto: "Integridade, registro e rastreabilidade",
+    imagem: "/16bpmm/carrossel/slide-6.jpg",
+  },
+  {
+    numero: "04",
+    titulo: "MONITORAMENTO & CONTROLE",
+    texto: "Aferição, conformidade e auditoria",
+    imagem: "/16bpmm/carrossel/slide-5.jpg",
+  },
+  {
+    numero: "05",
+    titulo: "MODOS & TRANSMISSÃO",
+    texto: "Funcionalidades da COP",
+    imagem: "/16bpmm/carrossel/slide-7.jpg",
+  },
+  {
+    numero: "06",
+    titulo: "OBRIGAÇÕES DO OPERADOR",
+    texto: "Acionamento, uso e encerramento",
+    imagem: "/16bpmm/carrossel/slide-2.jpg",
+  },
+  {
+    numero: "07",
+    titulo: "ENTREGA IMEDIATA",
+    texto: "Repercussão e indícios de desvios de conduta",
+    imagem: "/16bpmm/carrossel/slide-8.jpg",
+  },
 ] as const;
 
 export function DiretrizEmFoco({
@@ -38,53 +57,55 @@ export function DiretrizEmFoco({
   return (
     <section aria-labelledby="diretriz-em-foco-titulo" className={espac}>
       <div className="mx-auto max-w-6xl px-4">
-        <p className="text-[11px] font-black uppercase tracking-[0.22em] text-branco/55">
-          Diretriz PM3-001/02/25 · Ambiente Executivo de Governança, Controle e Auditabilidade das COPs
-        </p>
-        <h2
-          id="diretriz-em-foco-titulo"
-          className="mt-3 font-serif text-[1.75rem] font-black leading-[1.05] text-branco sm:text-[2.6rem]"
-        >
-          Registro Operacional ·<br className="hidden sm:block" />
-          <span className="text-branco"> Governança da Auditoria de COP</span>
+        <h2 id="diretriz-em-foco-titulo" className="sr-only">
+          Registro Operacional · Governança da Auditoria de COP
         </h2>
-        <p className="mt-3 max-w-3xl text-[14.5px] leading-relaxed text-branco/60">
-          Pontos de relevância normativa para fiscalização, cadeia de custódia,
-          monitoramento e gestão executiva.
-        </p>
-        <span className="mt-4 inline-flex items-center gap-2 rounded-full border border-vermelho/40 bg-vermelho/[0.08] px-4 py-1.5 text-[12px] font-black uppercase tracking-wider text-vermelho">
-          <Crosshair size={14} strokeWidth={2.5} /> Diretriz em Foco
-        </span>
+        <Link
+          href={hrefBase}
+          aria-label="Registro Operacional · Governança da Auditoria de COP — abrir a Diretriz PM3-001/02/25"
+          className="block overflow-hidden rounded-2xl bg-[#101d35] p-3 shadow-xl transition-opacity hover:opacity-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-vermelho sm:p-6"
+        >
+          <div className="space-y-4 sm:space-y-5">
+            <div className="border-b border-white/20 px-2 pb-4 text-white sm:px-3 sm:pb-5">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#e5d332] sm:text-xs">
+                Diretriz PM3-001/02/25 · Ambiente Executivo de Governança, Controle e Auditabilidade das COPs
+              </p>
+              <h3 className="mt-2 font-serif text-xl font-bold uppercase sm:text-3xl">
+                Registro Operacional · Governança da Auditoria de COP
+              </h3>
+              <p className="mt-2 max-w-3xl text-sm leading-relaxed text-white/70 sm:text-base">
+                Pontos de relevância normativa para fiscalização, cadeia de custódia, monitoramento e gestão executiva.
+              </p>
+              <p className="mt-3 text-xs font-bold uppercase tracking-[0.16em] text-white/80">Diretriz em Foco</p>
+            </div>
 
-        <ul className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {PILARES.map((p) => {
-            const Icone = p.icon;
-            return (
-              <li key={p.n}>
-                <Link
-                  href={hrefBase}
-                  aria-label={`${p.n}. ${p.titulo} — abrir a Diretriz`}
-                  className="group relative flex h-full items-start gap-4 overflow-hidden rounded-2xl border-2 border-slate-800 bg-gradient-to-br from-[#0b0f1a] via-[#101725] to-[#050810] p-5 shadow-md transition-all hover:-translate-y-0.5 hover:border-vermelho/60 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-vermelho"
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
+              {PONTOS_DIRETRIZ.map((ponto) => (
+                <div
+                  key={ponto.numero}
+                  className="relative isolate min-h-64 overflow-hidden rounded-xl border border-white/20 bg-[#1d2c46] lg:col-span-2"
                 >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-vermelho font-mono text-base font-black text-white shadow-sm">
-                    {p.n}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <Icone size={18} className="text-vermelho/85" strokeWidth={2.2} />
-                      <h3 className="font-serif text-[13.5px] font-black uppercase tracking-wide text-vermelho">
-                        {p.titulo}
-                      </h3>
-                    </div>
-                    <p className="mt-1.5 text-[13.5px] leading-snug text-branco/80">
-                      {p.desc}
-                    </p>
+                  <Image
+                    src={ponto.imagem}
+                    alt={`Foto real da Polícia Militar para ${ponto.titulo.toLowerCase()}`}
+                    fill
+                    sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                    className="-z-20 object-cover"
+                    priority={variante === "home" && ponto.numero === "01"}
+                  />
+                  <div className="absolute inset-0 -z-10 bg-gradient-to-t from-[#071225] via-[#071225]/55 to-[#071225]/10" />
+                  <div className="flex min-h-64 flex-col justify-end p-5 text-white sm:p-6">
+                    <span className="text-4xl font-black leading-none text-[#e5d332]/90">{ponto.numero}</span>
+                    <h4 className="mt-2 max-w-[18rem] text-sm font-black uppercase leading-tight">
+                      {ponto.titulo}
+                    </h4>
+                    <p className="mt-1 text-xs leading-relaxed text-white/75">{ponto.texto}</p>
                   </div>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Link>
       </div>
     </section>
   );

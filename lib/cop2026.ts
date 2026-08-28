@@ -81,7 +81,7 @@ export const ROTULO_SUBUNIDADE: Record<string, string> = {
  * - EM: 98 PMs (17,19% bruto) fixado em 5,00% (administrativo) = 48 evidências.
  * - 1ª Cia: 102 PMs (17,89% + rateio) = 20,32% = 195 evidências.
  * - 2ª Cia: 93 PMs (16,31% + rateio) = 18,74% = 180 evidências.
- * - 3ª Cia: 111 PMs (19,47% + rateio) = 21,97% = 210 evidências.
+ * - 3ª Cia: 111 PMs (19,47% + rateio) = 21,90% = 210 evidências.
  * - 4ª Cia: 93 PMs (16,31% + rateio) = 18,74% = 180 evidências.
  * - FT: 73 PMs (12,80% + rateio) = 15,23% = 147 evidências.
  * Soma: 48 + 195 + 180 + 210 + 180 + 147 = 960 evidências (100,00%).
@@ -93,6 +93,7 @@ export const MATRIZ_PROPORCIONAL_2026: Record<
     pctEfetivo: number;
     pctMeta: number;
     meta: number;
+    ritmoProporcional: number;
     metaSemanalMedia: number;
     metasSemanais: [number, number, number, number];
     rotulo: string;
@@ -103,6 +104,7 @@ export const MATRIZ_PROPORCIONAL_2026: Record<
     pctEfetivo: 17.19,
     pctMeta: 5.0,
     meta: 48,
+    ritmoProporcional: 4,
     metaSemanalMedia: 12,
     metasSemanais: [12, 12, 12, 12],
     rotulo: "Estado-Maior",
@@ -112,6 +114,7 @@ export const MATRIZ_PROPORCIONAL_2026: Record<
     pctEfetivo: 17.89,
     pctMeta: 20.32,
     meta: 195,
+    ritmoProporcional: 15,
     metaSemanalMedia: 48.75,
     metasSemanais: [49, 49, 49, 48],
     rotulo: "1ª Cia",
@@ -121,6 +124,7 @@ export const MATRIZ_PROPORCIONAL_2026: Record<
     pctEfetivo: 16.31,
     pctMeta: 18.74,
     meta: 180,
+    ritmoProporcional: 14,
     metaSemanalMedia: 45,
     metasSemanais: [45, 45, 45, 45],
     rotulo: "2ª Cia",
@@ -128,8 +132,9 @@ export const MATRIZ_PROPORCIONAL_2026: Record<
   "3cia": {
     efetivo: 111,
     pctEfetivo: 19.47,
-    pctMeta: 21.97,
+    pctMeta: 21.9,
     meta: 210,
+    ritmoProporcional: 16,
     metaSemanalMedia: 52.5,
     metasSemanais: [53, 52, 53, 52],
     rotulo: "3ª Cia",
@@ -139,6 +144,7 @@ export const MATRIZ_PROPORCIONAL_2026: Record<
     pctEfetivo: 16.31,
     pctMeta: 18.74,
     meta: 180,
+    ritmoProporcional: 14,
     metaSemanalMedia: 45,
     metasSemanais: [45, 45, 45, 45],
     rotulo: "4ª Cia",
@@ -148,6 +154,7 @@ export const MATRIZ_PROPORCIONAL_2026: Record<
     pctEfetivo: 12.8,
     pctMeta: 15.23,
     meta: 147,
+    ritmoProporcional: 11,
     metaSemanalMedia: 36.75,
     metasSemanais: [37, 37, 37, 36],
     rotulo: "Força Tática",
@@ -157,6 +164,8 @@ export const MATRIZ_PROPORCIONAL_2026: Record<
 export const META_TOTAL_BATALHAO = 960;
 export const META_SEMANAL_BATALHAO = 240;
 export const EFETIVO_TOTAL_BATALHAO = 570;
+export const RITMO_GLOBAL_RESTANTE = 73;
+export const TURNOS_RESTANTES_GLOBAL = 12;
 
 export const METAS_PADRAO_2026: MetaSubunidade[] = [
   { subunidade: "em", efetivo: 98, evidenciasPorTurno: 2, turnos: 12, dias: 24, meta: 48 },
