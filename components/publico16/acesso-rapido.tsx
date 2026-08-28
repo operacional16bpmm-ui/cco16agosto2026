@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import {
+  AlertTriangle,
   FileSpreadsheet,
   BarChart3,
   Presentation,
@@ -17,6 +18,7 @@ import { cn } from "@/lib/utils";
 type Atalho = {
   rotulo: string;
   subtitulo: string;
+  faixa?: string;
   nota: string;
   href: string;
   botaoTexto: string;
@@ -38,6 +40,7 @@ export function AcessoRapido({
   const atalhos: Atalho[] = [
     {
       rotulo: "Lançar Auditoria do Turno",
+      faixa: "Faixa de Atenção da Meta",
       subtitulo: "Registro obrigatório das mídias auditadas com mínimo de 3 IDs por turno.",
       nota: "Formulário da Auditoria",
       href: urlFormulario,
@@ -188,8 +191,16 @@ export function AcessoRapido({
                       {a.rotulo}
                     </h3>
 
+                    {/* Faixa de Atenção da Meta no Meio */}
+                    {a.faixa && (
+                      <div className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-amber-500/30 border border-amber-400/80 px-2.5 py-1 text-xs font-black uppercase tracking-wider text-amber-300 backdrop-blur-md shadow-md animate-pulse">
+                        <AlertTriangle size={13} className="text-amber-400 shrink-0" />
+                        <span>{a.faixa}</span>
+                      </div>
+                    )}
+
                     {/* Subtítulo / Descrição */}
-                    <p className="mt-2 text-xs sm:text-[13px] leading-relaxed text-slate-200 font-medium drop-shadow">
+                    <p className="mt-2.5 text-xs sm:text-[13px] leading-relaxed text-slate-200 font-medium drop-shadow">
                       {a.subtitulo}
                     </p>
                   </div>
