@@ -19,7 +19,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { toPng } from "html-to-image";
+import { domToPng } from "modern-screenshot";
 import {
   ROTULO_SUBUNIDADE,
   RITMO_GLOBAL_RESTANTE,
@@ -235,36 +235,23 @@ export function DashboardCop({
     const node = painelBriefingRef.current;
     try {
       await document.fonts?.ready;
-      // Sem `filter`: html-to-image invoca o callback para TODO no filho,
-      // inclusive nos de texto (cloneChildren percorre childNodes). Em um no
-      // de texto `dataset` e undefined, entao `child.dataset.noBriefing`
-      // lancava TypeError no primeiro texto do painel e derrubava a exportacao
-      // inteira. Video e o proprio FAB ja sao removidos do clone abaixo, entao
-      // o filtro era redundante alem de quebrado.
-      const captureOptions = {
-        cacheBust: true,
-        pixelRatio: 2.5,
+      const { width, height } = node.getBoundingClientRect();
+      // modern-screenshot no lugar de html-to-image: o Tailwind v4 gera cores
+      // em oklch() e o painel usa next/image; o html-to-image rasterizava isso
+      // em branco (fundo liso, sem erro). O modern-screenshot renderiza pelo
+      // mesmo foreignObject do navegador, entao o resultado sai identico a tela.
+      const dataUrl = await domToPng(node, {
+        scale: 2,
         backgroundColor: "#edf2f7",
-      } as const;
-      // Captura sempre uma cópia estática: vídeos e controles interativos não
-      // entram na rasterização e não conseguem travar a geração do arquivo.
-      const copia = node.cloneNode(true) as HTMLElement;
-      // Só saem o vídeo de fundo e o próprio botão de exportar (data-no-briefing).
-      // Os cards clicáveis (semanas, frações) SÃO conteúdo e precisam ficar no PNG.
-      copia
-        .querySelectorAll('video, [data-no-briefing="true"]')
-        .forEach((elemento) => elemento.remove());
-      copia.style.position = "fixed";
-      copia.style.left = "-100000px";
-      copia.style.top = "0";
-      copia.style.width = `${node.getBoundingClientRect().width}px`;
-      document.body.appendChild(copia);
-      let dataUrl: string;
-      try {
-        dataUrl = await toPng(copia, captureOptions);
-      } finally {
-        copia.remove();
-      }
+        // Fora do PNG: so o video de fundo e o proprio FAB (data-no-briefing).
+        // Nos de texto (nodeType !== 1) precisam passar, senao o conteudo some.
+        filter: (alvo) => {
+          if (!(alvo instanceof HTMLElement)) return true;
+          return alvo.tagName !== "VIDEO" && alvo.dataset.noBriefing !== "true";
+        },
+      });
+      // Se o PNG voltar minusculo, a rasterizacao falhou (imagem em branco).
+      console.info("[briefing] png gerado", { width, height, bytes: dataUrl.length });
       const nomeArquivo = `painel-cop-2026-${new Date().toISOString().slice(0, 10)}.png`;
       const blob = await (await fetch(dataUrl)).blob();
       const urlDownload = URL.createObjectURL(blob);
@@ -281,9 +268,8 @@ export function DashboardCop({
       }, 1000);
       toast.success("Painel completo exportado em PNG.");
     } catch (erro) {
-      // Sem isto o motivo real da falha some e so sobra o toast generico.
       console.error("[briefing] falha ao gerar o PNG:", erro);
-      toast.error("Não foi possível gerar o briefing em PNG. Tente novamente.");
+      toast.error("Nao foi possivel gerar o briefing em PNG. Tente novamente.");
     } finally {
       setExportandoBriefing(false);
     }
