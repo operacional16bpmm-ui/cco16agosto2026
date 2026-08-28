@@ -1132,7 +1132,7 @@ export function DashboardCop({
       </section>
 
       {/* ---------------- Camada 2: Onde agir ---------------- */}
-      <section aria-label="Onde agir" className="mb-6 grid gap-6 lg:grid-cols-[1.35fr_1fr]">
+      <section aria-label="Onde agir" className="mb-6">
         <Cartao
           titulo="Onde agir · frações"
           nota="rateio proporcional ao quadro COP (570 PMs) · clique para filtrar o painel"
