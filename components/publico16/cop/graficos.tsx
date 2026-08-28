@@ -33,6 +33,7 @@ import {
   type ProgressoSemana,
   type Nivel,
 } from "@/lib/cop2026-metricas";
+import { AlertCircle } from "lucide-react";
 import { COR_NIVEL, Selo } from "./primitivos";
 import { cn } from "@/lib/utils";
 
@@ -337,15 +338,22 @@ export function AgulhaoMetas({
           <span className="dados font-extrabold text-[#1d1d1d]">{FMT.format(meta)} evidências</span>
         </p>
         <div className="mt-2.5">
-          <Selo nivel={nivel} />
+          {nivel === "critico" ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#ca0202] border-2 border-red-700 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-white shadow-md animate-pulse">
+              <AlertCircle size={13} className="text-white shrink-0" />
+              <span>Abaixo da Meta</span>
+            </span>
+          ) : (
+            <Selo nivel={nivel} />
+          )}
         </div>
       </div>
 
       {/* Régua de Zonas de Atingimento Nítida */}
       <div className="relative z-10 mt-4 grid w-full grid-cols-3 gap-2 border-t-2 border-slate-200 pt-3 text-center">
-        <div className="rounded-xl border-2 border-red-200 bg-red-50 p-1.5 shadow-2xs">
-          <span className="block text-xs font-black text-[#ca0202]">&lt; 50%</span>
-          <span className="text-[10px] font-bold text-red-900 uppercase tracking-tight">Abaixo da Meta</span>
+        <div className="rounded-xl border-2 border-red-600 bg-[#ca0202] p-1.5 shadow-sm text-white">
+          <span className="block text-xs font-black text-white">&lt; 50%</span>
+          <span className="text-[10px] font-black text-white uppercase tracking-tight">Abaixo da Meta</span>
         </div>
         <div className="rounded-xl border-2 border-amber-200 bg-amber-50 p-1.5 shadow-2xs">
           <span className="block text-xs font-black text-amber-700">50% a 79%</span>
