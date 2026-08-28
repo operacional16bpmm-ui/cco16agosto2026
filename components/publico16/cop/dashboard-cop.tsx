@@ -241,24 +241,20 @@ export function DashboardCop({
         filter: (child: HTMLElement) =>
           child.tagName !== "VIDEO" && child.dataset.noBriefing !== "true",
       } as const;
+      // Captura sempre uma cópia estática: vídeos e controles interativos não
+      // entram na rasterização e não conseguem travar a geração do arquivo.
+      const copia = node.cloneNode(true) as HTMLElement;
+      copia.querySelectorAll("video, button").forEach((elemento) => elemento.remove());
+      copia.style.position = "fixed";
+      copia.style.left = "-100000px";
+      copia.style.top = "0";
+      copia.style.width = `${node.getBoundingClientRect().width}px`;
+      document.body.appendChild(copia);
       let dataUrl: string;
       try {
-        dataUrl = await toPng(node, captureOptions);
-      } catch {
-        // Fallback: captura uma cópia sem vídeos e controles, caso o navegador
-        // não consiga rasterizar algum elemento animado do painel original.
-        const copia = node.cloneNode(true) as HTMLElement;
-        copia.querySelectorAll("video, button").forEach((elemento) => elemento.remove());
-        copia.style.position = "fixed";
-        copia.style.left = "-100000px";
-        copia.style.top = "0";
-        copia.style.width = `${node.getBoundingClientRect().width}px`;
-        document.body.appendChild(copia);
-        try {
-          dataUrl = await toPng(copia, captureOptions);
-        } finally {
-          copia.remove();
-        }
+        dataUrl = await toPng(copia, captureOptions);
+      } finally {
+        copia.remove();
       }
       const nomeArquivo = `briefing-estatico-cop-2026-${new Date().toISOString().slice(0, 10)}.png`;
       const blob = await (await fetch(dataUrl)).blob();
