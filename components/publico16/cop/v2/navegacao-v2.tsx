@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { URL_FORMULARIO, URL_PLANILHA } from "@/lib/cop2026";
 import { cn } from "@/lib/utils";
+import { FaixaCreditos } from "@/components/publico16/creditos";
 
 export function NavegacaoV2({
   lidoEm,
@@ -70,6 +71,10 @@ export function NavegacaoV2({
   ];
 
   return (
+    <>
+      {/* Créditos da equipe: faixa do topo, antes do cabeçalho. */}
+      <FaixaCreditos />
+
     <header className="sticky top-0 z-30 border-b border-white/10 bg-[#070b14]/90 backdrop-blur-md shadow-2xl">
       {/* Banner da Versão Provisória */}
       <div className="bg-gradient-to-r from-ouro/20 via-ouro/10 to-transparent px-4 py-1.5 text-center text-xs font-semibold text-ouro border-b border-ouro/20 flex items-center justify-center gap-2">
@@ -271,5 +276,6 @@ export function NavegacaoV2({
         </div>
       )}
     </header>
+    </>
   );
 }

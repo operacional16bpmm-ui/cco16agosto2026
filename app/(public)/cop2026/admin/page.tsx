@@ -5,6 +5,7 @@ import { ChevronRight, LayoutDashboard, LogOut, Presentation } from "lucide-reac
 import { adminsDaEnv } from "@/lib/cop2026-acesso";
 import { exigirAdminCop, listarAutorizados } from "@/lib/db/cop2026-autorizados";
 import { RodapeCop } from "@/components/publico16/cop/rodape-cop";
+import { FaixaCreditos } from "@/components/publico16/creditos";
 import { PainelAutorizados } from "./painel-autorizados";
 
 export const metadata: Metadata = {
@@ -23,6 +24,9 @@ export default async function AdminCopPage() {
 
   return (
     <div className="tema-institucional min-h-screen bg-tatico-fundo text-[15px] text-branco">
+      {/* Créditos da equipe: faixa do topo, antes do cabeçalho. */}
+      <FaixaCreditos />
+
       <header className="border-b border-borda bg-tatico-super">
         <div className="mx-auto flex max-w-[1100px] flex-wrap items-center justify-between gap-4 px-5 py-4">
           <div className="flex items-center gap-4">

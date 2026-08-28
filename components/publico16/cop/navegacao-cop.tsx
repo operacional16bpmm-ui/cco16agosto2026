@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { URL_FORMULARIO, URL_PLANILHA } from "@/lib/cop2026";
 import { cn } from "@/lib/utils";
+import { FaixaCreditos } from "@/components/publico16/creditos";
 
 export function NavegacaoCop({
   lidoEm,
@@ -66,7 +67,11 @@ export function NavegacaoCop({
   ];
 
   return (
-    <header className="border-b border-borda bg-tatico-super sticky top-0 z-30 shadow-inst">
+    <>
+      {/* Créditos da equipe: faixa do topo, antes do cabeçalho. */}
+      <FaixaCreditos />
+
+    <header className="border-b border-borda bg-tatico-super sticky top-0 z-40 shadow-inst">
       <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-3 px-4 py-3 sm:px-5 sm:py-3.5">
         {/* Identidade e Botão Voltar */}
         <div className="flex items-center gap-3">
@@ -243,5 +248,6 @@ export function NavegacaoCop({
       {/* Faixa institucional de honra */}
       <div className="faixa-institucional h-1" />
     </header>
+    </>
   );
 }

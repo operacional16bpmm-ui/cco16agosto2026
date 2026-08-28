@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { ClipboardList, Fingerprint, Lock, Scale, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { EQUIPE } from "@/components/publico16/creditos";
 
 /**
  * Rodapé das páginas da Auditoria de COP 2026: identidade, selos técnicos e
@@ -29,7 +30,6 @@ import { cn } from "@/lib/utils";
  *  versão é o print que está circulando na reunião. */
 export const VERSAO_PORTAL = "16.0";
 
-const ASSINATURA = "Sd PM 231.936-5 Fabrício Pires";
 
 const SELOS = [
   {
@@ -97,9 +97,13 @@ export function AssinaturaDesenvolvimento({ className }: { className?: string })
     <div className={cn("flex items-stretch gap-3", className)}>
       <span aria-hidden className="regua-assinatura w-[3px] shrink-0 rounded-full bg-vermelho" />
       <div>
-        <p className="rotulo-dado text-branco/40">Concepção e desenvolvimento</p>
-        <p className="mt-1 text-[13px] font-semibold leading-tight text-branco">{ASSINATURA}</p>
-        <p className="dados mt-1 text-[10.5px] leading-none text-branco/35">
+        {EQUIPE.map(({ papel, nome }, i) => (
+          <div key={papel} className={i ? "mt-2" : undefined}>
+            <p className="rotulo-dado text-branco/40">{papel}</p>
+            <p className="mt-1 text-[13px] font-semibold leading-tight text-branco">{nome}</p>
+          </div>
+        ))}
+        <p className="dados mt-2 text-[10.5px] leading-none text-branco/35">
           Portal CCO-16 · versão {VERSAO_PORTAL}
         </p>
       </div>

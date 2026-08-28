@@ -16,6 +16,7 @@ import { DiretrizCop } from "@/components/publico16/diretriz-cop";
 import { DiretrizEmFoco } from "@/components/publico16/diretriz-em-foco";
 import { Instagram16 } from "@/components/publico16/instagram-16";
 import { RodapeCop } from "@/components/publico16/cop/rodape-cop";
+import { FaixaCreditos } from "@/components/publico16/creditos";
 import {
   URL_FORMULARIO,
   URL_PLANILHA,
@@ -69,6 +70,9 @@ export default async function Cop2026Page() {
     <div
       className={`tema-institucional min-h-screen bg-tatico-fundo text-[15px] text-branco`}
     >
+      {/* Créditos da equipe: faixa do topo, antes do cabeçalho. */}
+      <FaixaCreditos />
+
       <header className="border-b border-slate-300/80 bg-[#edf2f6] text-[#07182d] shadow-[0_10px_30px_rgba(7,24,45,0.08)]">
         <div className="mx-auto max-w-6xl px-4 pb-5 pt-3 sm:pb-6 sm:pt-4">
           <div className="mb-3 flex items-center gap-3 text-[9px] font-bold uppercase tracking-[0.28em] text-[#15304c]/65 sm:text-[10px]">

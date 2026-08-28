@@ -4,6 +4,7 @@ import Link from "next/link";
 import { AlertTriangle, ArrowLeft, LogIn, ShieldCheck } from "lucide-react";
 import { URL_FORMULARIO } from "@/lib/cop2026";
 import { RodapeCop } from "@/components/publico16/cop/rodape-cop";
+import { FaixaCreditos } from "@/components/publico16/creditos";
 
 export const metadata: Metadata = {
   title: "Acesso restrito · Auditoria de COP 2026",
@@ -39,6 +40,9 @@ export default async function AcessoCopPage({
 
   return (
     <div className="tema-institucional flex min-h-screen flex-col bg-tatico-fundo text-[15px] text-branco">
+      {/* Créditos da equipe: faixa do topo, antes do cabeçalho. */}
+      <FaixaCreditos />
+
       <header className="border-b border-borda bg-tatico-super">
         <div className="mx-auto flex max-w-3xl items-center gap-4 px-5 py-4">
           <Image

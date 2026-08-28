@@ -22,6 +22,7 @@ import {
 } from "@/components/public/territorio-chart";
 import type { Metadata } from "next";
 import { CicloFlow } from "@/components/public/ciclo-flow";
+import { EQUIPE, FaixaCreditos } from "@/components/publico16/creditos";
 import { getComunicacao } from "@/lib/db";
 
 // Raiz do portal, servida também em 16bpmmoperacao.vercel.app (mesmo deploy,
@@ -192,6 +193,9 @@ export default async function VitrinePage() {
 
   return (
     <>
+      {/* Créditos da equipe: faixa do topo, acima do cabeçalho fixo. */}
+      <FaixaCreditos />
+
       {/* Cabeçalho fixo */}
       <header className="sticky top-0 z-50 backdrop-blur bg-branco/85 border-b border-borda">
         <div className="faixa-institucional h-1 w-full" />
@@ -1009,9 +1013,13 @@ export default async function VitrinePage() {
             <p>
               &copy; {new Date().getFullYear()} 16º BPM/M — Polícia Militar do Estado de São Paulo.
             </p>
-            <p>
-              Desenvolvido por{" "}
-              <span className="font-medium text-branco/60">Sd PM 231.936-5 Fabricio Pires</span>
+            <p className="flex flex-wrap gap-x-4 gap-y-1">
+              {EQUIPE.map(({ papel, nome }) => (
+                <span key={papel}>
+                  {papel}{" "}
+                  <span className="font-medium text-branco/60">{nome}</span>
+                </span>
+              ))}
             </p>
           </div>
         </div>
