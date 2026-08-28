@@ -79,34 +79,17 @@ export function NavegacaoCop({
             <ArrowLeft className="h-4 w-4" />
           </Link>
 
-          <Link href="/cop2026" className="flex items-center gap-3.5 sm:gap-4 group">
-            {/* Brasão em Alta Definição, Maior e com Movimento de Pulso/Brilho Tático */}
-            <div className="relative flex items-center justify-center rounded-2xl bg-white p-2 shadow-[0_6px_22px_rgba(202,2,2,0.3)] border-2 border-vermelho/60 transition-all duration-500 group-hover:scale-105 group-hover:border-vermelho group-hover:shadow-[0_8px_30px_rgba(202,2,2,0.5)]">
-              {/* Anel de Radar de Movimento Tático */}
-              <span className="absolute -inset-1 rounded-2xl border-2 border-vermelho animate-ping opacity-30 pointer-events-none" />
-              <Image
-                src="/brand/16bpmm-hd.png"
-                alt="Brasão Oficial do 16º BPM/M"
-                width={72}
-                height={72}
-                className="h-12 w-auto sm:h-16 drop-shadow-md transition-transform duration-500 group-hover:rotate-1"
-                priority
-              />
-            </div>
+          <Link href="/cop2026" className="flex items-center gap-2.5 group">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-vermelho text-white font-serif font-black text-sm shadow-sm transition-transform group-hover:scale-105">
+              16
+            </span>
             <div>
-              <p className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.18em] text-[#ca0202]">
-                Polícia Militar do Estado de São Paulo
+              <p className="font-serif text-sm sm:text-base font-black uppercase leading-tight text-[#1d1d1d]">
+                Portal CCO 16º BPM/M
               </p>
-              <p className="font-serif text-base sm:text-2xl font-black uppercase leading-tight tracking-wider text-[#1d1d1d]">
-                16º Batalhão · COP 2026
+              <p className="text-[11px] font-semibold text-slate-500">
+                {tituloPagina}
               </p>
-              <div className="flex items-center gap-2 text-[11px] sm:text-[12px] font-semibold text-texto-suave mt-0.5">
-                <span className="inline-flex items-center rounded bg-vermelho/10 border border-vermelho/30 px-1.5 py-0.2 text-[10.5px] font-bold text-vermelho uppercase tracking-wider">
-                  Sala de Operações
-                </span>
-                <span className="hidden sm:inline text-slate-400">·</span>
-                <span className="hidden sm:inline font-bold text-branco">{tituloPagina}</span>
-              </div>
             </div>
           </Link>
         </div>

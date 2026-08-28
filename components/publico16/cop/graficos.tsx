@@ -239,15 +239,27 @@ export function AgulhaoMetas({
   const corAgulha = pct >= 80 ? "#16a34a" : pct >= 50 ? "#d97706" : "#ca0202";
 
   return (
-    <div className="card-interativo flex flex-col items-center justify-between rounded-2xl border-2 border-slate-300/85 bg-gradient-to-b from-[#ffffff] via-[#f8fafc] to-[#edf3f8] p-5 sm:p-6 shadow-[0_4px_16px_rgba(15,23,42,0.06)]">
-      <div className="w-full text-center">
+    <div className="relative overflow-hidden card-interativo flex flex-col items-center justify-between rounded-2xl border-2 border-slate-300/85 bg-gradient-to-b from-[#ffffff] via-[#f8fafc] to-[#edf3f8] p-5 sm:p-6 shadow-[0_4px_16px_rgba(15,23,42,0.06)]">
+      {/* Vídeo de Viatura em Segundo Plano */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-25 mix-blend-luminosity scale-110"
+      >
+        <source src="/media/clip_patrulha_noturna.mp4" type="video/mp4" />
+      </video>
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/90 via-white/80 to-white/95" />
+
+      <div className="relative z-10 w-full text-center">
         <p className="font-serif text-base font-bold text-branco tracking-wide">
           {titulo}
         </p>
         <p className="mt-0.5 text-xs text-texto-suave font-medium">{subtitulo}</p>
       </div>
 
-      <div className="relative mt-2 flex items-center justify-center">
+      <div className="relative z-10 mt-2 flex items-center justify-center">
         <svg viewBox="0 0 280 150" className="h-36 w-68 overflow-visible">
           <defs>
             <filter id="needleShadow" x="-20%" y="-20%" width="140%" height="140%">

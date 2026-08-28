@@ -741,6 +741,39 @@ export function DashboardCop({
         </p>
       )}
 
+      {/* ---------------- Brasão Monumental do 16º BPM/M (100% Solto, Sem Fundo Branco, Sem Moldura) ---------------- */}
+      <div className="mb-8 flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-6 sm:gap-8 pt-3 pb-2">
+        {/* Brasão Solto em Alta Definição (Alpha Puro, 4x Maior, Sem Fundo, Sem Moldura) */}
+        <div className="relative shrink-0 flex items-center justify-center">
+          <Image
+            src="/brand/16bpmm-hd.png"
+            alt="Brasão Oficial do 16º Batalhão de Polícia Militar Metropolitano"
+            width={180}
+            height={180}
+            className="h-32 sm:h-44 w-auto object-contain drop-shadow-[0_12px_28px_rgba(0,0,0,0.18)] transition-transform duration-700 hover:scale-105"
+            priority
+          />
+        </div>
+
+        {/* Tipografia Oficial Monumental do Batalhão */}
+        <div className="text-center sm:text-left">
+          <p className="text-xs sm:text-sm font-black uppercase tracking-[0.25em] text-[#ca0202]">
+            Polícia Militar do Estado de São Paulo
+          </p>
+          <h1 className="font-serif text-2xl sm:text-4xl lg:text-5xl font-black uppercase tracking-wider text-[#1d1d1d] mt-1.5 leading-tight">
+            16º Batalhão de Polícia Militar Metropolitano
+          </h1>
+          <div className="mt-2.5 flex flex-wrap items-center justify-center sm:justify-start gap-3">
+            <span className="inline-flex items-center gap-1.5 rounded-md bg-[#ca0202] px-3 py-1 text-xs font-black text-white uppercase tracking-wider shadow-md">
+              COP 2026
+            </span>
+            <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-700">
+              Diretriz PM3-001/02/25 · Sala de Operações & Fiscalização
+            </span>
+          </div>
+        </div>
+      </div>
+
       {/* ---------------- Camada 1: Situação ---------------- */}
       <section aria-label="Situação" className="mb-8">
         <div className="grid gap-5 lg:grid-cols-[1fr_340px]">
@@ -750,17 +783,17 @@ export function DashboardCop({
               className="relative overflow-hidden flex flex-wrap items-start gap-3.5 rounded-2xl border-l-4 border-2 border-slate-300/85 bg-gradient-to-r from-[#ffffff] via-[#f8fafc] to-[#edf3f8] p-5 sm:p-6 shadow-[0_4px_16px_rgba(15,23,42,0.06)]"
               style={{ borderLeftColor: `var(--sinal-${v.nivel})` }}
             >
-              {/* Vídeo Operacional Sutil em Background */}
+              {/* Vídeo Operacional Evidente em Background */}
               <video
                 autoPlay
                 loop
                 muted
                 playsInline
-                className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-15 mix-blend-luminosity scale-105"
+                className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-35 mix-blend-luminosity scale-105"
               >
                 <source src="/media/cop-hero.mp4" type="video/mp4" />
               </video>
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-white via-white/80 to-transparent" />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-white/95 via-white/80 to-white/70" />
 
               <div className="relative z-10 flex flex-wrap items-start gap-3.5 w-full">
                 <Selo nivel={v.nivel} />
