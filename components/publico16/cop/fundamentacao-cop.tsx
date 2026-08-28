@@ -1,6 +1,45 @@
 import Image from "next/image";
 import { BarChart3, ShieldCheck } from "lucide-react";
 
+const FAIXAS_DESEMPENHO = [
+  {
+    intervalo: "0 ≤ resultado < 50%",
+    faixa: "Faixa Crítica",
+    resultado: "Abaixo da Meta",
+    borda: "border-sinal-critico/45",
+    fundo: "bg-sinal-critico-suave",
+    acento: "bg-sinal-critico",
+    texto: "text-sinal-critico",
+  },
+  {
+    intervalo: "50% ≤ resultado < 80%",
+    faixa: "Faixa de Atenção",
+    resultado: "Cumprimento Insuficiente",
+    borda: "border-sinal-atencao/45",
+    fundo: "bg-sinal-atencao-suave",
+    acento: "bg-sinal-atencao",
+    texto: "text-sinal-atencao",
+  },
+  {
+    intervalo: "80% ≤ resultado ≤ 100%",
+    faixa: "Faixa de Conformidade",
+    resultado: "Meta Cumprida",
+    borda: "border-sinal-conforme/45",
+    fundo: "bg-sinal-conforme-suave",
+    acento: "bg-sinal-conforme",
+    texto: "text-sinal-conforme",
+  },
+  {
+    intervalo: "resultado > 100%",
+    faixa: "Faixa de Superação",
+    resultado: "Meta Superada",
+    borda: "border-sinal-superacao/45",
+    fundo: "bg-sinal-superacao-suave",
+    acento: "bg-sinal-superacao",
+    texto: "text-sinal-superacao",
+  },
+] as const;
+
 export function FundamentacaoCop() {
   return (
     <section className="border-b border-borda bg-superficie py-12 sm:py-16" aria-label="Fundamentação e Diretriz">
@@ -95,42 +134,25 @@ export function FundamentacaoCop() {
           </div>
 
           <div className="mb-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-xl border border-sinal-critico/40 bg-sinal-critico-suave p-3.5">
-              <span className="mb-1 block text-[10px] font-black uppercase tracking-[0.16em] text-sinal-critico">
-                0 ≤ resultado &lt; 50%
-              </span>
-              <h4 className="font-serif text-xs font-black uppercase tracking-[0.14em] text-[#07182d]">
-                Faixa Crítica
-              </h4>
-              <p className="mt-1 text-[11px] font-bold text-sinal-critico">Abaixo da Meta</p>
-            </div>
-            <div className="rounded-xl border border-sinal-atencao/40 bg-sinal-atencao-suave p-3.5">
-              <span className="mb-1 block text-[10px] font-black uppercase tracking-[0.16em] text-sinal-atencao">
-                50% ≤ resultado &lt; 80%
-              </span>
-              <h4 className="font-serif text-xs font-black uppercase tracking-[0.14em] text-[#07182d]">
-                Faixa de Atenção
-              </h4>
-              <p className="mt-1 text-[11px] font-bold text-sinal-atencao">Cumprimento Insuficiente</p>
-            </div>
-            <div className="rounded-xl border border-sinal-conforme/40 bg-sinal-conforme-suave p-3.5">
-              <span className="mb-1 block text-[10px] font-black uppercase tracking-[0.16em] text-sinal-conforme">
-                80% ≤ resultado ≤ 100%
-              </span>
-              <h4 className="font-serif text-xs font-black uppercase tracking-[0.14em] text-[#07182d]">
-                Faixa de Conformidade
-              </h4>
-              <p className="mt-1 text-[11px] font-bold text-sinal-conforme">Meta Cumprida</p>
-            </div>
-            <div className="rounded-xl border border-sinal-superacao/40 bg-sinal-superacao-suave p-3.5">
-              <span className="mb-1 block text-[10px] font-black uppercase tracking-[0.16em] text-sinal-superacao">
-                resultado &gt; 100%
-              </span>
-              <h4 className="font-serif text-xs font-black uppercase tracking-[0.14em] text-[#07182d]">
-                Faixa de Superação
-              </h4>
-              <p className="mt-1 text-[11px] font-bold text-sinal-superacao">Meta Superada</p>
-            </div>
+            {FAIXAS_DESEMPENHO.map((item) => (
+              <div
+                key={item.faixa}
+                className={`relative flex min-h-[138px] flex-col overflow-hidden rounded-xl border-2 p-4 shadow-[0_5px_14px_rgba(15,23,42,0.06)] ${item.borda} ${item.fundo}`}
+              >
+                <span className={`absolute inset-x-0 top-0 h-1 ${item.acento}`} aria-hidden="true" />
+                <span
+                  className={`block text-[11px] font-black uppercase leading-tight tracking-[0.11em] sm:text-xs ${item.texto}`}
+                >
+                  {item.intervalo}
+                </span>
+                <h4 className="mt-2 font-serif text-sm font-black uppercase leading-snug tracking-[0.08em] text-[#07182d] sm:text-[15px]">
+                  {item.faixa}
+                </h4>
+                <p className={`mt-auto pt-3 text-xs font-extrabold leading-snug sm:text-[13px] ${item.texto}`}>
+                  {item.resultado}
+                </p>
+              </div>
+            ))}
           </div>
 
           <p className="text-xs italic leading-relaxed text-texto-suave">
