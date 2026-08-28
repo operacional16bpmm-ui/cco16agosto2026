@@ -443,21 +443,21 @@ export function DashboardCop({
           <span className="h-px flex-1 bg-slate-300/80" aria-hidden />
         </div>
 
-        <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 md:grid md:grid-cols-[180px_minmax(0,1fr)_190px] md:items-stretch md:gap-x-0">
+        <div className="mx-auto flex max-w-5xl flex-col items-center gap-6 md:grid md:grid-cols-[160px_minmax(0,1fr)_175px] md:items-stretch md:gap-x-0">
           {/* Brasão oficial do 16º BPM/M */}
-          <div className="relative shrink-0 flex items-center justify-center md:pr-6 md:border-r md:border-slate-300/70">
+          <div className="relative shrink-0 flex items-center justify-center md:pr-2 md:border-r md:border-slate-300/70">
             <Image
               src="/brand/brasao-16bpmm-hd.png"
               alt="Brasão do 16º BPM/M"
               width={2481}
               height={3508}
-              className="h-40 sm:h-44 md:h-52 w-auto object-contain drop-shadow-[0_14px_28px_rgba(7,24,45,0.34)]"
+              className="h-44 sm:h-48 md:h-56 w-auto object-contain drop-shadow-[0_16px_30px_rgba(7,24,45,0.36)]"
               priority
             />
           </div>
 
           {/* Bloco tipográfico */}
-          <div className="flex-1 text-center md:text-left flex flex-col justify-center">
+          <div className="min-w-0 flex-1 text-center md:text-left flex flex-col justify-center">
             <p className="text-[11px] sm:text-xs font-black uppercase tracking-[0.28em] text-[#ca0202]">
               16º Batalhão de Polícia Militar Metropolitano
             </p>
