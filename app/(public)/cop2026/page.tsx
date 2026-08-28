@@ -85,7 +85,7 @@ export default async function Cop2026Page() {
               alt="16º BPM/M · Auditoria de COP 2026 · Controle e Fiscalização das Câmeras Operacionais Corporais"
               width={1536}
               height={1536}
-              className="h-24 w-auto drop-shadow-[0_8px_18px_rgba(7,24,45,0.28)] sm:h-32 md:h-36"
+              className="h-32 w-auto drop-shadow-[0_10px_22px_rgba(7,24,45,0.3)] sm:h-40 md:h-48"
               priority
             />
               <div className="hidden h-28 w-px bg-[#15304c]/20 sm:block" />
@@ -99,9 +99,8 @@ export default async function Cop2026Page() {
                 <p className="mt-1 font-serif text-sm italic text-[#15304c]/80 sm:text-base md:text-lg">
                   das Câmeras Operacionais Corporais
                 </p>
-                <div className="mt-3 flex flex-wrap items-center gap-2 text-[9px] font-bold uppercase tracking-[0.16em] text-[#15304c]/70 sm:text-[10px]">
-                  <span className="rounded bg-[#ca0202] px-2.5 py-1 text-white">COP 2026</span>
-                  <span>Diretriz PM3-001/02/25</span>
+                <div className="mt-3 text-[9px] font-bold uppercase tracking-[0.16em] text-[#15304c]/70 sm:text-[10px]">
+                  Diretriz PM3-001/02/25
                 </div>
               </div>
             </div>
