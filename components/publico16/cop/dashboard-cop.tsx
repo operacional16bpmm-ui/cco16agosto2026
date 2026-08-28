@@ -262,7 +262,8 @@ export function DashboardCop({
         f.semana !== "todas"
           ? `${FMT.format(p.falta)} a realizar na Sem. ${f.semana}`
           : `${FMT.format(p.falta)} evidências a realizar`,
-      icone: <TrendingUp size={17} aria-hidden />,
+      foto: "/media/foto-viatura.jpg",
+      icone: <TrendingUp size={18} aria-hidden />,
     },
     {
       rotulo: "Evidências auditadas",
@@ -271,19 +272,22 @@ export function DashboardCop({
         f.semana !== "todas"
           ? `meta da semana ${f.semana}: ${FMT.format(p.meta)}`
           : `meta do período: ${FMT.format(p.meta)}`,
-      icone: <Target size={17} aria-hidden />,
+      foto: "/media/foto_operacao.jpg",
+      icone: <Target size={18} aria-hidden />,
     },
     {
       rotulo: "Auditores ativos",
       valor: `${FMT.format(p.ativos)}/${FMT.format(p.auditores)}`,
       nota: `${PCT.format(p.auditores ? (p.ativos / p.auditores) * 100 : 0)}% do efetivo designado`,
-      icone: <Users size={17} aria-hidden />,
+      foto: "/media/foto-oficial.jpg",
+      icone: <Users size={18} aria-hidden />,
     },
     {
       rotulo: `Conformidade (≥${p.minimo})`,
       valor: `${PCT.format(p.taxaConf)}%`,
       nota: `${FMT.format(p.conformes)} de ${FMT.format(p.dados.length)} lançamentos`,
-      icone: <CheckCircle2 size={17} aria-hidden />,
+      foto: "/media/foto-rua.jpg",
+      icone: <CheckCircle2 size={18} aria-hidden />,
     },
   ];
 
@@ -811,14 +815,39 @@ export function DashboardCop({
               {kpis.map((k) => (
                 <div
                   key={k.rotulo}
-                  className="card-interativo cartao-painel rounded-2xl border-2 border-slate-300/85 bg-gradient-to-b from-[#ffffff] via-[#f8fafc] to-[#edf3f8] p-5 shadow-[0_4px_16px_rgba(15,23,42,0.06)]"
+                  className="group relative overflow-hidden rounded-2xl border-2 border-slate-300/85 bg-white p-5 shadow-[0_4px_16px_rgba(15,23,42,0.06)] transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_12px_28px_rgba(202,2,2,0.18)] hover:border-vermelho"
                 >
-                  <div className="flex items-center justify-between text-texto-suave">
-                    <span className="rotulo-dado font-bold uppercase tracking-wider text-xs">{k.rotulo}</span>
-                    <span className="text-vermelho">{k.icone}</span>
+                  {/* Foto Real da Operação em Background com Efeito de Movimento */}
+                  <div className="absolute inset-0 z-0 overflow-hidden">
+                    <Image
+                      src={k.foto}
+                      alt={k.rotulo}
+                      fill
+                      sizes="(max-width: 768px) 100vw, 25vw"
+                      className="object-cover opacity-20 transition-transform duration-700 ease-out group-hover:scale-115 group-hover:opacity-30 mix-blend-multiply"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-white via-white/90 to-white/75" />
                   </div>
-                  <p className="metric-hero mt-2 text-3xl sm:text-4xl font-black text-branco">{k.valor}</p>
-                  <p className="mt-1.5 text-[12.5px] font-medium text-texto-suave">{k.nota}</p>
+
+                  {/* Conteúdo em Alto Contraste e Evidência */}
+                  <div className="relative z-10 flex flex-col justify-between h-full">
+                    <div className="flex items-center justify-between text-slate-700">
+                      <span className="font-serif font-black uppercase tracking-wider text-xs text-[#1d1d1d]">
+                        {k.rotulo}
+                      </span>
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 border border-red-200 text-[#ca0202] shadow-xs transition-transform duration-300 group-hover:scale-110 group-hover:bg-vermelho group-hover:text-white">
+                        {k.icone}
+                      </div>
+                    </div>
+                    <p className="metric-hero mt-2.5 text-3xl sm:text-4xl lg:text-5xl font-black text-[#1d1d1d] tracking-tight drop-shadow-2xs">
+                      {k.valor}
+                    </p>
+                    <div className="mt-2">
+                      <span className="text-xs font-bold text-slate-800 bg-white/90 px-2.5 py-0.5 rounded-md inline-block border border-slate-200 shadow-2xs">
+                        {k.nota}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>

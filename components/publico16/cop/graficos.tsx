@@ -240,17 +240,17 @@ export function AgulhaoMetas({
 
   return (
     <div className="relative overflow-hidden card-interativo flex flex-col items-center justify-between rounded-2xl border-2 border-slate-300/85 bg-gradient-to-b from-[#ffffff] via-[#f8fafc] to-[#edf3f8] p-5 sm:p-6 shadow-[0_4px_16px_rgba(15,23,42,0.06)]">
-      {/* Vídeo de Viatura em Segundo Plano Mais Forte */}
+      {/* Vídeo de Viatura em Segundo Plano Mais Forte & Marcante */}
       <video
         autoPlay
         loop
         muted
         playsInline
-        className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-45 mix-blend-luminosity scale-110"
+        className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-65 mix-blend-luminosity scale-110"
       >
         <source src="/media/clip_patrulha_noturna.mp4" type="video/mp4" />
       </video>
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/95 via-white/80 to-white/95" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/90 via-white/70 to-white/90" />
 
       {/* Título e Subtítulo com Alto Contraste */}
       <div className="relative z-10 w-full text-center">
