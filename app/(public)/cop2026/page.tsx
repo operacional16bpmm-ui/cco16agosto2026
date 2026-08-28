@@ -69,20 +69,46 @@ export default async function Cop2026Page() {
     <div
       className={`tema-institucional min-h-screen bg-tatico-fundo text-[15px] text-branco`}
     >
-      <header className="border-b border-branco/10 bg-tatico-super">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-4 sm:py-5">
-          <div className="flex items-center">
+      <header className="border-b border-slate-300/80 bg-[#edf2f6] text-[#07182d] shadow-[0_10px_30px_rgba(7,24,45,0.08)]">
+        <div className="mx-auto max-w-6xl px-4 pb-5 pt-3 sm:pb-6 sm:pt-4">
+          <div className="mb-3 flex items-center gap-3 text-[9px] font-bold uppercase tracking-[0.28em] text-[#15304c]/65 sm:text-[10px]">
+            <span className="h-0.5 w-7 bg-[#ca0202]" />
+            Governo do Estado de São Paulo
+            <span className="hidden h-px flex-1 bg-[#15304c]/15 sm:block" />
+            <span className="hidden sm:inline">Polícia Militar</span>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-6">
+            <div className="flex min-w-0 items-center gap-4 sm:gap-5">
             <Image
               src="/brand/logo-auditoria-cop2026-transparent.png"
               alt="16º BPM/M · Auditoria de COP 2026 · Controle e Fiscalização das Câmeras Operacionais Corporais"
               width={1536}
               height={1536}
-              className="h-24 w-auto drop-shadow-[0_8px_18px_rgba(0,0,0,0.45)] sm:h-32 md:h-40"
+              className="h-24 w-auto drop-shadow-[0_8px_18px_rgba(7,24,45,0.28)] sm:h-32 md:h-36"
               priority
             />
-          </div>
+              <div className="hidden h-28 w-px bg-[#15304c]/20 sm:block" />
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#ca0202] sm:text-xs">
+                  16º Batalhão de Polícia Militar Metropolitano
+                </p>
+                <h1 className="mt-1 font-serif text-2xl font-bold uppercase leading-[1.02] tracking-tight text-[#07182d] sm:text-3xl md:text-4xl">
+                  Auditoria e Governança
+                </h1>
+                <p className="mt-1 font-serif text-sm italic text-[#15304c]/80 sm:text-base md:text-lg">
+                  das Câmeras Operacionais Corporais
+                </p>
+                <div className="mt-3 flex flex-wrap items-center gap-2 text-[9px] font-bold uppercase tracking-[0.16em] text-[#15304c]/70 sm:text-[10px]">
+                  <span className="rounded bg-[#ca0202] px-2.5 py-1 text-white">COP 2026</span>
+                  <span>Diretriz PM3-001/02/25</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex min-w-[220px] flex-col items-stretch gap-2 sm:items-end">
           {/* Sem links de saída: esta página trata só da auditoria de COP. */}
-          <div className="flex w-full flex-wrap items-center gap-2.5 sm:w-auto sm:justify-end">
+          <div className="flex w-full flex-wrap items-center justify-end gap-2.5 sm:w-auto">
             {/* Botões de vitrine: mostram os destinos do Batalhão sem levar a
                 lugar nenhum — esta página trata só da auditoria de COP. */}
             <span
@@ -98,14 +124,16 @@ export default async function Cop2026Page() {
               Página do 16º BPM/M <ArrowRight size={16} />
             </span>
           </div>
-          <div className="w-full text-left sm:w-auto sm:text-right">
-            <p className="font-serif text-base font-bold uppercase tracking-wide text-branco/80">
-              Diretriz nº PM3-001/02/25
-            </p>
-            <p className="text-[13px] font-semibold text-branco/45">
+              <div className="w-full text-right">
+            <p className="font-serif text-sm font-bold uppercase tracking-wide text-[#15304c]/80">
               Preenchimento diário obrigatório
             </p>
-          </div>
+            <p className="text-[12px] font-semibold text-[#15304c]/55">
+              Controle e fiscalização do uso das câmeras
+            </p>
+              </div>
+            </div>
+        </div>
         </div>
       </header>
 
