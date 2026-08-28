@@ -79,28 +79,16 @@ export function NavegacaoCop({
             <ArrowLeft className="h-4 w-4" />
           </Link>
 
-          <Link href="/cop2026" className="flex items-center gap-3 group">
-            {/* Emblema de Auditoria & Fiscalização de COP 2026 */}
-            <div className="relative flex items-center justify-center rounded-full overflow-hidden shadow-md ring-2 ring-vermelho/60 transition-transform duration-300 group-hover:scale-105 group-hover:ring-vermelho shrink-0">
-              <Image
-                src="/brand/emblema-cop2026.jpg"
-                alt="Emblema de Auditoria de COP 2026"
-                width={48}
-                height={48}
-                className="h-10 w-10 sm:h-11 sm:w-11 object-cover"
-                priority
-              />
-            </div>
-            <div>
-              <p className="font-serif text-sm sm:text-base font-black uppercase leading-tight text-[#1d1d1d]">
-                Auditoria de COP 2026
-              </p>
-              <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-600">
-                <span className="text-vermelho">Controle & Fiscalização</span>
-                <span>·</span>
-                <span className="text-slate-500">{tituloPagina}</span>
-              </div>
-            </div>
+          <Link href="/cop2026" className="flex items-center group">
+            {/* Logo Auditoria COP 2026 */}
+            <Image
+              src="/brand/logo-auditoria-cop2026.webp"
+              alt="16º BPM/M · Auditoria COP 2026 — Controle e Fiscalização das Câmeras Operacionais Corporais"
+              width={280}
+              height={80}
+              className="h-11 sm:h-14 w-auto object-contain transition-transform duration-300 group-hover:scale-[1.03]"
+              priority
+            />
           </Link>
         </div>
 
