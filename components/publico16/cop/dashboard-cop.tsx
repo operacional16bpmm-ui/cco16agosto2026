@@ -393,14 +393,14 @@ export function DashboardCop({
             16º Batalhão de Polícia Militar Metropolitano
           </h1>
           <p className="font-serif text-base sm:text-xl font-bold uppercase tracking-widest text-slate-800 mt-1">
-            Auditoria & Fiscalização de Câmeras Operacionais Portáteis
+            Diretriz PM3-001/02/25 · Sala de Controle Operacional
           </p>
           <div className="mt-3 flex flex-wrap items-center justify-center md:justify-start gap-3">
             <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#ca0202] px-4 py-1.5 text-xs sm:text-sm font-black text-white uppercase tracking-wider shadow-md">
               COP 2026
             </span>
-            <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-700 bg-slate-200/80 px-3 py-1.5 rounded-lg">
-              Diretriz PM3-001/02/25 · Sala de Controle Operacional
+            <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-700 bg-slate-200/80 px-3.5 py-1.5 rounded-lg">
+              Auditoria & Governança de Câmeras Operacionais Portáteis
             </span>
           </div>
         </div>
