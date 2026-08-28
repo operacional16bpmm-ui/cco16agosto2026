@@ -25,6 +25,7 @@ const PONTOS_DIRETRIZ = [
     titulo: "MONITORAMENTO & CONTROLE",
     texto: "Aferição, conformidade e auditoria",
     imagem: "/16bpmm/carrossel/slide-5.jpg",
+    video: "/media/clip_patrulha_noturna.mp4",
   },
   {
     numero: "05",
@@ -37,6 +38,7 @@ const PONTOS_DIRETRIZ = [
     titulo: "OBRIGAÇÕES DO OPERADOR",
     texto: "Acionamento, uso e encerramento",
     imagem: "/16bpmm/carrossel/slide-2.jpg",
+    video: "/media/clip_tropa.mp4",
   },
   {
     numero: "07",
@@ -85,14 +87,29 @@ export function DiretrizEmFoco({
                   key={ponto.numero}
                   className="relative isolate min-h-72 overflow-hidden rounded-xl border border-white/20 bg-[#1d2c46] shadow-[0_10px_24px_rgba(0,0,0,0.2)] transition-transform duration-300 hover:-translate-y-1 sm:[&:first-child]:col-span-2"
                 >
-                  <Image
-                    src={ponto.imagem}
-                    alt={`Foto real da Polícia Militar para ${ponto.titulo.toLowerCase()}`}
-                    fill
-                    sizes="(min-width: 640px) 50vw, 100vw"
-                    className="-z-20 object-cover"
-                    priority={variante === "home" && ponto.numero === "01"}
-                  />
+                  {"video" in ponto ? (
+                    <video
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      preload="metadata"
+                      poster={ponto.imagem}
+                      aria-hidden="true"
+                      className="absolute inset-0 -z-20 h-full w-full object-cover"
+                    >
+                      <source src={ponto.video} type="video/mp4" />
+                    </video>
+                  ) : (
+                    <Image
+                      src={ponto.imagem}
+                      alt={`Foto real da Polícia Militar para ${ponto.titulo.toLowerCase()}`}
+                      fill
+                      sizes="(min-width: 640px) 50vw, 100vw"
+                      className="-z-20 object-cover"
+                      priority={variante === "home" && ponto.numero === "01"}
+                    />
+                  )}
                   <div className="absolute inset-0 -z-10 bg-gradient-to-t from-[#071225] via-[#071225]/55 to-[#071225]/10" />
                   <div className="flex min-h-72 flex-col justify-end p-6 text-white sm:p-7">
                     <span className="text-4xl font-black leading-none text-[#e5d332]/90">{ponto.numero}</span>
