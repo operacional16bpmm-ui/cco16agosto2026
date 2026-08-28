@@ -363,8 +363,9 @@ export function RankingFracoes({
                   {d.rotulo}
                   <Selo nivel={d.nivel} />
                   {d.pctBatalhao !== undefined && (
-                    <span className="rounded-md border border-borda/60 bg-branco/5 px-2 py-0.5 text-[11px] font-semibold text-texto-suave">
-                      Cota: {PCT.format(d.pctBatalhao)}% ({FMT.format(d.meta)})
+                    <span className="inline-flex items-center gap-1 rounded-lg border border-[#1d1d1d] bg-[#1d1d1d] px-2.5 py-1 text-[11.5px] font-bold text-white shadow-xs">
+                      <span>Cota: {PCT.format(d.pctBatalhao)}%</span>
+                      <span className="dados font-extrabold text-vermelho">({FMT.format(d.meta)})</span>
                     </span>
                   )}
                 </span>
@@ -415,7 +416,7 @@ export function RankingFracoes({
 
             {/* Evolução semana a semana da Cia */}
             {d.semanas && d.semanas.length > 0 && (
-              <div className="mt-3.5 grid grid-cols-4 gap-2 border-t border-borda/60 pt-3">
+              <div className="mt-3.5 grid grid-cols-2 sm:grid-cols-4 gap-2 border-t border-borda/60 pt-3">
                 {d.semanas.map((s) => (
                   <div
                     key={s.semana}
@@ -463,7 +464,7 @@ export function QuadroSemanalBatalhao({
   onSelecionarSemana?: (semana: string) => void;
 }) {
   return (
-    <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-2.5 sm:gap-3.5 grid-cols-2 lg:grid-cols-4">
       {semanas.map((s) => {
         const ativa = semanaAtiva === String(s.semana);
         return (
@@ -472,7 +473,7 @@ export function QuadroSemanalBatalhao({
             type="button"
             onClick={() => onSelecionarSemana?.(ativa ? "todas" : String(s.semana))}
             className={cn(
-              "card-interativo group rounded-xl border p-4 text-left",
+              "card-interativo group rounded-xl border p-3 sm:p-4 text-left",
               ativa
                 ? "border-vermelho bg-vermelho/10 shadow-inst ring-2 ring-vermelho/80"
                 : "border-borda bg-tatico-super hover:border-vermelho/50 hover:bg-branco/[0.03]"
@@ -480,22 +481,22 @@ export function QuadroSemanalBatalhao({
             aria-pressed={ativa}
             aria-label={`Filtrar por ${s.rotulo} — ${PCT.format(s.pct)}% da meta`}
           >
-            <div className="flex items-center justify-between">
-              <span className="font-serif text-[14px] font-bold text-branco group-hover:text-vermelho">
+            <div className="flex items-center justify-between gap-1">
+              <span className="font-serif text-[13px] sm:text-[14px] font-bold text-branco group-hover:text-vermelho">
                 {s.rotulo}
               </span>
               <Selo nivel={s.nivel} />
             </div>
-            <p className="mt-0.5 text-[11.5px] text-texto-suave">Dias {s.diasRotulo}</p>
+            <p className="mt-0.5 text-[11px] sm:text-[11.5px] text-texto-suave">Dias {s.diasRotulo}</p>
 
-            <div className="mt-3.5 flex items-baseline justify-between">
-              <span className="metric-card text-2xl sm:text-3xl text-branco">
+            <div className="mt-2.5 sm:mt-3.5 flex flex-wrap items-baseline justify-between gap-1">
+              <span className="metric-card text-xl sm:text-2xl xl:text-3xl text-branco">
                 {FMT.format(s.feito)}
-                <span className="text-[13px] font-normal text-texto-suave opacity-80"> / {FMT.format(s.meta)}</span>
+                <span className="text-[12px] font-normal text-texto-suave opacity-80"> / {FMT.format(s.meta)}</span>
               </span>
               <span className={cn(
-                "dados rounded-md px-2 py-0.5 text-xs font-bold",
-                s.pct >= 90 ? "bg-sinal-conforme-suave text-sinal-conforme" : s.pct >= 70 ? "bg-sinal-atencao-suave text-sinal-atencao" : s.pct > 0 ? "bg-sinal-critico-suave text-sinal-critico" : "bg-branco/5 text-texto-suave"
+                "dados rounded-md px-1.5 sm:px-2 py-0.5 text-[11px] sm:text-xs font-bold",
+                s.pct >= 80 ? "bg-sinal-conforme-suave text-sinal-conforme" : s.pct >= 50 ? "bg-sinal-atencao-suave text-sinal-atencao" : s.pct > 0 ? "bg-sinal-critico-suave text-sinal-critico" : "bg-branco/5 text-texto-suave"
               )}>
                 {PCT.format(s.pct)}%
               </span>

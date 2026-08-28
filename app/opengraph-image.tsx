@@ -3,13 +3,13 @@ import path from "node:path";
 import { ImageResponse } from "next/og";
 
 /**
- * Cartão de pré-visualização oficial do link /cop2026 para WhatsApp e redes.
+ * Cartão de pré-visualização oficial do Portal CCO16 para WhatsApp e redes.
  * Padrão CComSoc / PMESP: Azul Noite (#16294a), Vermelho PM (#ca0202), Ouro (#ded845).
  */
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export const alt =
-  "16º BPM/M — Auditoria de COP 2026 · Painel de Controle Operacional de Câmeras Portáteis";
+  "Portal CCO16 — 16º Batalhão de Polícia Militar Metropolitano · PMESP";
 
 export const runtime = "nodejs";
 
@@ -65,7 +65,7 @@ export default async function OpengraphImage() {
               16º Batalhão de Polícia Militar Metropolitano
             </span>
             <span style={{ fontSize: 18, color: "#94a3b8", marginTop: 2 }}>
-              Sala de Operações e Centro de Controle Operacional (CCO)
+              Centro de Controle Operacional (CCO) e Sala de Operações
             </span>
           </div>
         </div>
@@ -86,7 +86,7 @@ export default async function OpengraphImage() {
                 textTransform: "uppercase",
               }}
             >
-              Sala de Comando
+              Portal Oficial
             </span>
             <span
               style={{
@@ -100,7 +100,7 @@ export default async function OpengraphImage() {
                 fontWeight: 700,
               }}
             >
-              Meta: 240 evidências / semana
+              Sistemas de Comando & Gestão Operacional
             </span>
           </div>
 
@@ -113,11 +113,11 @@ export default async function OpengraphImage() {
               color: "#ffffff",
             }}
           >
-            Auditoria de COP 2026
+            PORTAL CCO 16
           </span>
 
           <span style={{ fontSize: 26, color: "#cbd5e1", lineHeight: 1.35, maxWidth: 980 }}>
-            Painel Executivo em tempo real · Manômetro de Atingimento, ranking das 6 Companhias e controle de metas semanais.
+            Auditoria COP 2026, Escala DEJEM, Boletins de Ocorrência, Câmeras ao Vivo e Sala de Operações do 16º BPM/M.
           </span>
         </div>
 
@@ -135,15 +135,15 @@ export default async function OpengraphImage() {
         >
           <div style={{ display: "flex", gap: 24 }}>
             <span style={{ fontWeight: 700, color: "#ffffff" }}>
-              🎯 Meta Geral: 960 Evidências
+              🏛️ 16º BPM/M — Zona Oeste / SP
             </span>
             <span>•</span>
             <span style={{ fontWeight: 700, color: "#ffffff" }}>
-              👥 Quadro COP: 570 PMs
+              ⚡ CCO em Tempo Real
             </span>
           </div>
           <span style={{ color: "#ded845", fontWeight: 700 }}>
-            Diretriz nº PM3-001/02/25
+            Diretriz nº PM3-001/02/23
           </span>
         </div>
       </div>

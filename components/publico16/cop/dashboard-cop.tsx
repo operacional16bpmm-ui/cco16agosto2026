@@ -360,31 +360,34 @@ export function DashboardCop({
     setOrdem((o) => ({ col, desc: o.col === col ? !o.desc : true }));
 
   return (
-    <div className="mx-auto max-w-[1400px] px-5 pb-12">
-      {/* ---------------- Filtros & Paleta de Comando ---------------- */}
-      <div className="nao-imprime sticky top-0 z-20 -mx-5 mb-6 border-b border-borda bg-tatico-fundo/95 px-5 py-3 backdrop-blur">
-        <div className="flex flex-wrap items-center gap-2.5 text-[13px]">
-          <span className="inline-flex items-center gap-1.5 font-semibold text-texto-suave">
-            <Filter size={15} aria-hidden /> Recorte
+    <div className="mx-auto max-w-[1400px] px-3.5 sm:px-5 pb-12">
+      {/* ---------------- Filtros & Paleta de Comando Responsivos ---------------- */}
+      <div className="nao-imprime sticky top-[54px] sm:top-[64px] z-20 -mx-3.5 sm:-mx-5 mb-5 sm:mb-6 border-b border-borda bg-tatico-fundo/95 px-3.5 sm:px-5 py-2.5 sm:py-3 backdrop-blur shadow-xs">
+        <div className="flex flex-wrap items-center gap-2 text-[12.5px] sm:text-[13px]">
+          <span className="hidden sm:inline-flex items-center gap-1.5 font-semibold text-texto-suave">
+            <Filter size={14} aria-hidden /> Recorte:
           </span>
 
-          <PaletaComando
-            lancamentos={lancamentos}
-            onSelecionarFracao={(fracao) => {
-              definir({ fracao });
-              toast.info(`Filtro de fração aplicado: ${ROTULO_SUBUNIDADE[fracao] ?? fracao}`);
-            }}
-            onSelecionarSemana={(semana) => {
-              definir({ semana });
-              toast.info(`Filtro de semana aplicado: Semana ${semana}`);
-            }}
-            onExportarCsv={baixarLancamentosCsv}
-          />
+          <div className="w-full sm:w-auto flex-1 sm:flex-none">
+            <PaletaComando
+              lancamentos={lancamentos}
+              onSelecionarFracao={(fracao) => {
+                definir({ fracao });
+                toast.info(`Filtro aplicado: ${ROTULO_SUBUNIDADE[fracao] ?? fracao}`);
+              }}
+              onSelecionarSemana={(semana) => {
+                definir({ semana });
+                toast.info(`Filtro aplicado: Semana ${semana}`);
+              }}
+              onExportarCsv={baixarLancamentosCsv}
+            />
+          </div>
+
           <select
             value={f.fracao}
             onChange={(e) => definir({ fracao: e.target.value })}
             aria-label="Filtrar por fração"
-            className="rounded-md border border-borda bg-tatico-super px-3 py-2 font-semibold text-branco"
+            className="w-full sm:w-auto rounded-lg border border-borda bg-tatico-super px-2.5 py-1.5 font-semibold text-branco text-xs sm:text-sm"
           >
             <option value="todas">Todas as frações</option>
             {metas.map((m) => (
@@ -393,11 +396,12 @@ export function DashboardCop({
               </option>
             ))}
           </select>
+
           <select
             value={f.semana}
             onChange={(e) => definir({ semana: e.target.value })}
             aria-label="Filtrar por semana"
-            className="rounded-md border border-borda bg-tatico-super px-3 py-2 font-semibold text-branco"
+            className="w-full sm:w-auto rounded-lg border border-borda bg-tatico-super px-2.5 py-1.5 font-semibold text-branco text-xs sm:text-sm"
           >
             <option value="todas">Todas as semanas (Mês)</option>
             <option value="1">Semana 1 (01 a 07)</option>
@@ -405,59 +409,64 @@ export function DashboardCop({
             <option value="3">Semana 3 (15 a 21)</option>
             <option value="4">Semana 4 (22 a 31)</option>
           </select>
+
           <select
             value={f.turno}
             onChange={(e) => definir({ turno: e.target.value })}
             aria-label="Filtrar por turno"
-            className="rounded-md border border-borda bg-tatico-super px-3 py-2 font-semibold text-branco"
+            className="w-full sm:w-auto rounded-lg border border-borda bg-tatico-super px-2.5 py-1.5 font-semibold text-branco text-xs sm:text-sm"
           >
             <option value="todos">Todos os turnos</option>
             <option value="diurno">Diurno</option>
             <option value="noturno">Noturno</option>
           </select>
-          <label className="inline-flex items-center gap-1.5 text-texto-suave">
-            de
-            <input
-              type="date"
-              value={f.de}
-              onChange={(e) => definir({ de: e.target.value })}
-              className="dados rounded-md border border-borda bg-tatico-super px-2 py-1.5 text-branco"
-            />
-          </label>
-          <label className="inline-flex items-center gap-1.5 text-texto-suave">
-            até
-            <input
-              type="date"
-              value={f.ate}
-              onChange={(e) => definir({ ate: e.target.value })}
-              className="dados rounded-md border border-borda bg-tatico-super px-2 py-1.5 text-branco"
-            />
-          </label>
+
+          <div className="flex w-full sm:w-auto items-center gap-1.5 text-xs text-texto-suave">
+            <label className="flex items-center gap-1">
+              De
+              <input
+                type="date"
+                value={f.de}
+                onChange={(e) => definir({ de: e.target.value })}
+                className="dados rounded-lg border border-borda bg-tatico-super px-2 py-1 text-branco text-xs"
+              />
+            </label>
+            <label className="flex items-center gap-1">
+              Até
+              <input
+                type="date"
+                value={f.ate}
+                onChange={(e) => definir({ ate: e.target.value })}
+                className="dados rounded-lg border border-borda bg-tatico-super px-2 py-1 text-branco text-xs"
+              />
+            </label>
+          </div>
+
           <button
             type="button"
             onClick={() => setF(FILTROS_VAZIOS)}
-            className="rounded-md border border-borda px-3 py-2 font-semibold text-texto-suave hover:border-vermelho/40 hover:text-vermelho"
+            className="rounded-lg border border-borda px-2.5 py-1.5 font-semibold text-texto-suave hover:border-vermelho/40 hover:text-vermelho text-xs"
           >
             Limpar
           </button>
 
-          <span className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex items-center gap-2">
             <button
               type="button"
               onClick={atualizar}
-              className="inline-flex items-center gap-1.5 rounded-md border border-borda px-3 py-2 font-semibold text-texto-suave hover:border-vermelho/40 hover:text-vermelho"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-borda px-2.5 py-1.5 font-semibold text-texto-suave hover:border-vermelho/40 hover:text-vermelho text-xs"
             >
-              <RefreshCw size={14} className={cn(atualizando && "animate-spin")} aria-hidden />
+              <RefreshCw size={13} className={cn(atualizando && "animate-spin")} aria-hidden />
               Atualizar
             </button>
             <button
               type="button"
               onClick={() => window.print()}
-              className="inline-flex items-center gap-1.5 rounded-md border border-borda px-3 py-2 font-semibold text-texto-suave hover:border-vermelho/40 hover:text-vermelho"
+              className="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-borda px-2.5 py-1.5 font-semibold text-texto-suave hover:border-vermelho/40 hover:text-vermelho text-xs"
             >
-              <Printer size={14} aria-hidden /> Imprimir
+              <Printer size={13} aria-hidden /> Imprimir
             </button>
-          </span>
+          </div>
         </div>
 
         {chips.length > 0 && (
