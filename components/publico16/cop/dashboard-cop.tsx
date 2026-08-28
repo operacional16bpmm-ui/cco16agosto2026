@@ -48,7 +48,6 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Cartao, Selo, SemDados } from "./primitivos";
 import { PaletaComando } from "./paleta-comando";
-import { DashboardKpiLayout, DashboardLayout } from "./dashboard-layout";
 import {
   AgulhaoMetas,
   BarrasSimples,
@@ -312,7 +311,9 @@ export function DashboardCop({
       key={k.rotulo}
       className={cn(
         "group relative overflow-hidden rounded-2xl border-2 border-slate-300/85 bg-white shadow-[0_4px_16px_rgba(15,23,42,0.06)] transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_12px_28px_rgba(202,2,2,0.22)] hover:border-vermelho",
-        principal ? "h-full p-5 sm:p-6" : "h-full p-4 sm:p-5"
+        principal
+          ? "min-h-[220px] p-6 sm:min-h-[250px] sm:p-7"
+          : "min-h-[148px] p-4 sm:min-h-[164px] sm:p-5"
       )}
     >
       <div className="absolute inset-0 z-0 overflow-hidden">
@@ -864,10 +865,8 @@ export function DashboardCop({
         </p>
       )}
 
-      <DashboardLayout>
-      <div key="situacao" className="h-full">
       {/* ---------------- Camada 1: Situação ---------------- */}
-      <section aria-label="Situação" className="h-full">
+      <section aria-label="Situação" className="mb-8">
         <div className="grid gap-5 lg:grid-cols-[1fr_340px]">
           {/* Lado Esquerdo: Diagnóstico e KPIs */}
           <div className="flex flex-col justify-between gap-4">
@@ -896,10 +895,15 @@ export function DashboardCop({
               </div>
             </div>
 
-            <DashboardKpiLayout>
+            <div className="grid gap-4 sm:grid-cols-2">
               {kpisPrincipais.map((k) => renderKpi(k, true))}
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-3">
               {kpisApoio.map((k) => renderKpi(k, false))}
-              <div key="resumo-indicadores" className="flex h-full flex-wrap items-center justify-between gap-3 rounded-2xl border-2 border-slate-300/85 bg-gradient-to-r from-[#ffffff] via-[#f8fafc] to-[#edf3f8] px-4 py-3 text-[12.5px] text-texto-suave shadow-xs">
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border-2 border-slate-300/85 bg-gradient-to-r from-[#ffffff] via-[#f8fafc] to-[#edf3f8] px-4 py-3 text-[12.5px] text-texto-suave shadow-xs">
               <span>
                 Mediana por lançamento: <strong className="dados text-branco font-bold">{FMT.format(p.mediana)}</strong> · p90{" "}
                 <strong className="dados text-branco font-bold">{FMT.format(p.p90)}</strong>
@@ -911,8 +915,7 @@ export function DashboardCop({
               <span>
                 Partes confeccionadas: <strong className="dados text-branco font-bold">{FMT.format(p.partes)}</strong>
               </span>
-              </div>
-            </DashboardKpiLayout>
+            </div>
           </div>
 
           {/* Lado Direito: Agulhão / Manômetro de Atingimento */}
@@ -929,11 +932,9 @@ export function DashboardCop({
           />
         </div>
       </section>
-      </div>
 
       {/* ---------------- Camada Semanal: Metas por Semana ---------------- */}
-      <div key="semanal" className="h-full">
-      <section aria-label="Evolução Semanal" className="h-full">
+      <section aria-label="Evolução Semanal" className="mb-6">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div>
             <h2 className="font-serif text-base font-bold text-branco">
@@ -990,11 +991,9 @@ export function DashboardCop({
           onSelecionarSemana={(sem) => definir({ semana: sem })}
         />
       </section>
-      </div>
 
       {/* ---------------- Camada 2: Onde agir ---------------- */}
-      <div key="onde-agir" className="h-full">
-      <section aria-label="Onde agir" className="grid h-full gap-6 lg:grid-cols-[1.35fr_1fr]">
+      <section aria-label="Onde agir" className="mb-6 grid gap-6 lg:grid-cols-[1.35fr_1fr]">
         <Cartao
           titulo="Onde agir · frações"
           nota="rateio proporcional ao quadro COP (570 PMs) · clique para filtrar o painel"
@@ -1062,14 +1061,12 @@ export function DashboardCop({
           </p>
         </Cartao>
       </section>
-      </div>
 
       {/* ---------------- Pontos de atenção ---------------- */}
-      <div key="atencao" className="h-full">
       <Cartao
         titulo="Pontos de atenção"
         nota="o que a Diretriz PM3-001/02/25 manda olhar de perto, com a justificativa registrada"
-        className="h-full"
+        className="mb-6"
         ajuda={
           <p>
             Contagem não se cobra — nome se cobra. Aqui cada exceção aparece com quem, quando e a
@@ -1099,11 +1096,9 @@ export function DashboardCop({
           />
         </div>
       </Cartao>
-      </div>
 
       {/* ---------------- Camada 3: Análise técnica ---------------- */}
-      <div key="analise" className="h-full">
-      <section aria-label="Análise técnica" className="h-full">
+      <section aria-label="Análise técnica" className="mb-6">
         <div className="nao-imprime mb-4 flex flex-wrap gap-1.5 border-b border-borda" role="tablist">
           {ABAS.map((a) => (
             <button
@@ -1257,12 +1252,9 @@ export function DashboardCop({
           </Grupo>
         </div>
       </section>
-      </div>
 
       {/* ---------------- Tabela analítica ---------------- */}
-      <div key="tabela" className="h-full">
       <Cartao
-        className="h-full"
         titulo="Tabela analítica"
         nota="produção por auditor no recorte selecionado"
         ajuda={
@@ -1350,14 +1342,12 @@ export function DashboardCop({
           <SemDados texto="Nenhum auditor lançou no recorte." />
         )}
       </Cartao>
-      </div>
 
       {/* ---------------- Lançamentos (planilha bruta) ---------------- */}
-      <div key="lancamentos" className="h-full">
       <Cartao
         titulo="Lançamentos"
         nota={`${FMT.format(p.dados.length)} de ${FMT.format(lancamentos.length)} respostas na planilha`}
-        className="h-full"
+        className="mt-6"
         ajuda={
           <p>
             A resposta como foi lançada no formulário, sem agregação. É esta a linha que instrui
@@ -1444,11 +1434,9 @@ export function DashboardCop({
           <SemDados texto="Nenhuma resposta no recorte." />
         )}
       </Cartao>
-      </div>
 
       {/* ---------------- Galeria Tática & Operacional 16º BPM/M ---------------- */}
-      <div key="galeria" className="h-full">
-      <section className="h-full nao-imprime" aria-label="Galeria Tática Operacional">
+      <section className="mt-8 mb-6 nao-imprime" aria-label="Galeria Tática Operacional">
         <div className="mb-3.5 flex flex-wrap items-center justify-between gap-2">
           <div>
             <h2 className="font-serif text-base font-bold uppercase tracking-wider text-branco">
@@ -1521,8 +1509,6 @@ export function DashboardCop({
           </div>
         </div>
       </section>
-      </div>
-      </DashboardLayout>
 
       {/* ---------------- Glossário ---------------- */}
       <details className="mt-6 rounded-xl border border-borda bg-tatico-super p-5 shadow-inst">

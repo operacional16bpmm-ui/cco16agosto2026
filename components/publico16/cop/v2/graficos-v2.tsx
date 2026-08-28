@@ -1,6 +1,9 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useRef, useCallback } from "react";
+import { Download, Check, Loader2 } from "lucide-react";
+import { toPng } from "html-to-image";
+import { toast } from "sonner";
 import {
   Bar,
   CartesianGrid,
@@ -90,6 +93,10 @@ export function AgulhaoMetasV2({
   titulo?: string;
   subtitulo?: string;
 }) {
+  const painelRef = useRef<HTMLDivElement>(null);
+  const [exportando, setExportando] = useState(false);
+  const [copiado, setCopiado] = useState(false);
+
   const angulo = useMemo(() => {
     const lim = Math.max(0, Math.min(100, pct));
     return -90 + (lim / 100) * 180;
@@ -118,8 +125,107 @@ export function AgulhaoMetasV2({
   const dAmarelo = descreverArco(cx, cy, r, 0, 54);
   const dVerde = descreverArco(cx, cy, r, 54, 90);
 
+  const exportarPNG = useCallback(async () => {
+    if (!painelRef.current || exportando) return;
+    setExportando(true);
+    try {
+      const node = painelRef.current;
+      const dataUrl = await toPng(node, {
+        cacheBust: true,
+        pixelRatio: 2.5,
+        backgroundColor: "#0d1627",
+        filter: (child: HTMLElement) => {
+          if (child.dataset?.noExport === "true") return false;
+          return true;
+        },
+      });
+
+      const nomeArquivo = `painel-metas-v2-16bpmm-${new Date().toISOString().slice(0, 10)}.png`;
+
+      try {
+        const res = await fetch(dataUrl);
+        const blob = await res.blob();
+        const arquivo = new File([blob], nomeArquivo, { type: "image/png" });
+        if (navigator.canShare && navigator.canShare({ files: [arquivo] })) {
+          await navigator.share({
+            title: "16º BPM/M — Auditoria COP 2026",
+            text: `Meta Global COP 2026: ${PCT.format(pct)}% (${FMT.format(total)} de ${FMT.format(meta)} evidências)`,
+            files: [arquivo],
+          });
+          toast.success("Painel compartilhado com sucesso!");
+          setCopiado(true);
+          setTimeout(() => setCopiado(false), 2500);
+          return;
+        }
+      } catch (shareErr: any) {
+        if (shareErr?.name === "AbortError") return;
+      }
+
+      const link = document.createElement("a");
+      link.download = nomeArquivo;
+      link.href = dataUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      try {
+        const res = await fetch(dataUrl);
+        const blob = await res.blob();
+        if (navigator.clipboard && window.ClipboardItem) {
+          await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+          toast.success("PNG baixado e copiado para a área de transferência!");
+        } else {
+          toast.success("Painel exportado em PNG com sucesso!");
+        }
+      } catch {
+        toast.success("Painel exportado em PNG com sucesso!");
+      }
+
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2500);
+    } catch (erro) {
+      console.error("Erro ao exportar painel PNG:", erro);
+      toast.error("Não foi possível exportar a imagem. Tente novamente.");
+    } finally {
+      setExportando(false);
+    }
+  }, [exportando, pct, total, meta]);
+
   return (
-    <div className="flex flex-col items-center justify-between rounded-2xl border border-white/10 bg-gradient-to-b from-[#131e34]/90 via-[#0d1627]/90 to-[#080e1b]/95 p-5 shadow-2xl backdrop-blur-md">
+    <div ref={painelRef} className="relative flex flex-col items-center justify-between rounded-2xl border border-white/10 bg-gradient-to-b from-[#131e34]/90 via-[#0d1627]/90 to-[#080e1b]/95 p-5 shadow-2xl backdrop-blur-md">
+      {/* Botão de Exportar / Compartilhar PNG no topo direito */}
+      <div data-no-export="true" className="absolute top-3.5 right-3.5 z-20">
+        <button
+          type="button"
+          onClick={exportarPNG}
+          disabled={exportando}
+          title="Exportar painel em imagem PNG de alta resolução"
+          aria-label="Exportar painel em PNG"
+          className={cn(
+            "group inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-black uppercase tracking-wider transition-all duration-200 cursor-pointer shadow-xs",
+            copiado
+              ? "bg-emerald-600 text-white border-emerald-700 shadow-md"
+              : "bg-white/10 text-white border-white/20 hover:bg-white hover:text-slate-900 hover:border-white hover:shadow-md active:scale-95"
+          )}
+        >
+          {exportando ? (
+            <>
+              <Loader2 size={12} className="animate-spin text-white group-hover:text-slate-900" />
+              <span className="text-[10px]">Gerando...</span>
+            </>
+          ) : copiado ? (
+            <>
+              <Check size={12} className="stroke-[3] text-white" />
+              <span className="text-[10px]">Salvo!</span>
+            </>
+          ) : (
+            <>
+              <Download size={12} className="text-white group-hover:text-slate-900 transition-colors" />
+              <span className="text-[10.5px] font-bold">Exportar PNG</span>
+            </>
+          )}
+        </button>
+      </div>
       <div className="w-full text-center">
         <h3 className="font-serif text-base font-bold uppercase tracking-wider text-white">
           {titulo}

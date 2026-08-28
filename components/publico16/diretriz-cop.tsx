@@ -1,12 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Download, Lock, Maximize2, RotateCcw, Unlock } from "lucide-react";
+import { Download, Maximize2 } from "lucide-react";
 import { IconeDiretriz } from "@/components/publico16/icones-cop";
-import { ConfigurableSurface } from "@/components/publico16/configurable-surface";
-
-const DIRETRIZ_LAYOUT = [{ i: "leitor-diretriz", x: 0, y: 0, w: 12, h: 24, minW: 4, minH: 10 }];
-const DIRETRIZ_LABELS = { "leitor-diretriz": "Leitor da Diretriz" };
 
 /**
  * Quadro com a Diretriz nº PM3-001/02/25 (Câmeras Operacionais Corporais)
@@ -19,8 +15,6 @@ export function DiretrizCop() {
   // não precisa clicar em nada e o carregamento inicial da página continua leve
   // para quem abre no celular em serviço.
   const [aberto, setAberto] = useState(false);
-  const [editing, setEditing] = useState(false);
-  const [resetToken, setResetToken] = useState(0);
   const alvo = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -40,38 +34,7 @@ export function DiretrizCop() {
   }, [aberto]);
   return (
     <section ref={alvo} className="mt-10">
-      <div className="nao-imprime mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#ca0202]/25 bg-white p-2.5 shadow-sm">
-        <p className="px-2 text-xs font-black uppercase tracking-wider text-[#222]">Diretriz configurável</p>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => setEditing((value) => !value)}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-[#ca0202] px-3 py-2 text-xs font-black text-white"
-          >
-            {editing ? <Lock size={14} /> : <Unlock size={14} />}
-            {editing ? "Concluir organização" : "Organizar quadro"}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              window.localStorage.removeItem("cop2026-diretriz-layout-v1");
-              setResetToken((value) => value + 1);
-            }}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-xs font-black text-slate-700"
-          >
-            <RotateCcw size={14} /> Restaurar
-          </button>
-        </div>
-        {editing && <p className="w-full px-2 text-[11px] font-semibold text-slate-600">Arraste pela faixa vermelha e ajuste largura ou altura pelos cantos.</p>}
-      </div>
-      <ConfigurableSurface
-        storageKey="cop2026-diretriz-layout-v1"
-        editing={editing}
-        resetToken={resetToken}
-        defaults={DIRETRIZ_LAYOUT}
-        labels={DIRETRIZ_LABELS}
-      >
-      <div key="leitor-diretriz" className="h-full overflow-hidden rounded-xl border-2 border-[#ca0202]/25 bg-white shadow-[0_4px_18px_rgba(0,0,0,0.08)]">
+      <div className="overflow-hidden rounded-xl border-2 border-[#ca0202]/25 bg-white shadow-[0_4px_18px_rgba(0,0,0,0.08)]">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b-4 border-[#ca0202] bg-[#111] px-6 py-5">
           <div className="flex items-center gap-4">
             <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-[#ca0202] text-white">
@@ -99,15 +62,10 @@ export function DiretrizCop() {
         {/* O leitor nativo do navegador dá rolagem, busca e zoom sem carregar
             biblioteca nenhuma; o link acima cobre quem estiver no celular. */}
         {aberto ? (
-          <object
-            data={`${arquivo}#view=FitH`}
-            type="application/pdf"
-            className="block min-h-80 w-full"
-            style={{ height: "calc(100% - 96px)" }}
-          >
+          <object data={`${arquivo}#view=FitH`} type="application/pdf" className="block h-[60vh] w-full sm:h-[78vh]">
             <iframe
               src={`${arquivo}#view=FitH`}
-              className="block h-full min-h-80 w-full"
+              className="block h-[60vh] w-full sm:h-[78vh]"
               title="Diretriz nº PM3-001/02/25"
             />
           </object>
@@ -120,7 +78,6 @@ export function DiretrizCop() {
           </div>
         )}
       </div>
-      </ConfigurableSurface>
     </section>
   );
 }

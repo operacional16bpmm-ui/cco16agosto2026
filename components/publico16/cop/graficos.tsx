@@ -35,7 +35,10 @@ import {
   type ProgressoSemana,
   type Nivel,
 } from "@/lib/cop2026-metricas";
-import { AlertCircle } from "lucide-react";
+import { useState, useRef, useCallback } from "react";
+import { AlertCircle, Download, Check, Loader2 } from "lucide-react";
+import { toPng } from "html-to-image";
+import { toast } from "sonner";
 import { COR_NIVEL, Selo } from "./primitivos";
 import { cn } from "@/lib/utils";
 
@@ -378,6 +381,10 @@ export function AgulhaoMetas({
   titulo?: string;
   subtitulo?: string | { linha1: string; linha2?: string; linha3?: string };
 }) {
+  const painelRef = useRef<HTMLDivElement>(null);
+  const [exportando, setExportando] = useState(false);
+  const [copiado, setCopiado] = useState(false);
+
   // A agulha não satura mais em 100%: só para no fim do arco de superação.
   const pctBruto = Number.isFinite(pct) ? pct : 0;
   const pctClamped = Math.min(PCT_MAX_ARCO, Math.max(0, pctBruto));
@@ -390,8 +397,114 @@ export function AgulhaoMetas({
   const nivel: Nivel = nivelPorCumprimento(pct, true);
   const corAgulha = COR_FAIXA[nivel];
 
+  const exportarPNG = useCallback(async () => {
+    if (!painelRef.current || exportando) return;
+    setExportando(true);
+    try {
+      const node = painelRef.current;
+      const dataUrl = await toPng(node, {
+        cacheBust: true,
+        pixelRatio: 2.5,
+        backgroundColor: "#ffffff",
+        filter: (child: HTMLElement) => {
+          if (child.tagName === "VIDEO" || child.dataset?.noExport === "true") {
+            return false;
+          }
+          return true;
+        },
+      });
+
+      const nomeArquivo = `painel-metas-16bpmm-${new Date().toISOString().slice(0, 10)}.png`;
+
+      // Tentativa de compartilhamento nativo em aparelhos móveis
+      try {
+        const res = await fetch(dataUrl);
+        const blob = await res.blob();
+        const arquivo = new File([blob], nomeArquivo, { type: "image/png" });
+        if (navigator.canShare && navigator.canShare({ files: [arquivo] })) {
+          await navigator.share({
+            title: "16º BPM/M — Auditoria COP 2026",
+            text: `Meta Global COP 2026: ${PCT.format(pct)}% (${FMT.format(total)} de ${FMT.format(meta)} evidências)`,
+            files: [arquivo],
+          });
+          toast.success("Painel compartilhado com sucesso!");
+          setCopiado(true);
+          setTimeout(() => setCopiado(false), 2500);
+          return;
+        }
+      } catch (shareErr: unknown) {
+        if (shareErr instanceof DOMException && shareErr.name === "AbortError") return;
+      }
+
+      // Download do PNG
+      const link = document.createElement("a");
+      link.download = nomeArquivo;
+      link.href = dataUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Copiar imagem para a área de transferência como comodidade
+      try {
+        const res = await fetch(dataUrl);
+        const blob = await res.blob();
+        if (navigator.clipboard && window.ClipboardItem) {
+          await navigator.clipboard.write([
+            new ClipboardItem({ "image/png": blob }),
+          ]);
+          toast.success("PNG baixado e copiado para a área de transferência!");
+        } else {
+          toast.success("Painel exportado em PNG com sucesso!");
+        }
+      } catch {
+        toast.success("Painel exportado em PNG com sucesso!");
+      }
+
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2500);
+    } catch (erro) {
+      console.error("Erro ao exportar painel PNG:", erro);
+      toast.error("Não foi possível exportar a imagem. Tente novamente.");
+    } finally {
+      setExportando(false);
+    }
+  }, [exportando, pct, total, meta]);
+
   return (
-    <div className="relative overflow-hidden card-interativo flex flex-col items-center justify-between rounded-2xl border-2 border-slate-300/85 bg-gradient-to-b from-[#ffffff] via-[#f8fafc] to-[#edf3f8] p-5 sm:p-6 shadow-[0_4px_16px_rgba(15,23,42,0.06)]">
+    <div ref={painelRef} className="relative w-full max-w-[440px] overflow-hidden card-interativo flex flex-col items-center justify-between rounded-2xl border-2 border-slate-300/85 bg-gradient-to-b from-[#ffffff] via-[#f8fafc] to-[#edf3f8] p-5 sm:p-6 shadow-[0_4px_16px_rgba(15,23,42,0.06)]">
+      {/* Botão de Exportar / Compartilhar PNG no topo direito */}
+      <div data-no-export="true" className="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 z-20">
+        <button
+          type="button"
+          onClick={exportarPNG}
+          disabled={exportando}
+          title="Exportar painel em imagem PNG de alta resolução para download ou compartilhamento"
+          aria-label="Exportar painel em PNG"
+          className={cn(
+            "group inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-black uppercase tracking-wider transition-all duration-200 cursor-pointer shadow-xs",
+            copiado
+              ? "bg-emerald-600 text-white border-emerald-700 shadow-md"
+              : "bg-white/95 text-slate-800 border-slate-300/90 hover:bg-[#ca0202] hover:text-white hover:border-[#ca0202] hover:shadow-md active:scale-95"
+          )}
+        >
+          {exportando ? (
+            <>
+              <Loader2 size={12} className="animate-spin text-slate-600 group-hover:text-white" />
+              <span className="text-[10px]">Gerando...</span>
+            </>
+          ) : copiado ? (
+            <>
+              <Check size={12} className="stroke-[3] text-white" />
+              <span className="text-[10px]">Salvo!</span>
+            </>
+          ) : (
+            <>
+              <Download size={12} className="text-slate-600 group-hover:text-white transition-colors" />
+              <span className="text-[10.5px] font-bold">Exportar PNG</span>
+            </>
+          )}
+        </button>
+      </div>
       {/* Vídeo de Viatura em Cores Vívidas e Giroflex Iluminado */}
       <video
         autoPlay
@@ -410,23 +523,23 @@ export function AgulhaoMetas({
           {titulo}
         </p>
         {subtitulo && (
-          <div className="mt-1.5 inline-flex flex-col items-center justify-center rounded-xl bg-white/95 border border-slate-300/90 px-3.5 py-1 shadow-xs backdrop-blur-md max-w-full">
+          <div className="mt-1.5 flex w-full max-w-full flex-col items-center justify-center rounded-xl border border-slate-300/90 bg-white/95 px-3.5 py-1 shadow-xs backdrop-blur-md">
             {typeof subtitulo === "string" ? (
-              <span className="text-[10.5px] sm:text-[11.5px] font-black uppercase tracking-wider text-[#ca0202] text-center leading-tight">
+              <span className="w-full max-w-full break-words text-center text-[10.5px] sm:text-[11.5px] font-black uppercase tracking-wider leading-tight text-[#ca0202]">
                 {subtitulo}
               </span>
             ) : (
               <>
-                <span className="text-[11px] sm:text-[11.5px] font-black uppercase tracking-wider text-[#ca0202] text-center">
+                <span className="w-full max-w-full break-words text-center text-[11px] sm:text-[11.5px] font-black uppercase tracking-wider text-[#ca0202]">
                   {subtitulo.linha1}
                 </span>
                 {subtitulo.linha2 && (
-                  <span className="text-[10px] sm:text-[10.5px] font-bold text-slate-700 text-center">
+                  <span className="w-full max-w-full break-words text-center text-[10px] sm:text-[10.5px] font-bold leading-snug text-slate-700">
                     {subtitulo.linha2}
                   </span>
                 )}
                 {subtitulo.linha3 && (
-                  <span className="text-[9.5px] sm:text-[10px] font-semibold text-slate-600 text-center">
+                  <span className="w-full max-w-full break-words text-center text-[9.5px] sm:text-[10px] font-semibold leading-snug text-slate-600">
                     {subtitulo.linha3}
                   </span>
                 )}

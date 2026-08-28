@@ -19,26 +19,12 @@ import {
   TrendingUp,
   Clock,
   Sparkles,
-  Lock,
-  RotateCcw,
-  Unlock,
 } from "lucide-react";
 import { ROTULO_SUBUNIDADE, type LancamentoCop, type MetaSubunidade } from "@/lib/cop2026";
 import { AssinaturaDesenvolvimento, SelosSeguranca } from "@/components/publico16/cop/rodape-cop";
 import { calcularPainel, FMT, PCT } from "@/lib/cop2026-metricas";
 import { DiretrizEmFoco } from "@/components/publico16/diretriz-em-foco";
 import { AgulhaoMetas } from "@/components/publico16/cop/graficos";
-import { ConfigurableSurface } from "@/components/publico16/configurable-surface";
-
-const BRIEFING_LAYOUT = [
-  { i: "cabecalho-slide", x: 0, y: 0, w: 12, h: 4, minW: 4, minH: 3 },
-  { i: "conteudo-slide", x: 0, y: 4, w: 12, h: 17, minW: 4, minH: 6 },
-];
-
-const BRIEFING_LABELS = {
-  "cabecalho-slide": "Cabeçalho do slide",
-  "conteudo-slide": "Conteúdo do slide",
-};
 
 /**
  * Briefing Executivo Interativo em Slides para o Comando:
@@ -60,8 +46,6 @@ export function BriefingSlides({
 }) {
   const [i, setI] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
-  const [editing, setEditing] = useState(false);
-  const [resetToken, setResetToken] = useState(0);
 
   // Métrica consolidada usando o mesmo motor de cálculo do Dashboard
   const p = calcularPainel(lancamentos, metas, {
@@ -633,25 +617,6 @@ export function BriefingSlides({
 
         {/* Indicador Central de Slide */}
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setEditing((value) => !value)}
-            className="inline-flex items-center gap-1.5 rounded-md border border-white/20 bg-white/5 px-2.5 py-1.5 text-xs font-bold uppercase tracking-wide text-white/80 transition-colors hover:border-[#ca0202] hover:text-white"
-            title="Mover e redimensionar os quadros deste slide"
-          >
-            {editing ? <Lock size={14} /> : <Unlock size={14} />}
-            <span className="hidden lg:inline">{editing ? "Concluir" : "Organizar"}</span>
-          </button>
-          <button
-            onClick={() => {
-              window.localStorage.removeItem(`cop2026-briefing-slide-${i}-v1`);
-              setResetToken((value) => value + 1);
-            }}
-            className="inline-flex items-center gap-1.5 rounded-md border border-white/20 bg-white/5 px-2.5 py-1.5 text-xs font-bold uppercase tracking-wide text-white/80 transition-colors hover:border-[#ca0202] hover:text-white"
-            title="Restaurar o layout deste slide"
-          >
-            <RotateCcw size={14} />
-            <span className="hidden xl:inline">Restaurar</span>
-          </button>
           <span className="text-xs font-mono font-bold text-white/50">SLIDE</span>
           <span className="rounded-md bg-[#ca0202] px-2 py-0.5 text-xs font-mono font-black text-white">
             0{i + 1} / 0{total}
@@ -695,21 +660,8 @@ export function BriefingSlides({
       {/* ---------------- CORPO DO SLIDE ATUAL COM ANIMAÇÃO ---------------- */}
       <div className="relative z-10 flex flex-1 items-center justify-center px-4 py-6 sm:px-8 sm:py-8 overflow-y-auto">
         <div key={i} className="w-full max-w-5xl animate-[slideIn_350ms_cubic-bezier(0.16,1,0.3,1)]">
-          {editing && (
-            <p className="nao-imprime mb-2 rounded-lg border border-[#ca0202]/45 bg-[#ca0202]/15 px-3 py-2 text-center text-[11px] font-bold text-white/85">
-              Arraste pelas faixas vermelhas e redimensione pelos cantos. Cada slide salva sua própria disposição.
-            </p>
-          )}
-          <ConfigurableSurface
-            storageKey={`cop2026-briefing-slide-${i}-v1`}
-            editing={editing}
-            resetToken={resetToken}
-            defaults={BRIEFING_LAYOUT}
-            labels={BRIEFING_LABELS}
-            dark
-          >
           {/* Cabeçalho do Slide */}
-          <div key="cabecalho-slide" className="h-full overflow-auto">
+          <div className="mb-6">
             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/15 px-3 py-1 text-xs font-black uppercase tracking-wider text-[#ff5a5a] backdrop-blur-sm">
               <Award size={12} />
               <span>{s.selo}</span>
@@ -725,8 +677,7 @@ export function BriefingSlides({
           </div>
 
           {/* Conteúdo Dinâmico */}
-          <div key="conteudo-slide" className="h-full overflow-auto pr-1">{s.corpo}</div>
-          </ConfigurableSurface>
+          <div>{s.corpo}</div>
         </div>
       </div>
 
