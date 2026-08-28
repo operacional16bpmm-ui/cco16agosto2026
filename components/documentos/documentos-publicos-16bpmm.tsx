@@ -17,7 +17,12 @@ function formatarTamanho(bytes: number | null): string {
  * (iframe) em vez de link de download.
  */
 export async function DocumentosPublicos16BPMM() {
-  const documentos = await listarDocumentosPorSecao("publico");
+  let documentos;
+  try {
+    documentos = await listarDocumentosPorSecao("publico");
+  } catch {
+    return null;
+  }
   if (documentos.length === 0) return null;
 
   return (
