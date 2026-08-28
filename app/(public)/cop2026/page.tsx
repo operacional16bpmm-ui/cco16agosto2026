@@ -201,7 +201,7 @@ export default async function Cop2026Page() {
               href={URL_FORMULARIO}
               target="_blank"
               rel="noopener noreferrer"
-              className="group inline-flex min-h-12 items-center justify-center gap-2.5 rounded-xl border border-red-300/30 bg-gradient-to-br from-[#d50909] to-[#a90000] px-7 py-3.5 text-[15px] font-bold text-white shadow-[0_10px_24px_rgba(126,0,0,0.28)] transition-all duration-200 hover:-translate-y-0.5 hover:from-[#e40707] hover:to-[#bd0000] hover:shadow-[0_14px_28px_rgba(126,0,0,0.36)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white active:translate-y-0"
+              className="group inline-flex min-h-12 items-center justify-center gap-2.5 rounded-xl border border-red-300/40 bg-gradient-to-br from-[#d50909] to-[#a90000] px-7 py-3.5 text-[15px] font-bold text-white shadow-[0_10px_24px_rgba(126,0,0,0.32)] transition-all duration-200 hover:-translate-y-0.5 hover:from-[#e40707] hover:to-[#bd0000] hover:shadow-[0_14px_28px_rgba(126,0,0,0.42)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white active:translate-y-0"
             >
               <FileCheck2 className="h-[18px] w-[18px]" />
               Preencher a auditoria do turno
@@ -209,14 +209,14 @@ export default async function Cop2026Page() {
             </a>
             <a
               href="/cop2026/dashboard"
-              className="inline-flex items-center justify-center gap-2.5 rounded-md border border-white/25 px-6 py-3.5 text-[15px] font-semibold text-white transition-colors hover:border-white/60 hover:bg-white/[0.06]"
+              className="group inline-flex min-h-12 items-center justify-center gap-2.5 rounded-xl border border-white/25 bg-[#07182d]/55 px-6 py-3.5 text-[15px] font-bold text-white shadow-[0_8px_20px_rgba(0,0,0,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/55 hover:bg-[#07182d]/75 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
             >
               <BarChart3 className="h-[18px] w-[18px] text-white/60" />
               Dashboard de metas
             </a>
             <a
               href="/cop2026/briefing"
-              className="inline-flex items-center justify-center gap-2 px-2 py-3.5 text-[15px] font-semibold text-slate-300 underline-offset-4 transition-colors hover:text-white hover:underline"
+              className="group inline-flex min-h-12 items-center justify-center gap-2.5 rounded-xl border border-white/15 bg-white/[0.06] px-5 py-3.5 text-[15px] font-bold text-slate-200 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/35 hover:bg-white/[0.12] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
             >
               <Presentation className="h-[18px] w-[18px]" />
               Briefing executivo
@@ -225,21 +225,22 @@ export default async function Cop2026Page() {
 
           {/* Os parâmetros que a tropa mais pergunta, na altura do olho, em vez
               de enterrados na nota de rodapé da página. */}
-          <dl className="mt-12 grid max-w-3xl grid-cols-2 gap-x-6 gap-y-6 border-t border-white/10 pt-7 sm:grid-cols-4">
+          <dl className="mt-12 grid max-w-4xl grid-cols-2 gap-3 border-t border-white/15 pt-7 sm:grid-cols-4">
             {[
-              { rotulo: "Evidências por turno", valor: "3", nota: "mínimo obrigatório" },
-              { rotulo: "Turnos no período", valor: "15", nota: "escala 12x36" },
-              { rotulo: "Lançamento", valor: "Diário", nota: "ao fim do turno" },
-              { rotulo: "Atualização", valor: "60s", nota: "leitura da planilha" },
+              { rotulo: "Evidências por turno", valor: "3", nota: "mínimo obrigatório", icon: FileCheck2 },
+              { rotulo: "Turnos no período", valor: "15", nota: "escala 12x36", icon: CalendarDays },
+              { rotulo: "Lançamento", valor: "Diário", nota: "ao fim do turno", icon: BarChart3 },
+              { rotulo: "Atualização", valor: "60s", nota: "leitura da planilha", icon: RefreshCw },
             ].map((item) => (
-              <div key={item.rotulo}>
-                <dt className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/40">
+              <div key={item.rotulo} className="rounded-xl border border-white/10 bg-white/[0.055] p-4 shadow-[0_8px_20px_rgba(0,0,0,0.12)] backdrop-blur-sm">
+                <dt className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-white/55">
+                  <item.icon className="h-4 w-4 shrink-0 text-[#f04a4a]" />
                   {item.rotulo}
                 </dt>
                 <dd className="mt-1.5 font-mono text-2xl font-bold leading-none text-white">
                   {item.valor}
                 </dd>
-                <dd className="mt-1 text-[12px] text-white/45">{item.nota}</dd>
+                <dd className="mt-1 text-[12px] font-medium text-white/55">{item.nota}</dd>
               </div>
             ))}
           </dl>
