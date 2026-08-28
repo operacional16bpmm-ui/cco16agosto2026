@@ -920,7 +920,7 @@ export function DashboardCop({
           ].map((img) => (
             <div
               key={img.src}
-              className="group relative h-20 overflow-hidden rounded-xl border border-slate-300/85 bg-slate-900 shadow-sm sm:h-24"
+              className="relative h-20 overflow-hidden rounded-xl border border-slate-300/85 bg-slate-900 shadow-sm sm:h-24"
             >
               <Image
                 src={img.src}
@@ -928,7 +928,7 @@ export function DashboardCop({
                 aria-hidden
                 width={400}
                 height={200}
-                className="h-full w-full object-cover opacity-80 transition-transform duration-500 group-hover:scale-105 group-hover:opacity-100"
+                className="h-full w-full object-cover opacity-80"
               />
               <div className="pointer-events-none absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/90 via-black/30 to-transparent p-2.5">
                 <span className="text-[9.5px] font-black uppercase tracking-wider text-vermelho">

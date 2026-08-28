@@ -396,7 +396,7 @@ export function RankingFracoes({
     <ul className="space-y-3.5">
       {dados.map((d) => (
         <li key={d.chave}>
-          <div className="card-interativo w-full rounded-2xl border-2 border-slate-300/85 bg-gradient-to-r from-[#ffffff] via-[#f8fafc] to-[#edf3f8] p-4 text-left shadow-[0_2px_10px_rgba(15,23,42,0.04)]">
+          <div className="w-full rounded-2xl border-2 border-slate-300/85 bg-gradient-to-r from-[#ffffff] via-[#f8fafc] to-[#edf3f8] p-4 text-left shadow-[0_2px_10px_rgba(15,23,42,0.04)]">
             <button
               type="button"
               onClick={() => onSelecionar?.(d.chave)}
@@ -436,7 +436,7 @@ export function RankingFracoes({
 
               <div className="mt-2.5 h-3 overflow-hidden rounded-full bg-slate-200">
                 <div
-                  className="h-full rounded-full transition-all duration-700"
+                  className="h-full rounded-full"
                   style={{ width: `${Math.min(100, d.pct)}%`, background: COR_NIVEL[d.nivel] }}
                 />
               </div>
@@ -479,7 +479,7 @@ export function RankingFracoes({
                     </div>
                     <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-200">
                       <div
-                        className="h-full rounded-full transition-all duration-500"
+                        className="h-full rounded-full"
                         style={{
                           width: `${Math.min(100, s.pct)}%`,
                           background: COR_NIVEL[s.nivel],
@@ -519,7 +519,7 @@ export function QuadroSemanalBatalhao({
             type="button"
             onClick={() => onSelecionarSemana?.(ativa ? "todas" : String(s.semana))}
             className={cn(
-              "card-semana card-interativo group rounded-2xl border-2 p-3.5 sm:p-4 text-left",
+              "card-semana group rounded-2xl border-2 p-3.5 sm:p-4 text-left",
               ativa
                 ? "border-vermelho bg-gradient-to-b from-red-50 via-white to-red-50/50 shadow-md ring-2 ring-vermelho"
                 : "border-slate-300/85 bg-gradient-to-b from-[#ffffff] via-[#f8fafc] to-[#edf3f8] hover:border-vermelho/60"
@@ -558,7 +558,7 @@ export function QuadroSemanalBatalhao({
 
             <div className="mt-2.5 h-2.5 overflow-hidden rounded-full bg-slate-200">
               <div
-                className="h-full rounded-full transition-all duration-700"
+                className="h-full rounded-full"
                 style={{
                   width: `${Math.min(100, s.pct)}%`,
                   background: COR_NIVEL[s.nivel],
