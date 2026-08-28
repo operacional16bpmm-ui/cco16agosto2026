@@ -358,7 +358,7 @@ export function DashboardCop({
     },
   ];
 
-  const kpisPrincipais = [kpis[0], kpis[4]];
+  const kpisPrincipais = [kpis[0]];
   const kpisApoio = [kpis[1], kpis[2], kpis[3]];
 
   const renderKpi = (k: (typeof kpis)[number], principal: boolean, className?: string) => (
@@ -970,7 +970,7 @@ export function DashboardCop({
 
           {/* Matriz de indicadores: sempre dois blocos por linha no desktop */}
           <div className="grid gap-4 sm:grid-cols-2 lg:col-span-7">
-            {kpisPrincipais.map((k) => renderKpi(k, true))}
+            {kpisPrincipais.map((k) => renderKpi(k, true, "sm:col-span-2"))}
             {kpisApoio.map((k, indice) =>
               renderKpi(k, false, indice === kpisApoio.length - 1 ? "sm:col-span-2" : undefined)
             )}
@@ -982,6 +982,8 @@ export function DashboardCop({
               pct={p.pct}
               total={p.total}
               meta={p.meta}
+              ritmo={RITMO_GLOBAL_RESTANTE}
+              turnosRestantes={TURNOS_RESTANTES_GLOBAL}
               titulo={f.fracao === "todas" ? '16º BPM/M — "1º Ten PM Fernão"' : `Ritmo Operacional · ${ROTULO_SUBUNIDADE[f.fracao] ?? f.fracao}`}
               subtitulo={{
                 linha1: "META GLOBAL — 960 EVIDÊNCIAS",

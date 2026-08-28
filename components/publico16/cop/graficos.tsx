@@ -365,6 +365,8 @@ export function AgulhaoMetas({
   pct,
   total,
   meta,
+  ritmo,
+  turnosRestantes,
   titulo = '16º BPM/M — "1º Ten PM Fernão"',
   subtitulo = {
     linha1: "META GLOBAL — 960 EVIDÊNCIAS",
@@ -375,6 +377,8 @@ export function AgulhaoMetas({
   pct: number;
   total: number;
   meta: number;
+  ritmo?: number;
+  turnosRestantes?: number;
   titulo?: string;
   subtitulo?: string | { linha1: string; linha2?: string; linha3?: string };
 }) {
@@ -513,35 +517,43 @@ export function AgulhaoMetas({
       </div>
 
       {/* Métrica Central — número empilhado, sem gap fantasma da vírgula */}
-      <div className="relative z-10 mt-1 text-center flex flex-col items-center">
-        <div className="flex min-w-[190px] flex-col items-center rounded-3xl border-2 border-slate-300 bg-white/95 px-7 py-3.5 shadow-[0_6px_18px_rgba(15,23,42,0.14),inset_0_1px_0_rgba(255,255,255,0.9)]">
-          <span
-            className="whitespace-nowrap text-6xl font-black leading-none text-[#1d1d1d] drop-shadow-sm sm:text-7xl"
-            style={{ letterSpacing: "-0.035em", fontFeatureSettings: '"tnum" 0' }}
-          >
-            {PCT.format(pct)}%
-          </span>
-          <span
-            className="mt-1.5 text-[11px] font-black uppercase text-slate-600"
-            style={{ letterSpacing: "0.14em" }}
-          >
-            da meta
-          </span>
-        </div>
-        <p className="mt-2 text-xs sm:text-sm font-bold text-slate-800 bg-white/85 px-3 py-1 rounded-lg border border-slate-200 shadow-2xs">
-          <strong className="dados text-[#ca0202] font-black text-sm sm:text-base">{FMT.format(total)}</strong> de{" "}
-          <span className="dados font-extrabold text-[#1d1d1d]">{FMT.format(meta)} evidências</span>
-        </p>
-        <div className="mt-2.5">
-          {nivel === "critico" ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#ca0202] border-2 border-red-700 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-white shadow-md">
-              <AlertCircle size={13} className="text-white shrink-0" />
-              <span>{SUBTITULO_NIVEL.critico}</span>
+      <div className="relative z-10 mt-1 grid w-full items-center justify-items-center gap-3 text-center sm:grid-cols-2 sm:gap-4">
+        <div className="flex min-w-0 flex-col items-center">
+          <div className="flex min-w-[170px] flex-col items-center rounded-3xl border-2 border-slate-300 bg-white/95 px-5 py-3.5 shadow-[0_6px_18px_rgba(15,23,42,0.14),inset_0_1px_0_rgba(255,255,255,0.9)] sm:min-w-[190px] sm:px-7">
+            <span
+              className="whitespace-nowrap text-5xl font-black leading-none text-[#1d1d1d] drop-shadow-sm sm:text-7xl"
+              style={{ letterSpacing: "-0.035em", fontFeatureSettings: '"tnum" 0' }}
+            >
+              {PCT.format(pct)}%
             </span>
-          ) : (
-            <Selo nivel={nivel} />
-          )}
+            <span className="mt-1.5 text-[11px] font-black uppercase text-slate-600" style={{ letterSpacing: "0.14em" }}>
+              da meta
+            </span>
+          </div>
+          <p className="mt-2 rounded-lg border border-slate-200 bg-white/85 px-3 py-1 text-xs font-bold text-slate-800 shadow-2xs sm:text-sm">
+            <strong className="dados text-sm font-black text-[#ca0202] sm:text-base">{FMT.format(total)}</strong> de{" "}
+            <span className="dados font-extrabold text-[#1d1d1d]">{FMT.format(meta)} evidências</span>
+          </p>
+          <div className="mt-2.5">
+            {nivel === "critico" ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-red-700 bg-[#ca0202] px-3.5 py-1 text-xs font-black uppercase tracking-wider text-white shadow-md">
+                <AlertCircle size={13} className="shrink-0 text-white" />
+                <span>{SUBTITULO_NIVEL.critico}</span>
+              </span>
+            ) : (
+              <Selo nivel={nivel} />
+            )}
+          </div>
         </div>
+
+        {ritmo !== undefined && (
+          <div className="flex min-h-[128px] w-full max-w-[170px] flex-col items-center justify-center rounded-2xl border-2 border-[#ca0202]/30 bg-white/90 px-3 py-4 shadow-[0_7px_18px_rgba(15,23,42,0.14)]">
+            <span className="text-[10px] font-black uppercase tracking-[0.12em] text-[#ca0202]">Ritmo necessário</span>
+            <span className="mt-2 text-5xl font-black leading-none tracking-tight text-slate-950">{FMT.format(ritmo)}</span>
+            <span className="mt-2 text-[10px] font-bold leading-tight text-slate-600">evidências/turno</span>
+            <span className="text-[10px] font-semibold leading-tight text-slate-500">· {FMT.format(turnosRestantes ?? 0)} turnos restantes</span>
+          </div>
+        )}
       </div>
 
       {/* Régua de Zonas — cada card leva barra superior colorida; a faixa
