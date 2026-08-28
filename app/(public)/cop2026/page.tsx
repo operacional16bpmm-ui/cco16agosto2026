@@ -117,71 +117,96 @@ export default async function Cop2026Page() {
         </div>
       </header>
 
-      {/* Hero Cinematográfico com Vídeo Tático em Loop Silencioso */}
-      <div className="relative min-h-[380px] sm:min-h-[460px] w-full overflow-hidden bg-[#070b14] flex items-center justify-center border-b-4 border-vermelho">
-        {/* Background Video */}
+      {/* Hero institucional: o cabeçalho acima já nomeia a página, o Batalhão
+          e a Diretriz — aqui não se repete nenhum dos três. O bloco é alinhado
+          à esquerda porque é tela de trabalho, não peça de campanha: caixa
+          alta centralizada com tracking largo lê como anúncio. A linha da
+          Diretriz continua onde o Batalhão fixou, abaixo de AUDITORIA &
+          GOVERNANÇA, em <DiretrizCop />. */}
+      <section className="relative isolate w-full overflow-hidden border-b-4 border-[#ca0202] bg-[#070b14]">
         <video
           autoPlay
           loop
           muted
           playsInline
-          className="absolute inset-0 h-full w-full object-cover opacity-40 scale-105 pointer-events-none"
+          poster="/media/hero-poster.jpg"
+          aria-hidden="true"
+          className="absolute inset-0 h-full w-full object-cover opacity-[0.22]"
         >
           <source src="/media/cop-hero.mp4" type="video/mp4" />
         </video>
-        
-        {/* Camada de Gradiente / Vidro Fumê */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#070b14] via-[#070b14]/60 to-black/40 pointer-events-none" />
 
-        {/* Conteúdo Nobre Sobreposto */}
-        <div className="relative z-10 mx-auto max-w-4xl px-4 py-12 text-center flex flex-col items-center">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-vermelho/60 bg-black/70 px-4 py-1.5 backdrop-blur-md shadow-xl">
-            <span className="h-2.5 w-2.5 rounded-full bg-vermelho animate-pulse" />
-            <span className="text-[11px] sm:text-xs font-black uppercase tracking-widest text-white">
-              Diretriz PM3-001/02/25 · Em Vigor
-            </span>
-          </div>
+        {/* Duas camadas: uma escurece a base para o texto assentar, a outra
+            puxa a imagem para a direita, longe da coluna de leitura. */}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#070b14] via-[#070b14]/85 to-[#070b14]/30" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#070b14] via-transparent to-[#070b14]/70" />
 
-          <h1 className="font-serif text-3xl sm:text-5xl font-black uppercase tracking-wider text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] leading-tight">
-            Auditoria de COP 2026
-          </h1>
-          
-          <p className="mt-2 text-base sm:text-xl font-bold text-vermelho uppercase tracking-widest drop-shadow">
-            16º Batalhão de Polícia Militar Metropolitano
+        <div className="relative mx-auto max-w-6xl px-4 py-14 sm:py-20">
+          <p className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.22em] text-white/55">
+            <span className="h-px w-8 bg-[#ca0202]" />
+            Câmeras Operacionais Corporais
           </p>
 
-          <p className="mt-3 max-w-2xl text-xs sm:text-sm text-slate-200 font-medium leading-relaxed drop-shadow">
-            Controle e fiscalização das Câmeras Operacionais Corporais · Lançamento diário obrigatório de no mínimo 3 evidências por turno.
+          <h2 className="mt-5 max-w-3xl font-serif text-[2rem] font-bold leading-[1.08] text-white sm:text-[3.25rem]">
+            Controle e fiscalização
+            <span className="block text-white/55">do uso das câmeras em serviço</span>
+          </h2>
+
+          <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-slate-300">
+            Cada auditor lança a sua auditoria ao fim do turno, com no mínimo três
+            evidências e os IDs das mídias. O acompanhamento da meta de cada
+            companhia é atualizado a cada minuto.
           </p>
 
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3.5">
+          <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
             <a
               href={URL_FORMULARIO}
               target="_blank"
               rel="noopener noreferrer"
-              className="group relative inline-flex items-center gap-2.5 rounded-xl bg-gradient-to-r from-[#ca0202] via-[#e40707] to-[#ca0202] px-8 py-4 text-sm sm:text-base font-black uppercase tracking-wider text-white shadow-[0_8px_30px_rgba(202,2,2,0.55)] transition-all duration-300 hover:scale-105 hover:shadow-[0_12px_40px_rgba(202,2,2,0.7)]"
+              className="group inline-flex items-center justify-center gap-2.5 rounded-md bg-[#ca0202] px-7 py-3.5 text-[15px] font-bold text-white shadow-sm transition-colors hover:bg-[#e40707] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
             >
-              <FileCheck2 className="h-5 w-5 transition-transform duration-300 group-hover:scale-110" />
-              <span>Preencher Auditoria do Turno</span>
-              <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+              <FileCheck2 className="h-[18px] w-[18px]" />
+              Preencher a auditoria do turno
+              <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
             </a>
             <a
               href="/cop2026/dashboard"
-              className="group inline-flex items-center gap-2.5 rounded-xl border-2 border-white/30 bg-white/10 px-6 py-4 text-sm sm:text-base font-bold uppercase tracking-wider text-white backdrop-blur-md transition-all duration-300 hover:bg-white/20 hover:border-white hover:scale-105"
+              className="inline-flex items-center justify-center gap-2.5 rounded-md border border-white/25 px-6 py-3.5 text-[15px] font-semibold text-white transition-colors hover:border-white/60 hover:bg-white/[0.06]"
             >
-              <BarChart3 className="h-5 w-5 text-red-400 transition-transform duration-300 group-hover:scale-110" />
-              <span>Ver Dashboard de Metas</span>
+              <BarChart3 className="h-[18px] w-[18px] text-white/60" />
+              Dashboard de metas
             </a>
             <a
               href="/cop2026/briefing"
-              className="group inline-flex items-center gap-2.5 rounded-xl border-2 border-white/20 bg-black/40 px-5 py-4 text-sm sm:text-base font-bold uppercase tracking-wider text-slate-200 backdrop-blur-md transition-all duration-300 hover:bg-black/60 hover:text-white hover:border-white/40"
+              className="inline-flex items-center justify-center gap-2 px-2 py-3.5 text-[15px] font-semibold text-slate-300 underline-offset-4 transition-colors hover:text-white hover:underline"
             >
-              <Presentation className="h-5 w-5 text-amber-400 transition-transform duration-300 group-hover:scale-110" />
-              <span>Briefing Executivo</span>
+              <Presentation className="h-[18px] w-[18px]" />
+              Briefing executivo
             </a>
           </div>
+
+          {/* Os parâmetros que a tropa mais pergunta, na altura do olho, em vez
+              de enterrados na nota de rodapé da página. */}
+          <dl className="mt-12 grid max-w-3xl grid-cols-2 gap-x-6 gap-y-6 border-t border-white/10 pt-7 sm:grid-cols-4">
+            {[
+              { rotulo: "Evidências por turno", valor: "3", nota: "mínimo obrigatório" },
+              { rotulo: "Turnos no período", valor: "15", nota: "escala 12x36" },
+              { rotulo: "Lançamento", valor: "Diário", nota: "ao fim do turno" },
+              { rotulo: "Atualização", valor: "60s", nota: "leitura da planilha" },
+            ].map((item) => (
+              <div key={item.rotulo}>
+                <dt className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/40">
+                  {item.rotulo}
+                </dt>
+                <dd className="mt-1.5 font-mono text-2xl font-bold leading-none text-white">
+                  {item.valor}
+                </dd>
+                <dd className="mt-1 text-[12px] text-white/45">{item.nota}</dd>
+              </div>
+            ))}
+          </dl>
         </div>
-      </div>
+      </section>
 
       <AcessoRapido urlFormulario={URL_FORMULARIO} urlPlanilha={URL_PLANILHA} />
 

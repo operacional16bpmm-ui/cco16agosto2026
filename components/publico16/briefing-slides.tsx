@@ -93,7 +93,7 @@ export function BriefingSlides({
             <div className="relative w-64 sm:w-96 aspect-[3/2] overflow-hidden rounded-2xl bg-black/60 shadow-2xl ring-1 ring-white/20">
               <Image
                 src="/cop2026/cop-colete-pmesp.webp"
-                alt="Câmera operacional portátil Motorola acoplada ao uniforme da Polícia Militar do Estado de São Paulo"
+                alt="Câmera operacional corporal Motorola acoplada ao uniforme da Polícia Militar do Estado de São Paulo"
                 width={1200}
                 height={800}
                 className="h-full w-full object-cover"
@@ -224,10 +224,23 @@ export function BriefingSlides({
         <div className="space-y-3">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {p.fracoes.map((f) => {
+              const nivel = f.nivel;
               const corBarra =
-                f.pct >= 80 ? "bg-emerald-500" : f.pct >= 50 ? "bg-amber-500" : "bg-[#ca0202]";
+                nivel === "superacao"
+                  ? "bg-blue-600"
+                  : nivel === "conforme"
+                  ? "bg-emerald-500"
+                  : nivel === "atencao"
+                  ? "bg-amber-500"
+                  : "bg-[#ca0202]";
               const corTexto =
-                f.pct >= 80 ? "text-emerald-400" : f.pct >= 50 ? "text-amber-400" : "text-[#ff5a5a]";
+                nivel === "superacao"
+                  ? "text-blue-400"
+                  : nivel === "conforme"
+                  ? "text-emerald-400"
+                  : nivel === "atencao"
+                  ? "text-amber-400"
+                  : "text-[#ff5a5a]";
 
               return (
                 <div
@@ -280,10 +293,31 @@ export function BriefingSlides({
         <div className="space-y-4">
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {p.semanasBatalhao.map((s) => {
+              const nivel = s.nivel;
               const cor =
-                s.pct >= 80 ? "border-emerald-500/50 bg-emerald-950/20" : s.pct >= 50 ? "border-amber-500/50 bg-amber-950/20" : "border-red-500/50 bg-red-950/20";
+                nivel === "superacao"
+                  ? "border-blue-500/50 bg-blue-950/20"
+                  : nivel === "conforme"
+                  ? "border-emerald-500/50 bg-emerald-950/20"
+                  : nivel === "atencao"
+                  ? "border-amber-500/50 bg-amber-950/20"
+                  : "border-red-500/50 bg-red-950/20";
               const corBadge =
-                s.pct >= 80 ? "text-emerald-400 bg-emerald-500/20" : s.pct >= 50 ? "text-amber-400 bg-amber-500/20" : "text-red-400 bg-red-500/20";
+                nivel === "superacao"
+                  ? "text-blue-400 bg-blue-500/20"
+                  : nivel === "conforme"
+                  ? "text-emerald-400 bg-emerald-500/20"
+                  : nivel === "atencao"
+                  ? "text-amber-400 bg-amber-500/20"
+                  : "text-red-400 bg-red-500/20";
+              const corBarra =
+                nivel === "superacao"
+                  ? "bg-blue-600"
+                  : nivel === "conforme"
+                  ? "bg-emerald-500"
+                  : nivel === "atencao"
+                  ? "bg-amber-500"
+                  : "bg-[#ca0202]";
 
               return (
                 <div
@@ -307,7 +341,7 @@ export function BriefingSlides({
 
                   <div className="h-2.5 w-full overflow-hidden rounded-full bg-white/10">
                     <div
-                      className="h-full rounded-full bg-[#ca0202] transition-all duration-1000"
+                      className={`h-full rounded-full ${corBarra} transition-all duration-1000`}
                       style={{ width: `${Math.min(100, Math.max(3, s.pct))}%` }}
                     />
                   </div>

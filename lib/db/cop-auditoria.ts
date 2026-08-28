@@ -3,7 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { supabaseConfigurado } from "@/lib/preview";
 
 /**
- * Camada de leitura da Auditoria de COP (câmera operacional portátil).
+ * Camada de leitura da Auditoria de COP (câmera operacional corporal).
  * Módulo próprio (não lib/db/secao.ts) porque a fonte é resposta crua de
  * formulário (cop_auditoria_respostas), não indicador agregado do framework
  * de seções — mesmo motivo documentado na migration 008.

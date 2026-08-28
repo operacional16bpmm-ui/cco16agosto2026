@@ -20,7 +20,7 @@ const base = (size: number, className?: string) => ({
   "aria-hidden": true,
 });
 
-/** Prancheta de serviço com a câmera operacional portátil e o visto do turno. */
+/** Prancheta de serviço com a câmera operacional corporal e o visto do turno. */
 export function IconeLancarAuditoria({ size = 48, className }: Props) {
   return (
     <svg {...base(size, className)}>

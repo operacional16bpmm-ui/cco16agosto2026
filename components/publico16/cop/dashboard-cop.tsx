@@ -6,8 +6,10 @@ import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
   ArrowUpDown,
+  ArrowUpRight,
   Calendar,
   CheckCircle2,
+  Clock,
   Download,
   FileWarning,
   Filter,
@@ -169,6 +171,55 @@ function Grupo({ ativo, children }: { ativo: boolean; children: React.ReactNode 
   );
 }
 
+type Kpi = {
+  rotulo: string;
+  valor: string;
+  nota: string;
+  foto: string;
+  icone: React.ReactNode;
+};
+
+/** A casca do cartão saiu do corpo do painel porque a faixa de projeção
+ *  (ritmo necessário e saldo) usa exatamente a mesma: markup duplicado faria
+ *  as duas linhas divergirem no primeiro ajuste de estilo. */
+function CartaoKpi({ dado }: { dado: Kpi }) {
+  return (
+    <div className="group relative overflow-hidden rounded-2xl border-2 border-slate-300/85 bg-white p-5 shadow-[0_4px_16px_rgba(15,23,42,0.06)] transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_12px_28px_rgba(202,2,2,0.22)] hover:border-vermelho">
+      {/* Foto Real da Operação em Cores Vivas e Efeito de Movimento */}
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        <Image
+          src={dado.foto}
+          alt={dado.rotulo}
+          fill
+          sizes="(max-width: 768px) 100vw, 25vw"
+          className="object-cover opacity-35 saturate-135 contrast-105 transition-transform duration-700 ease-out group-hover:scale-115 group-hover:opacity-55"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-white/95 via-white/80 to-white/65" />
+      </div>
+
+      {/* Conteúdo em Alto Contraste e Evidência */}
+      <div className="relative z-10 flex flex-col justify-between h-full">
+        <div className="flex items-center justify-between text-slate-700">
+          <span className="font-serif font-black uppercase tracking-wider text-xs text-[#1d1d1d]">
+            {dado.rotulo}
+          </span>
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 border border-red-200 text-[#ca0202] shadow-xs transition-transform duration-300 group-hover:scale-110 group-hover:bg-vermelho group-hover:text-white">
+            {dado.icone}
+          </div>
+        </div>
+        <p className="metric-hero mt-2.5 text-3xl sm:text-4xl lg:text-5xl font-black text-[#1d1d1d] tracking-tight drop-shadow-2xs">
+          {dado.valor}
+        </p>
+        <div className="mt-2">
+          <span className="text-xs font-bold text-slate-800 bg-white/90 px-2.5 py-0.5 rounded-md inline-block border border-slate-200 shadow-2xs">
+            {dado.nota}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function DashboardCop({
   lancamentos,
   metas,
@@ -254,7 +305,7 @@ export function DashboardCop({
     f.busca && { k: "busca", t: `"${f.busca}"`, limpar: () => definir({ busca: "" }) },
   ].filter(Boolean) as { k: string; t: string; limpar: () => void }[];
 
-  const kpis = [
+  const kpis: Kpi[] = [
     {
       rotulo: "Cumprimento da meta",
       valor: `${PCT.format(p.pct)}%`,
@@ -288,6 +339,47 @@ export function DashboardCop({
       nota: `${FMT.format(p.conformes)} de ${FMT.format(p.dados.length)} lançamentos`,
       foto: "/media/foto-rua.jpg",
       icone: <CheckCircle2 size={18} aria-hidden />,
+    },
+  ];
+
+  /* Projeção de fechamento. A redação copia a de `veredito()` de propósito: o
+     Comando lê as duas no mesmo scroll e divergir na frase vira pergunta em
+     reunião. Quando os turnos previstos já acabaram não há mais "por turno"
+     a projetar — o cartão passa a dizer isso em vez de exibir um número que
+     ninguém consegue mais cumprir. */
+  const turnosRestantesTexto = `${FMT.format(p.turnosRestantes)} turno${
+    p.turnosRestantes === 1 ? "" : "s"
+  } restante${p.turnosRestantes === 1 ? "" : "s"}`;
+
+  const projecoes: Kpi[] = [
+    {
+      rotulo: "Ritmo necessário",
+      valor:
+        p.falta === 0
+          ? "0"
+          : p.turnosRestantes > 0
+            ? FMT.format(Math.ceil(p.ritmoNecessario))
+            : "—",
+      nota:
+        p.falta === 0
+          ? `meta do período já cumprida (${PCT.format(p.pct)}%)`
+          : p.turnosRestantes > 0
+            ? `evidências / turno para atingir os 100% nos ${turnosRestantesTexto}`
+            : `os ${FMT.format(p.turnosPrevistos)} turnos previstos já foram cumpridos`,
+      foto: "/media/reel-patrulha.jpg",
+      icone: <ArrowUpRight size={18} aria-hidden />,
+    },
+    {
+      rotulo: "Saldo restante",
+      valor: FMT.format(p.falta),
+      nota:
+        p.falta === 0
+          ? `nada a realizar sobre a meta de ${FMT.format(p.meta)}`
+          : `evidências a realizar de um total de ${FMT.format(p.meta)} (${PCT.format(
+              p.meta ? (p.falta / p.meta) * 100 : 0
+            )}% da meta)`,
+      foto: "/media/reel-operacao.jpg",
+      icone: <Clock size={18} aria-hidden />,
     },
   ];
 
@@ -813,42 +905,7 @@ export function DashboardCop({
 
             <div className="grid gap-4 sm:grid-cols-2">
               {kpis.map((k) => (
-                <div
-                  key={k.rotulo}
-                  className="group relative overflow-hidden rounded-2xl border-2 border-slate-300/85 bg-white p-5 shadow-[0_4px_16px_rgba(15,23,42,0.06)] transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_12px_28px_rgba(202,2,2,0.22)] hover:border-vermelho"
-                >
-                  {/* Foto Real da Operação em Cores Vivas e Efeito de Movimento */}
-                  <div className="absolute inset-0 z-0 overflow-hidden">
-                    <Image
-                      src={k.foto}
-                      alt={k.rotulo}
-                      fill
-                      sizes="(max-width: 768px) 100vw, 25vw"
-                      className="object-cover opacity-35 saturate-135 contrast-105 transition-transform duration-700 ease-out group-hover:scale-115 group-hover:opacity-55"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-white/95 via-white/80 to-white/65" />
-                  </div>
-
-                  {/* Conteúdo em Alto Contraste e Evidência */}
-                  <div className="relative z-10 flex flex-col justify-between h-full">
-                    <div className="flex items-center justify-between text-slate-700">
-                      <span className="font-serif font-black uppercase tracking-wider text-xs text-[#1d1d1d]">
-                        {k.rotulo}
-                      </span>
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 border border-red-200 text-[#ca0202] shadow-xs transition-transform duration-300 group-hover:scale-110 group-hover:bg-vermelho group-hover:text-white">
-                        {k.icone}
-                      </div>
-                    </div>
-                    <p className="metric-hero mt-2.5 text-3xl sm:text-4xl lg:text-5xl font-black text-[#1d1d1d] tracking-tight drop-shadow-2xs">
-                      {k.valor}
-                    </p>
-                    <div className="mt-2">
-                      <span className="text-xs font-bold text-slate-800 bg-white/90 px-2.5 py-0.5 rounded-md inline-block border border-slate-200 shadow-2xs">
-                        {k.nota}
-                      </span>
-                    </div>
-                  </div>
-                </div>
+                <CartaoKpi key={k.rotulo} dado={k} />
               ))}
             </div>
 
@@ -867,7 +924,7 @@ export function DashboardCop({
             </div>
           </div>
 
-          {/* Lado Direito: Agulhão / Manômetro de Atingimento */}
+          {/* Lado Direito: Agulhão — Conformidade e Ritmo da Gestão Operacional da Meta */}
           <AgulhaoMetas
             pct={p.pct}
             total={p.total}
@@ -885,6 +942,17 @@ export function DashboardCop({
                   }
             }
           />
+        </div>
+      </section>
+
+      {/* ---------------- Projeção de fechamento ----------------
+           Vem logo abaixo da meta porque é a pergunta seguinte do Comando:
+           visto o quanto já foi feito, a que ritmo por turno o resto fecha. */}
+      <section aria-label="Projeção de fechamento" className="mb-8">
+        <div className="grid gap-4 sm:grid-cols-2">
+          {projecoes.map((k) => (
+            <CartaoKpi key={k.rotulo} dado={k} />
+          ))}
         </div>
       </section>
 
@@ -1139,7 +1207,7 @@ export function DashboardCop({
           <Grupo ativo={aba === "distribuicao"}>
               <Cartao
                 titulo="Dispersão por fração"
-                nota="mediana, quartis e p90 de cada companhia"
+                nota="mediana, quartis e p90 de cada fração"
                 conclusao={conclusaoDistribuicao(p)}
                 ajuda={
                   <>

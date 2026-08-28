@@ -1,7 +1,7 @@
 /**
  * Auditoria de COP 2026 — 16º BPM/M
  *
- * Painel da auditoria de câmera operacional portátil (Diretriz PM3-001/02/25).
+ * Painel da auditoria de câmera operacional corporal (Diretriz PM3-001/02/25).
  * A fonte é o Google Forms "Auditoria COP Motorola - 16 BPM/M" e a planilha de
  * respostas da conta institucional operacional16bpmm@gmail.com, que tem duas
  * abas: as respostas cruas e "Parametros", onde o Batalhão fixa o efetivo apto

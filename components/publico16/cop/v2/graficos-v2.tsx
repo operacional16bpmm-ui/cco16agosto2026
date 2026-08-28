@@ -13,14 +13,14 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { Nivel, LinhaFracao, ProgressoSemana } from "@/lib/cop2026-metricas";
+import { nivelPorCumprimento, type Nivel, type LinhaFracao, type ProgressoSemana } from "@/lib/cop2026-metricas";
 import { cn } from "@/lib/utils";
 
 const FMT = new Intl.NumberFormat("pt-BR");
 const PCT = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 });
 
 const COR_NIVEL: Record<Nivel, string> = {
-  superacao: "#3b82f6",
+  superacao: "#2563eb",
   critico: "#ef4444",
   atencao: "#f59e0b",
   conforme: "#10b981",
@@ -95,7 +95,7 @@ export function AgulhaoMetasV2({
     return -90 + (lim / 100) * 180;
   }, [pct]);
 
-  const nivel: Nivel = pct > 100 ? "superacao" : pct >= 80 ? "conforme" : pct >= 50 ? "atencao" : "critico";
+  const nivel: Nivel = nivelPorCumprimento(pct, true);
 
   const polarParaCartesiano = (cx: number, cy: number, r: number, angGraus: number) => {
     const rad = ((angGraus - 90) * Math.PI) / 180;

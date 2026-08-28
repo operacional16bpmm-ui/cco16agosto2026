@@ -29,6 +29,8 @@ import {
   FAIXAS_HORA,
   FMT,
   PCT,
+  SUBTITULO_NIVEL,
+  nivelPorCumprimento,
   type LinhaFracao,
   type ProgressoSemana,
   type Nivel,
@@ -51,6 +53,151 @@ const TOOLTIP = {
   },
   labelStyle: { color: "#1d1d1d", fontWeight: 700 },
 } as const;
+
+// ---------------------------------------------------------------------------
+// Semáforo de faixas — parametrização do Comando
+// ---------------------------------------------------------------------------
+/** Cores vivas das faixas para o velocímetro e para as caixas de percentual.
+ *  As barras de progresso continuam no `COR_NIVEL` (tokens do tema); aqui o
+ *  contraste precisa ser alto porque o painel é projetado em telão. */
+const COR_FAIXA: Record<Nivel, string> = {
+  superacao: "#2563eb",
+  conforme: "#16a34a",
+  atencao: "#d97706",
+  critico: VERM, // "sempre vermelho vivido"
+  neutro: "#94a3b8",
+};
+
+/** Caixa de percentual (ranking e quadro semanal) por faixa. */
+const CAIXA_FAIXA: Record<Nivel, string> = {
+  superacao: "border-blue-300 bg-blue-50 text-blue-800",
+  conforme: "border-emerald-300 bg-emerald-50 text-emerald-800",
+  atencao: "border-amber-300 bg-amber-50 text-amber-800",
+  critico: "border-red-300 bg-red-50 text-red-800",
+  neutro: "border-slate-200 bg-slate-100 text-slate-600",
+};
+
+/** Cor do texto de fecho ("Meta Cumprida" / "Meta Superada"). */
+const TEXTO_FAIXA: Record<Nivel, string> = {
+  superacao: "text-blue-700",
+  conforme: "text-emerald-700",
+  atencao: "text-amber-700",
+  critico: "text-red-700",
+  neutro: "text-slate-600",
+};
+
+/** Fecho positivo: acima de 100% vira "Meta Superada"; empatado em 100%,
+ *  "Meta Cumprida". Evita cair no subtítulo vazio de `neutro` (meta zerada). */
+function nivelDeFecho(nivel: Nivel): Nivel {
+  return nivel === "superacao" ? "superacao" : "conforme";
+}
+
+// ---------------------------------------------------------------------------
+// Geometria do arco do velocímetro
+// ---------------------------------------------------------------------------
+/**
+ * O arco de 0% a 100% ocupa 180° (de 180° a 0°), passo linear de 1,8° por ponto
+ * percentual. A faixa de SUPERAÇÃO (>100%) não cabe como fatia dessa escala sem
+ * distorcê-la, então ela avança 15° ALÉM do fim do arco — mantendo o mesmo passo
+ * — e a agulha satura só no fim desse trecho azul (~108,3%).
+ */
+const CX = 140;
+const CY = 125;
+const RAIO_EXT = 95;
+const RAIO_INT = 68;
+const RAIO_ROTULO = 110;
+const ANG_0 = 180; // 0%
+const ANG_100 = 0; // 100%
+const ANG_FIM = -15; // fim da faixa de superação
+const GRAUS_POR_PCT = (ANG_0 - ANG_100) / 100; // 1,8°/p.p.
+const PCT_MAX_ARCO = (ANG_0 - ANG_FIM) / GRAUS_POR_PCT; // ≈ 108,33%
+const ANG_50 = ANG_0 - 50 * GRAUS_POR_PCT; // 90°
+const ANG_80 = ANG_0 - 80 * GRAUS_POR_PCT; // 36°
+
+/** Ponto do arco em coordenadas SVG (y cresce para baixo, daí o seno subtraído). */
+function pontoArco(raio: number, graus: number) {
+  const r = (graus * Math.PI) / 180;
+  return { x: CX + raio * Math.cos(r), y: CY - raio * Math.sin(r) };
+}
+
+const nn = (v: number) => v.toFixed(2);
+
+/** Fatia anelar entre dois ângulos (percorrida em sentido horário na tela). */
+function fatiaArco(grausInicio: number, grausFim: number) {
+  const extIni = pontoArco(RAIO_EXT, grausInicio);
+  const extFim = pontoArco(RAIO_EXT, grausFim);
+  const intFim = pontoArco(RAIO_INT, grausFim);
+  const intIni = pontoArco(RAIO_INT, grausInicio);
+  return [
+    `M ${nn(extIni.x)} ${nn(extIni.y)}`,
+    `A ${RAIO_EXT} ${RAIO_EXT} 0 0 1 ${nn(extFim.x)} ${nn(extFim.y)}`,
+    `L ${nn(intFim.x)} ${nn(intFim.y)}`,
+    `A ${RAIO_INT} ${RAIO_INT} 0 0 0 ${nn(intIni.x)} ${nn(intIni.y)}`,
+    "Z",
+  ].join(" ");
+}
+
+/** As quatro fatias do arco, na ordem crescente de cumprimento. */
+const FATIAS_ARCO: { nivel: Nivel; d: string }[] = [
+  { nivel: "critico", d: fatiaArco(ANG_0, ANG_50) },
+  { nivel: "atencao", d: fatiaArco(ANG_50, ANG_80) },
+  { nivel: "conforme", d: fatiaArco(ANG_80, ANG_100) },
+  { nivel: "superacao", d: fatiaArco(ANG_100, ANG_FIM) },
+];
+
+/** Divisores brancos nas fronteiras de 50%, 80% e 100%. */
+const DIVISORES_ARCO = [ANG_50, ANG_80, ANG_100].map((g) => ({
+  g,
+  ext: pontoArco(RAIO_EXT, g),
+  int: pontoArco(RAIO_INT, g),
+}));
+
+/** Marcas de texto do arco. `raio` maior no >100% para não colar no 100%. */
+const MARCAS_ARCO: { texto: string; g: number; cor: string; raio?: number }[] = [
+  { texto: "0%", g: ANG_0, cor: "#1d1d1d" },
+  { texto: "50%", g: ANG_50, cor: "#1d1d1d" },
+  { texto: "80%", g: ANG_80, cor: "#1d1d1d" },
+  { texto: "100%", g: ANG_100, cor: "#1d1d1d" },
+  { texto: ">100%", g: ANG_FIM, cor: COR_FAIXA.superacao, raio: 116 },
+];
+
+/** Régua de rodapé: CRÍTICA → ATENÇÃO → CONFORMIDADE → SUPERAÇÃO. */
+const REGUA_FAIXAS: {
+  nivel: Nivel;
+  intervalo: string;
+  caixa: string;
+  valor: string;
+  rotulo: string;
+}[] = [
+  {
+    nivel: "critico",
+    intervalo: "< 50%",
+    caixa: "border-red-600 bg-[#ca0202] shadow-sm",
+    valor: "text-white",
+    rotulo: "font-black text-white",
+  },
+  {
+    nivel: "atencao",
+    intervalo: "50% a 79%",
+    caixa: "border-amber-200 bg-amber-50 shadow-2xs",
+    valor: "text-amber-700",
+    rotulo: "font-bold text-amber-900",
+  },
+  {
+    nivel: "conforme",
+    intervalo: "80% a 100%",
+    caixa: "border-emerald-200 bg-emerald-50 shadow-2xs",
+    valor: "text-emerald-700",
+    rotulo: "font-bold text-emerald-900",
+  },
+  {
+    nivel: "superacao",
+    intervalo: "> 100%",
+    caixa: "border-blue-200 bg-blue-50 shadow-2xs",
+    valor: "text-blue-700",
+    rotulo: "font-bold text-blue-900",
+  },
+];
 
 // ---------------------------------------------------------------------------
 export function ProducaoDiaria({
@@ -230,17 +377,17 @@ export function AgulhaoMetas({
   titulo?: string;
   subtitulo?: string | { linha1: string; linha2?: string };
 }) {
-  const pctClamped = Math.min(100, Math.max(0, pct));
-  const angulo = 180 - pctClamped * 1.8;
+  // A agulha não satura mais em 100%: só para no fim do arco de superação.
+  const pctBruto = Number.isFinite(pct) ? pct : 0;
+  const pctClamped = Math.min(PCT_MAX_ARCO, Math.max(0, pctBruto));
+  const angulo = ANG_0 - pctClamped * GRAUS_POR_PCT;
   const rad = (angulo * Math.PI) / 180;
-  const cx = 140;
-  const cy = 125;
   const needleLen = 78;
-  const nx = cx + needleLen * Math.cos(rad);
-  const ny = cy - needleLen * Math.sin(rad);
+  const nx = CX + needleLen * Math.cos(rad);
+  const ny = CY - needleLen * Math.sin(rad);
 
-  const nivel: Nivel = pct >= 80 ? "conforme" : pct >= 50 ? "atencao" : "critico";
-  const corAgulha = pct >= 80 ? "#16a34a" : pct >= 50 ? "#d97706" : "#ca0202";
+  const nivel: Nivel = nivelPorCumprimento(pct, true);
+  const corAgulha = COR_FAIXA[nivel];
 
   return (
     <div className="relative overflow-hidden card-interativo flex flex-col items-center justify-between rounded-2xl border-2 border-slate-300/85 bg-gradient-to-b from-[#ffffff] via-[#f8fafc] to-[#edf3f8] p-5 sm:p-6 shadow-[0_4px_16px_rgba(15,23,42,0.06)]">
@@ -284,58 +431,66 @@ export function AgulhaoMetas({
       </div>
 
       <div className="relative z-10 mt-2 flex items-center justify-center">
-        <svg viewBox="0 0 280 150" className="h-36 w-68 overflow-visible">
+        <svg viewBox="0 0 280 168" className="h-40 w-68 overflow-visible">
           <defs>
             <filter id="needleShadow" x="-20%" y="-20%" width="140%" height="140%">
               <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.35" />
             </filter>
           </defs>
 
-          {/* Segmento 1: Vermelho (< 50% = 180° a 90°) */}
-          <path
-            d="M 45 125 A 95 95 0 0 1 140 30 L 140 57 A 68 68 0 0 0 72 125 Z"
-            fill="#ca0202"
-            opacity={0.95}
-          />
-
-          {/* Segmento 2: Amarelo (50% a 80% = 90° a 36°) */}
-          <path
-            d="M 140 30 A 95 95 0 0 1 216.85 69.16 L 195.01 85.03 A 68 68 0 0 0 140 57 Z"
-            fill="#d97706"
-            opacity={0.95}
-          />
-
-          {/* Segmento 3: Verde (>= 80% = 36° a 0°) */}
-          <path
-            d="M 216.85 69.16 A 95 95 0 0 1 235 125 L 208 125 A 68 68 0 0 0 195.01 85.03 Z"
-            fill="#16a34a"
-            opacity={0.95}
-          />
+          {/* Faixas: crítica (180°→90°), atenção (90°→36°), conformidade
+              (36°→0°) e superação (0°→-15°, além do fim da escala). */}
+          {FATIAS_ARCO.map((f) => (
+            <path key={f.nivel} d={f.d} fill={COR_FAIXA[f.nivel]} opacity={0.95} />
+          ))}
 
           {/* Divisores sutis entre faixas */}
-          <line x1="140" y1="30" x2="140" y2="57" stroke="#ffffff" strokeWidth="2" opacity="0.8" />
-          <line x1="216.85" y1="69.16" x2="195.01" y2="85.03" stroke="#ffffff" strokeWidth="2" opacity="0.8" />
+          {DIVISORES_ARCO.map((d) => (
+            <line
+              key={d.g}
+              x1={nn(d.ext.x)}
+              y1={nn(d.ext.y)}
+              x2={nn(d.int.x)}
+              y2={nn(d.int.y)}
+              stroke="#ffffff"
+              strokeWidth="2"
+              opacity="0.8"
+            />
+          ))}
 
           {/* Agulha Indicadora */}
           <g filter="url(#needleShadow)" className="transition-all duration-700 ease-out">
             <line
-              x1={cx}
-              y1={cy}
+              x1={CX}
+              y1={CY}
               x2={nx}
               y2={ny}
               stroke={corAgulha}
               strokeWidth="4"
               strokeLinecap="round"
             />
-            <circle cx={cx} cy={cy} r="8" fill="#1d1d1d" stroke={corAgulha} strokeWidth="3" />
-            <circle cx={cx} cy={cy} r="2.5" fill="#ffffff" />
+            <circle cx={CX} cy={CY} r="8" fill="#1d1d1d" stroke={corAgulha} strokeWidth="3" />
+            <circle cx={CX} cy={CY} r="2.5" fill="#ffffff" />
           </g>
 
-          {/* Rótulos dos marcos no arco em preto de alto contraste */}
-          <text x="36" y="142" fontSize="10.5" fontWeight="800" fill="#1d1d1d" textAnchor="middle" className="dados">0%</text>
-          <text x="140" y="18" fontSize="10.5" fontWeight="800" fill="#1d1d1d" textAnchor="middle" className="dados">50%</text>
-          <text x="216" y="52" fontSize="10.5" fontWeight="800" fill="#1d1d1d" textAnchor="middle" className="dados">80%</text>
-          <text x="244" y="142" fontSize="10.5" fontWeight="800" fill="#1d1d1d" textAnchor="middle" className="dados">100%</text>
+          {/* Rótulos dos marcos, posicionados no próprio ângulo da fronteira */}
+          {MARCAS_ARCO.map((m) => {
+            const p = pontoArco(m.raio ?? RAIO_ROTULO, m.g);
+            return (
+              <text
+                key={m.texto}
+                x={nn(p.x)}
+                y={nn(p.y + 3.6)}
+                fontSize="10.5"
+                fontWeight="800"
+                fill={m.cor}
+                textAnchor="middle"
+                className="dados"
+              >
+                {m.texto}
+              </text>
+            );
+          })}
         </svg>
       </div>
 
@@ -355,7 +510,7 @@ export function AgulhaoMetas({
           {nivel === "critico" ? (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-[#ca0202] border-2 border-red-700 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-white shadow-md animate-pulse">
               <AlertCircle size={13} className="text-white shrink-0" />
-              <span>Abaixo da Meta</span>
+              <span>{SUBTITULO_NIVEL.critico}</span>
             </span>
           ) : (
             <Selo nivel={nivel} />
@@ -364,19 +519,15 @@ export function AgulhaoMetas({
       </div>
 
       {/* Régua de Zonas de Atingimento Nítida */}
-      <div className="relative z-10 mt-4 grid w-full grid-cols-3 gap-2 border-t-2 border-slate-200 pt-3 text-center">
-        <div className="rounded-xl border-2 border-red-600 bg-[#ca0202] p-1.5 shadow-sm text-white">
-          <span className="block text-xs font-black text-white">&lt; 50%</span>
-          <span className="text-[10px] font-black text-white uppercase tracking-tight">Abaixo da Meta</span>
-        </div>
-        <div className="rounded-xl border-2 border-amber-200 bg-amber-50 p-1.5 shadow-2xs">
-          <span className="block text-xs font-black text-amber-700">50% a 79%</span>
-          <span className="text-[10px] font-bold text-amber-900 uppercase tracking-tight leading-tight">Faixa de Atenção da Meta</span>
-        </div>
-        <div className="rounded-xl border-2 border-emerald-200 bg-emerald-50 p-1.5 shadow-2xs">
-          <span className="block text-xs font-black text-emerald-700">≥ 80%</span>
-          <span className="text-[10px] font-bold text-emerald-900 uppercase tracking-tight">Meta Cumprida</span>
-        </div>
+      <div className="relative z-10 mt-4 grid w-full grid-cols-2 sm:grid-cols-4 gap-2 border-t-2 border-slate-200 pt-3 text-center">
+        {REGUA_FAIXAS.map((f) => (
+          <div key={f.nivel} className={cn("rounded-xl border-2 p-1.5", f.caixa)}>
+            <span className={cn("block text-xs font-black", f.valor)}>{f.intervalo}</span>
+            <span className={cn("text-[10px] uppercase tracking-tight leading-tight", f.rotulo)}>
+              {SUBTITULO_NIVEL[f.nivel]}
+            </span>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -416,15 +567,12 @@ export function RankingFracoes({
                   )}
                 </span>
 
-                {/* Caixa destacada com cores de semáforo (Verde >=80%, Amarelo 50-79%, Vermelho <50%) */}
+                {/* Caixa destacada com as cores da régua de faixas
+                    (Azul >100%, Verde 80-100%, Âmbar 50-79%, Vermelho <50%) */}
                 <div
                   className={cn(
                     "dados rounded-xl border-2 px-3 py-1 text-[13px] font-black shadow-xs transition-colors",
-                    d.pct >= 80
-                      ? "border-emerald-300 bg-emerald-50 text-emerald-800"
-                      : d.pct >= 50
-                      ? "border-amber-300 bg-amber-50 text-amber-800"
-                      : "border-red-300 bg-red-50 text-red-800"
+                    CAIXA_FAIXA[d.nivel]
                   )}
                 >
                   <span>
@@ -454,7 +602,9 @@ export function RankingFracoes({
                       {FMT.format(Math.ceil(d.ritmoNecessario))}/turno em {FMT.format(d.turnosRestantes)} rest.)
                     </>
                   ) : (
-                    <span className="font-black text-emerald-700">Meta cumprida</span>
+                    <span className={cn("font-black", TEXTO_FAIXA[nivelDeFecho(d.nivel)])}>
+                      {SUBTITULO_NIVEL[nivelDeFecho(d.nivel)]}
+                    </span>
                   )}
                 </span>
               </div>
@@ -543,13 +693,7 @@ export function QuadroSemanalBatalhao({
               <span
                 className={cn(
                   "dados rounded-lg border px-2 py-0.5 text-xs font-black",
-                  s.pct >= 80
-                    ? "border-emerald-300 bg-emerald-50 text-emerald-800"
-                    : s.pct >= 50
-                    ? "border-amber-300 bg-amber-50 text-amber-800"
-                    : s.pct > 0
-                    ? "border-red-300 bg-red-50 text-red-800"
-                    : "border-slate-200 bg-slate-100 text-slate-600"
+                  CAIXA_FAIXA[s.nivel]
                 )}
               >
                 {PCT.format(s.pct)}%
@@ -572,7 +716,9 @@ export function QuadroSemanalBatalhao({
                   Faltam <strong className="dados font-black text-[#ca0202]">{FMT.format(s.falta)}</strong> p/ meta
                 </>
               ) : (
-                <span className="font-black text-emerald-700">Meta semanal atingida</span>
+                <span className={cn("font-black", TEXTO_FAIXA[nivelDeFecho(s.nivel)])}>
+                  {s.nivel === "superacao" ? "Meta semanal superada" : "Meta semanal atingida"}
+                </span>
               )}
             </p>
           </button>
