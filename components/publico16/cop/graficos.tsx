@@ -36,6 +36,7 @@ import {
   type Nivel,
 } from "@/lib/cop2026-metricas";
 import { AlertCircle } from "lucide-react";
+import type { CSSProperties } from "react";
 import { COR_NIVEL, Selo } from "./primitivos";
 import { cn } from "@/lib/utils";
 
@@ -402,7 +403,10 @@ export function AgulhaoMetas({
   const corAgulha = COR_FAIXA[nivel];
 
   return (
-    <div className="relative flex h-full w-full max-w-none flex-col items-center justify-between overflow-hidden rounded-2xl border-2 border-slate-800/75 bg-gradient-to-b from-[#ffffff] via-[#f8fafc] to-[#edf3f8] p-4 shadow-[0_18px_46px_rgba(7,18,37,0.28),0_5px_16px_rgba(7,18,37,0.18)] ring-2 ring-slate-900/15 sm:p-5 card-interativo">
+    <div
+      style={{ "--faixa": corAgulha } as CSSProperties}
+      className="relative flex h-full w-full max-w-none flex-col items-center justify-between overflow-hidden rounded-2xl border-2 border-slate-800/75 bg-gradient-to-b from-[#ffffff] via-[#f8fafc] to-[#edf3f8] p-4 shadow-[0_18px_46px_rgba(7,18,37,0.28),0_5px_16px_rgba(7,18,37,0.18)] ring-2 ring-slate-900/15 sm:p-5 card-interativo"
+    >
       {/* Vídeo de Viatura em Cores Vívidas e Giroflex Iluminado */}
       <video
         autoPlay
@@ -517,74 +521,100 @@ export function AgulhaoMetas({
         </svg>
       </div>
 
-      {/* Métrica Central — número empilhado, sem gap fantasma da vírgula */}
-      <div className="relative z-10 mt-1 grid w-full max-w-[390px] items-start justify-items-stretch gap-3 text-center sm:grid-cols-2 sm:gap-3.5">
-        <div className="flex min-w-0 flex-col items-center">
-          <div className="flex min-h-[128px] w-full flex-col items-center justify-center rounded-3xl border-2 border-slate-300 bg-white/95 px-3 py-3.5 shadow-[0_6px_18px_rgba(15,23,42,0.14),inset_0_1px_0_rgba(255,255,255,0.9)] sm:min-h-[140px] sm:px-5">
-            <span
-              className="whitespace-nowrap text-5xl font-black leading-none text-[#1d1d1d] drop-shadow-sm sm:text-6xl"
-              style={{ letterSpacing: "-0.035em", fontFeatureSettings: '"tnum" 0' }}
-            >
-              {PCT.format(pct)}%
-            </span>
-            <span className="mt-1.5 text-[11px] font-black uppercase text-slate-600" style={{ letterSpacing: "0.14em" }}>
-              da meta
-            </span>
-          </div>
-          <p className="mt-2 rounded-lg border border-slate-200 bg-white/85 px-2.5 py-1 text-[11px] font-bold text-slate-800 shadow-2xs sm:px-3 sm:text-xs">
-            <strong className="dados text-sm font-black text-[#ca0202] sm:text-base">{FMT.format(total)}</strong> de{" "}
-            <span className="dados font-extrabold text-[#1d1d1d]">{FMT.format(meta)} evidências</span>
-          </p>
-          <div className="mt-2.5">
-            {nivel === "critico" ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-red-700 bg-[#ca0202] px-3.5 py-1 text-xs font-black uppercase tracking-wider text-white shadow-md">
-                <AlertCircle size={13} className="shrink-0 text-white" />
-                <span>{SUBTITULO_NIVEL.critico}</span>
-              </span>
-            ) : (
-              <Selo nivel={nivel} />
-            )}
-          </div>
+      {/* Métrica Central — META e RITMO no MESMO tamanho, lado a lado.
+          As duas caixas pulsam na cor da faixa atual (matriz quente→frio). */}
+      <div
+        className={cn(
+          "relative z-10 mt-1 grid w-full max-w-[390px] items-stretch gap-3 text-center sm:gap-3.5",
+          ritmo !== undefined ? "grid-cols-2" : "grid-cols-1"
+        )}
+      >
+        <div
+          className="pulso-faixa-card flex min-h-[130px] flex-col items-center justify-center rounded-2xl border-2 bg-white/95 px-3 py-4 shadow-[0_6px_18px_rgba(15,23,42,0.14),inset_0_1px_0_rgba(255,255,255,0.9)] sm:min-h-[136px]"
+          style={{ borderColor: "color-mix(in srgb, var(--faixa) 55%, white)" }}
+        >
+          <span
+            className="pulso-faixa-texto whitespace-nowrap text-5xl font-black leading-none drop-shadow-sm sm:text-6xl"
+            style={{ letterSpacing: "-0.035em", fontFeatureSettings: '"tnum" 0', color: "var(--faixa)" }}
+          >
+            {PCT.format(pct)}%
+          </span>
+          <span className="mt-1.5 text-[11px] font-black uppercase text-slate-600" style={{ letterSpacing: "0.14em" }}>
+            da meta
+          </span>
         </div>
 
         {ritmo !== undefined && (
-          <div className="flex min-h-[128px] w-full flex-col items-center justify-center rounded-3xl border-2 border-[#ca0202]/30 bg-white/90 px-2.5 py-4 shadow-[0_7px_18px_rgba(15,23,42,0.14)] sm:min-h-[140px] sm:px-3">
-            <span className="text-[10px] font-black uppercase tracking-[0.12em] text-[#ca0202]">Ritmo necessário</span>
-            <span className="mt-2 text-5xl font-black leading-none tracking-tight text-slate-950">{FMT.format(ritmo)}</span>
+          <div
+            className="pulso-faixa-card flex min-h-[130px] flex-col items-center justify-center rounded-2xl border-2 bg-white/95 px-2.5 py-4 shadow-[0_7px_18px_rgba(15,23,42,0.14)] sm:min-h-[136px] sm:px-3"
+            style={{ borderColor: "color-mix(in srgb, var(--faixa) 55%, white)" }}
+          >
+            <span className="pulso-faixa-texto text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: "var(--faixa)" }}>
+              Ritmo necessário
+            </span>
+            <span className="pulso-faixa-texto mt-1.5 text-5xl font-black leading-none tracking-tight sm:text-6xl" style={{ color: "var(--faixa)" }}>
+              {FMT.format(ritmo)}
+            </span>
             <span className="mt-2 text-[10px] font-bold leading-tight text-slate-600">evidências/turno</span>
             <span className="text-[10px] font-semibold leading-tight text-slate-500">· {FMT.format(turnosRestantes ?? 0)} turnos restantes</span>
           </div>
         )}
       </div>
 
-      {/* Régua de Zonas — cada card leva barra superior colorida; a faixa
-          onde a leitura atual cai fica com anel vermelho de destaque. */}
+      {/* Linha horizontal de status — evidências + selo do estado atual, logo
+          abaixo das duas caixas, pulsando na cor da faixa. */}
+      <div className="relative z-10 mt-3 flex w-full max-w-[390px] flex-wrap items-center justify-center gap-2.5 border-t-2 border-slate-300 pt-3">
+        <p
+          className="rounded-full border-2 bg-white/90 px-3.5 py-1 text-[11px] font-bold text-slate-800 shadow-2xs sm:text-xs"
+          style={{ borderColor: "color-mix(in srgb, var(--faixa) 50%, white)" }}
+        >
+          <strong className="dados text-sm font-black sm:text-base" style={{ color: "var(--faixa)" }}>
+            {FMT.format(total)}
+          </strong>{" "}
+          de <span className="dados font-extrabold text-[#1d1d1d]">{FMT.format(meta)} evidências</span>
+        </p>
+        <span
+          className="pulso-faixa inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-xs font-black uppercase tracking-wider text-white shadow-md"
+          style={{ background: "var(--faixa)" }}
+        >
+          {nivel === "critico" || nivel === "atencao" ? (
+            <AlertCircle size={13} className="shrink-0 text-white" />
+          ) : (
+            <span aria-hidden className="text-sm leading-none">
+              {nivel === "superacao" ? "★" : "✓"}
+            </span>
+          )}
+          <span>{SUBTITULO_NIVEL[nivel]}</span>
+        </span>
+      </div>
+
+      {/* Régua de Zonas — cada card na sua própria cor da matriz; a faixa da
+          leitura atual fica preenchida e PULSANDO na cor correspondente. */}
       <div className="relative z-10 mt-4 grid w-full grid-cols-2 gap-2.5 border-t-2 border-slate-300 pt-3 text-center sm:grid-cols-4">
         {REGUA_FAIXAS.map((f) => {
           const ativo = f.nivel === nivel;
+          const cor = COR_FAIXA[f.nivel];
           return (
             <div
               key={f.nivel}
               className={cn(
-                "relative flex min-h-[78px] flex-col justify-center overflow-hidden rounded-xl border-2 px-1.5 py-2.5 shadow-[0_4px_10px_rgba(15,23,42,0.08)] backdrop-blur-sm",
-                f.caixa,
-                ativo && "ring-2 ring-offset-2 ring-offset-white ring-[#ca0202]"
+                "relative flex min-h-[78px] flex-col justify-center overflow-hidden rounded-xl border-2 px-1.5 py-2.5 transition-all",
+                ativo ? "pulso-faixa shadow-md" : "shadow-[0_4px_10px_rgba(15,23,42,0.08)]"
               )}
+              style={
+                ativo
+                  ? { background: cor, borderColor: cor, color: "#ffffff" }
+                  : {
+                      background: `color-mix(in srgb, ${cor} 12%, white)`,
+                      borderColor: `color-mix(in srgb, ${cor} 35%, white)`,
+                      color: cor,
+                    }
+              }
             >
-              <span
-                aria-hidden
-                className="absolute inset-x-0 top-0 h-1.5"
-                style={{ background: COR_FAIXA[f.nivel] }}
-              />
-              <span className={cn("block font-sans text-[11px] font-black leading-tight tracking-[0.02em] sm:text-xs", f.valor)}>
+              <span className="block font-sans text-[11px] font-black leading-tight tracking-[0.02em] sm:text-xs">
                 {f.intervalo}
               </span>
-              <span
-                className={cn(
-                  "mt-1 block font-sans text-[10px] font-extrabold uppercase leading-tight tracking-[0.04em] sm:text-[10.5px]",
-                  f.rotulo
-                )}
-              >
+              <span className="mt-1 block font-sans text-[10px] font-extrabold uppercase leading-tight tracking-[0.04em] sm:text-[10.5px]">
                 {SUBTITULO_NIVEL[f.nivel]}
               </span>
             </div>
