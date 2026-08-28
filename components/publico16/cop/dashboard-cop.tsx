@@ -1104,29 +1104,36 @@ export function DashboardCop({
               </p>
               <p className="mt-1 text-[11px] font-semibold text-slate-500">Progresso visual por fração</p>
             </div>
-            <ul className="space-y-4">
-              {p.fracoes.map((fracao) => (
-                <li key={fracao.chave}>
-                  <div className="mb-1.5 flex items-center gap-2">
-                    <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: `var(--sinal-${fracao.nivel})` }} aria-hidden="true" />
-                    <span className="truncate text-[11px] font-black uppercase tracking-wide text-slate-700">{fracao.rotulo}</span>
-                  </div>
-                  <div
-                    className="h-4 overflow-hidden rounded-full border border-slate-300 bg-slate-200 shadow-inner"
-                    role="img"
-                    aria-label={`${fracao.rotulo}: ${PCT.format(fracao.pct)}% da meta`}
-                  >
+            <ol className="space-y-3">
+              {p.fracoes.map((fracao) => {
+                const largura = Math.min(100, Math.max(0, fracao.pct));
+                return (
+                  <li key={fracao.chave}>
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-3 text-[12px]">
+                      <span className="truncate font-black uppercase tracking-wide text-slate-800">
+                        {fracao.rotulo}
+                      </span>
+                      <span className="dados font-bold text-slate-500">{PCT.format(fracao.pct)}%</span>
+                    </div>
                     <div
-                      className="h-full rounded-full shadow-[0_0_12px_rgba(15,23,42,0.16)] transition-[width] duration-700"
-                      style={{
-                        width: `${Math.min(100, Math.max(0, fracao.pct))}%`,
-                        background: `var(--sinal-${fracao.nivel})`,
-                      }}
-                    />
-                  </div>
-                </li>
-              ))}
-            </ul>
+                      className="mt-1.5 h-6 overflow-hidden rounded bg-slate-200"
+                      role="img"
+                      aria-label={`${fracao.rotulo}: ${PCT.format(fracao.pct)}% da meta`}
+                    >
+                      <div
+                        className="dados flex h-full items-center justify-end rounded pr-2.5 text-[11.5px] font-bold text-white transition-[width] duration-700"
+                        style={{
+                          width: `${Math.max(8, largura)}%`,
+                          background: `linear-gradient(90deg, rgba(0,0,0,0.42) 0%, rgba(0,0,0,0) 100%), var(--sinal-${fracao.nivel})`,
+                        }}
+                      >
+                        {PCT.format(fracao.pct)}%
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
           </aside>
         </div>
       </section>
