@@ -217,14 +217,17 @@ export function AgulhaoMetas({
   pct,
   total,
   meta,
-  titulo = "Ritmo Operacional do Efetivo",
-  subtitulo = "Ciclo completo de 960 evidências distribuídas proporcionalmente",
+  titulo = '16º BPM/M — "1º Ten PM Fernão"',
+  subtitulo = {
+    linha1: "META GLOBAL — 960 EVIDÊNCIAS",
+    linha2: "(Distribuição Proporcional por Matriz Operacional)",
+  },
 }: {
   pct: number;
   total: number;
   meta: number;
   titulo?: string;
-  subtitulo?: string;
+  subtitulo?: string | { linha1: string; linha2?: string };
 }) {
   const pctClamped = Math.min(100, Math.max(0, pct));
   const angulo = 180 - pctClamped * 1.8;
@@ -258,9 +261,16 @@ export function AgulhaoMetas({
           {titulo}
         </p>
         {subtitulo && (
-          <p className="mt-1 text-xs font-bold text-slate-700 bg-white/80 backdrop-blur-xs py-0.5 px-2.5 rounded-md inline-block border border-slate-200">
-            {subtitulo}
-          </p>
+          <div className="mt-1.5 inline-flex flex-col items-center rounded-xl bg-white/95 border border-slate-300/90 px-3.5 py-1 shadow-xs backdrop-blur-md">
+            <span className="text-[11.5px] font-black uppercase tracking-wider text-[#ca0202]">
+              {typeof subtitulo === "string" ? subtitulo : subtitulo.linha1}
+            </span>
+            {typeof subtitulo !== "string" && subtitulo.linha2 && (
+              <span className="text-[10.5px] font-bold text-slate-700">
+                {subtitulo.linha2}
+              </span>
+            )}
+          </div>
         )}
       </div>
 
