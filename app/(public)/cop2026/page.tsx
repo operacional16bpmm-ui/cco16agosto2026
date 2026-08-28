@@ -71,25 +71,15 @@ export default async function Cop2026Page() {
     >
       <header className="border-b border-branco/10 bg-tatico-super">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-4 sm:py-5">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center">
             <Image
-              src="/brand/16bpmm.png"
-              alt="Brasão do 16º BPM/M"
-              // Proporção real do arquivo: declarar quadrado num brasão que não
-              // é quadrado dispara o aviso de aspect ratio do next/image.
-              width={168}
-              height={240}
-              className="h-14 w-auto drop-shadow-sm sm:h-16"
+              src="/brand/logo-auditoria-cop2026-transparent.png"
+              alt="16º BPM/M · Auditoria de COP 2026 · Controle e Fiscalização das Câmeras Operacionais Corporais"
+              width={1536}
+              height={1536}
+              className="h-24 w-auto drop-shadow-[0_8px_18px_rgba(0,0,0,0.45)] sm:h-32 md:h-40"
               priority
             />
-            <div>
-              <p className="font-serif text-xl font-bold uppercase leading-tight tracking-wide text-branco sm:text-2xl">
-                Auditoria de COP 2026
-              </p>
-              <p className="mt-0.5 text-[13px] font-semibold text-[#ca0202] sm:text-sm">
-                16º BPM/M · Câmeras Operacionais Corporais
-              </p>
-            </div>
           </div>
           {/* Sem links de saída: esta página trata só da auditoria de COP. */}
           <div className="flex w-full flex-wrap items-center gap-2.5 sm:w-auto sm:justify-end">
