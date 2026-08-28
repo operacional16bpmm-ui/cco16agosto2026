@@ -445,14 +445,14 @@ export function DashboardCop({
         </div>
 
         <div className="flex flex-col md:flex-row items-center md:items-stretch justify-center md:justify-start gap-6 md:gap-8">
-          {/* Brasão */}
+          {/* Identidade completa da Auditoria COP 2026 */}
           <div className="relative shrink-0 flex items-center justify-center md:pr-8 md:border-r md:border-slate-300/70">
             <Image
-              src="/brand/16bpmm-hd.png"
-              alt="Brasão Oficial do 16º Batalhão de Polícia Militar Metropolitano"
-              width={360}
-              height={360}
-              className="h-40 sm:h-52 md:h-60 lg:h-64 w-auto object-contain drop-shadow-[0_10px_28px_rgba(0,0,0,0.18)]"
+              src="/brand/logo-auditoria-cop2026.png"
+              alt="16º BPM/M — Auditoria COP 2026 — Controle e Fiscalização das Câmeras Operacionais Corporais"
+              width={1536}
+              height={1536}
+              className="h-52 sm:h-64 md:h-72 lg:h-80 w-auto object-contain drop-shadow-[0_12px_30px_rgba(0,0,0,0.22)]"
               priority
             />
           </div>

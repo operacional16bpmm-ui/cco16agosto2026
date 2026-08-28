@@ -6,8 +6,8 @@ import { ArrowLeft, CalendarDays } from "lucide-react";
  * Cabeçalho-capa da página pública do Inventário 2026: uma imagem só (a foto
  * da tropa, em cor, sem duotone pesado) como fundo, com um único gradiente
  * lateral só onde o texto precisa de contraste — o resto da foto fica
- * visível. Brasão e selo da PM entram como marcas por cima, não misturados
- * na foto. Vive fora de .tema-institucional na paleta — usa branco fixo
+ * visível. A identidade da Auditoria COP 2026 entra como marca por cima,
+ * sem se misturar na foto. Vive fora de .tema-institucional na paleta — usa branco fixo
  * porque o texto senta sobre a foto, não sobre o fundo claro do resto da
  * página.
  */
@@ -74,13 +74,14 @@ export function CabecalhoInventario() {
             </div>
           </div>
 
-          <div className="rounded-lg bg-white/95 p-2 shadow-lg backdrop-blur-sm sm:p-2.5">
+          <div className="ml-auto flex shrink-0 items-center justify-center rounded-2xl border border-white/25 bg-white/92 p-2 shadow-[0_14px_35px_rgba(0,0,0,0.38)] backdrop-blur-sm sm:p-3">
             <Image
-              src="/inventario/selo-pm.png"
-              alt="Polícia Militar do Estado de São Paulo"
-              width={175}
-              height={100}
-              className="h-9 w-auto sm:h-11"
+              src="/brand/logo-auditoria-cop2026.png"
+              alt="16º BPM/M — Auditoria COP 2026"
+              width={1536}
+              height={1536}
+              className="h-32 w-auto object-contain sm:h-44 lg:h-52"
+              priority
             />
           </div>
         </div>
