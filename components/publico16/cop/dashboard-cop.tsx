@@ -447,11 +447,11 @@ export function DashboardCop({
           {/* Brasão oficial do 16º BPM/M */}
           <div className="relative shrink-0 flex items-center justify-center md:pr-6 md:border-r md:border-slate-300/70">
             <Image
-              src="/16bpmm/geral/brasao.png"
+              src="/brand/brasao-16bpmm-hd.png"
               alt="Brasão do 16º BPM/M"
-              width={300}
-              height={300}
-              className="h-28 sm:h-32 md:h-40 w-auto object-contain drop-shadow-[0_10px_22px_rgba(7,24,45,0.24)]"
+              width={2481}
+              height={3508}
+              className="h-36 sm:h-40 md:h-48 w-auto object-contain drop-shadow-[0_14px_28px_rgba(7,24,45,0.34)]"
               priority
             />
           </div>

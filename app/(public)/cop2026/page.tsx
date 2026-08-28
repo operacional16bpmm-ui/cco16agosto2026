@@ -81,11 +81,11 @@ export default async function Cop2026Page() {
           <div className="grid items-center gap-x-4 gap-y-5 md:grid-cols-[minmax(130px,180px)_minmax(0,1fr)_minmax(130px,180px)] md:gap-x-5">
             <div className="flex justify-center md:justify-end">
               <Image
-                src="/16bpmm/geral/brasao.png"
+                src="/brand/brasao-16bpmm-hd.png"
                 alt="Brasão do 16º BPM/M"
-                width={300}
-                height={300}
-                className="h-32 w-auto drop-shadow-[0_12px_24px_rgba(7,24,45,0.32)] sm:h-40 md:h-44"
+                width={2481}
+                height={3508}
+                className="h-36 w-auto drop-shadow-[0_14px_28px_rgba(7,24,45,0.35)] sm:h-44 md:h-52"
                 priority
               />
             </div>
