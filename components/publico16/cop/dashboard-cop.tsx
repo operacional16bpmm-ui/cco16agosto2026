@@ -1122,14 +1122,12 @@ export function DashboardCop({
                       aria-label={`${fracao.rotulo}: ${PCT.format(fracao.pct)}% da meta`}
                     >
                       <div
-                        className="dados flex h-full items-center justify-end rounded pr-2.5 text-[11.5px] font-bold text-white transition-[width] duration-700"
+                        className="h-full rounded transition-[width] duration-700"
                         style={{
-                          width: `${Math.max(8, largura)}%`,
+                          width: `${largura}%`,
                           background: `linear-gradient(90deg, rgba(0,0,0,0.42) 0%, rgba(0,0,0,0) 100%), ${COR_FAIXA[fracao.nivel]}`,
                         }}
-                      >
-                        {PCT.format(fracao.pct)}%
-                      </div>
+                      />
                     </div>
                   </li>
                 );
