@@ -218,10 +218,7 @@ export function AgulhaoMetas({
   total,
   meta,
   titulo = '16º BPM/M — "1º Ten PM Fernão"',
-  subtitulo = {
-    linha1: "META GLOBAL — 960 EVIDÊNCIAS",
-    linha2: "Distribuição Proporcional por Matriz Operacional",
-  },
+  subtitulo = "DIRETRIZ PM3-001/02/25 · AMBIENTE EXECUTIVO DE GESTÃO E CONTROLE",
 }: {
   pct: number;
   total: number;
@@ -261,15 +258,12 @@ export function AgulhaoMetas({
           {titulo}
         </p>
         {subtitulo && (
-          <div className="mt-1.5 inline-flex flex-col items-center rounded-xl bg-white/95 border border-slate-300/90 px-3.5 py-1 shadow-xs backdrop-blur-md">
-            <span className="text-[11.5px] font-black uppercase tracking-wider text-[#ca0202]">
-              {typeof subtitulo === "string" ? subtitulo : subtitulo.linha1}
+          <div className="mt-2 inline-flex items-center justify-center rounded-xl bg-white/95 border border-slate-300/90 px-3.5 py-1.5 shadow-xs backdrop-blur-md max-w-full">
+            <span className="text-[10.5px] sm:text-[11.5px] font-black uppercase tracking-wider text-[#ca0202] text-center leading-tight">
+              {typeof subtitulo === "string"
+                ? subtitulo
+                : `${subtitulo.linha1}${subtitulo.linha2 ? ` · ${subtitulo.linha2}` : ""}`}
             </span>
-            {typeof subtitulo !== "string" && subtitulo.linha2 && (
-              <span className="text-[10.5px] font-bold text-slate-700">
-                {subtitulo.linha2}
-              </span>
-            )}
           </div>
         )}
       </div>

@@ -873,17 +873,7 @@ export function DashboardCop({
             total={p.total}
             meta={p.meta}
             titulo={f.fracao === "todas" ? '16º BPM/M — "1º Ten PM Fernão"' : `Ritmo Operacional · ${ROTULO_SUBUNIDADE[f.fracao] ?? f.fracao}`}
-            subtitulo={
-              f.fracao === "todas"
-                ? {
-                    linha1: "META GLOBAL — 960 EVIDÊNCIAS",
-                    linha2: "Distribuição Proporcional por Matriz Operacional",
-                  }
-                : {
-                    linha1: `META ${ROTULO_SUBUNIDADE[f.fracao] ?? f.fracao}: ${FMT.format(p.meta)} EVIDÊNCIAS`,
-                    linha2: "Distribuição Proporcional por Matriz Operacional",
-                  }
-            }
+            subtitulo="DIRETRIZ PM3-001/02/25 · AMBIENTE EXECUTIVO DE GESTÃO E CONTROLE"
           />
         </div>
       </section>
