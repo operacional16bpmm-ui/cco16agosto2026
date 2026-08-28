@@ -518,9 +518,9 @@ export function AgulhaoMetas({
       </div>
 
       {/* Métrica Central — número empilhado, sem gap fantasma da vírgula */}
-      <div className="relative z-10 mt-1 grid w-full max-w-[390px] items-stretch justify-items-stretch gap-3 text-center sm:grid-cols-[1.08fr_0.92fr] sm:gap-3.5">
+      <div className="relative z-10 mt-1 grid w-full max-w-[390px] items-start justify-items-stretch gap-3 text-center sm:grid-cols-2 sm:gap-3.5">
         <div className="flex min-w-0 flex-col items-center">
-          <div className="flex min-h-[118px] w-full flex-col items-center justify-center rounded-3xl border-2 border-slate-300 bg-white/95 px-3 py-3.5 shadow-[0_6px_18px_rgba(15,23,42,0.14),inset_0_1px_0_rgba(255,255,255,0.9)] sm:min-h-[128px] sm:px-5">
+          <div className="flex min-h-[128px] w-full flex-col items-center justify-center rounded-3xl border-2 border-slate-300 bg-white/95 px-3 py-3.5 shadow-[0_6px_18px_rgba(15,23,42,0.14),inset_0_1px_0_rgba(255,255,255,0.9)] sm:min-h-[140px] sm:px-5">
             <span
               className="whitespace-nowrap text-5xl font-black leading-none text-[#1d1d1d] drop-shadow-sm sm:text-6xl"
               style={{ letterSpacing: "-0.035em", fontFeatureSettings: '"tnum" 0' }}
@@ -548,7 +548,7 @@ export function AgulhaoMetas({
         </div>
 
         {ritmo !== undefined && (
-          <div className="flex min-h-[118px] w-full flex-col items-center justify-center rounded-2xl border-2 border-[#ca0202]/30 bg-white/90 px-2.5 py-4 shadow-[0_7px_18px_rgba(15,23,42,0.14)] sm:min-h-[128px] sm:px-3">
+          <div className="flex min-h-[128px] w-full flex-col items-center justify-center rounded-3xl border-2 border-[#ca0202]/30 bg-white/90 px-2.5 py-4 shadow-[0_7px_18px_rgba(15,23,42,0.14)] sm:min-h-[140px] sm:px-3">
             <span className="text-[10px] font-black uppercase tracking-[0.12em] text-[#ca0202]">Ritmo necessário</span>
             <span className="mt-2 text-5xl font-black leading-none tracking-tight text-slate-950">{FMT.format(ritmo)}</span>
             <span className="mt-2 text-[10px] font-bold leading-tight text-slate-600">evidências/turno</span>
