@@ -1,35 +1,94 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
+  Activity,
+  AlertTriangle,
   ArrowLeft,
   ArrowRight,
+  Award,
   BarChart3,
+  CalendarRange,
+  CheckCircle2,
+  Clock,
+  FileSearch,
+  Gauge,
   Home,
-  Printer,
+  LogOut,
+  Layers,
+  ListChecks,
   Maximize2,
   Minimize2,
+  Percent,
+  Printer,
+  ScrollText,
   Shield,
-  Award,
-  AlertTriangle,
-  CheckCircle2,
-  Users,
-  TrendingUp,
-  Clock,
   Sparkles,
+  Target,
+  Timer,
+  TrendingUp,
+  Users,
 } from "lucide-react";
-import { ROTULO_SUBUNIDADE, type LancamentoCop, type MetaSubunidade } from "@/lib/cop2026";
+import { type LancamentoCop, type MetaSubunidade } from "@/lib/cop2026";
 import { AssinaturaDesenvolvimento, SelosSeguranca } from "@/components/publico16/cop/rodape-cop";
-import { calcularPainel, FMT, PCT } from "@/lib/cop2026-metricas";
+import {
+  calcularPainel,
+  conclusaoDistribuicao,
+  conclusaoFunil,
+  conclusaoHorario,
+  conclusaoPareto,
+  conclusaoQualidade,
+  conclusaoRitmo,
+  veredito,
+  DIAS,
+  FAIXAS_HORA,
+  FMT,
+  PCT,
+  ROTULO_NIVEL,
+  SUBTITULO_NIVEL,
+  nivelPorCumprimento,
+  type Nivel,
+} from "@/lib/cop2026-metricas";
 import { DiretrizEmFoco } from "@/components/publico16/diretriz-em-foco";
 import { AgulhaoMetas } from "@/components/publico16/cop/graficos";
+import {
+  AreaDiaria,
+  Barra,
+  Bloco,
+  BarrasRotulo,
+  Cartao,
+  Chip,
+  ColunasQualidade,
+  Contador,
+  FAIXA,
+  FunilRastreio,
+  INST,
+  Kpi,
+  Leitura,
+  MatrizHorario,
+  ParetoCarga,
+  SUPERFICIE,
+  T,
+  atraso,
+} from "@/components/publico16/cop/briefing-ui";
 
 /**
- * Briefing Executivo Interativo em Slides para o Comando:
- * Apresentação cinematográfica, dinâmica, didática com métricas em tempo real,
- * gráficos vetoriais, termômetro/manômetro e projeção de ritmo operacional.
+ * Briefing Executivo da Auditoria de COP 2026 — a apresentação que o Comando
+ * projeta em telão.
+ *
+ * O que este arquivo NÃO faz mais: inventar número, cor e tamanho de fonte por
+ * slide. Toda tipografia, cor de faixa e movimento vêm de `briefing-ui.tsx`;
+ * todo número vem de `calcularPainel` — o mesmo motor do dashboard, para os
+ * dois nunca discordarem na reunião. Frase de diagnóstico é `veredito()` e as
+ * `conclusao*()`, não texto fixo: um briefing que afirma "faixa crítica" com o
+ * valor cravado no JSX continua dizendo isso no dia em que a meta for batida.
+ *
+ * Ordem dos slides = ordem de uma exposição ao Comando: onde estamos (capa e
+ * veredito) → por que medimos assim (diretriz) → quem está onde (frações,
+ * semanas) → como vem andando (ritmo, qualidade, rastreabilidade, carga,
+ * cobertura) → o que fazer (exceções e plano).
  */
 export function BriefingSlides({
   lancamentos,
@@ -47,32 +106,44 @@ export function BriefingSlides({
   const [i, setI] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
 
-  // Métrica consolidada usando o mesmo motor de cálculo do Dashboard
-  const p = calcularPainel(lancamentos, metas, {
-    fracao: "todas",
-    semana: "todas",
-    turno: "todos",
-    de: "",
-    ate: "",
-    excecao: "",
-    busca: "",
-  });
+  // Mesmo motor do dashboard, sem recorte: o briefing fala do Batalhão inteiro.
+  const p = useMemo(
+    () =>
+      calcularPainel(lancamentos, metas, {
+        fracao: "todas",
+        semana: "todas",
+        turno: "todos",
+        de: "",
+        ate: "",
+        excecao: "",
+        busca: "",
+      }),
+    [lancamentos, metas]
+  );
 
-  const videos = p.total;
-  const meta = p.meta;
+  const v = veredito(p);
+  const nivel: Nivel = p.nivelGeral;
   const auditoresTotal = metas.reduce((s, m) => s + m.efetivo, 0);
-  const pct = p.pct;
+  const ritmo = Math.ceil(p.ritmoNecessario);
+  const foraRotulos = useMemo(
+    () => new Set(p.foraDeControle.map((d) => d.data)),
+    [p.foraDeControle]
+  );
+  const comIds = p.dados.filter((l) => l.idsMidia.trim()).length;
+  const taxaIds = p.dados.length ? (comIds / p.dados.length) * 100 : 0;
+  const engajamento = auditoresTotal > 0 ? (p.ativos / auditoresTotal) * 100 : 0;
+  const desvios = p.naoAuditou + p.abaixo;
+  /* As frações que puxam a meta para baixo. É delas que sai o plano de ação —
+     cobrar "o Batalhão" não move nada, cobrar a fração move. */
+  const criticas = [...p.fracoes].sort((a, b) => a.pct - b.pct).slice(0, 3);
 
-  // Toggle Tela Cheia
-  const toggleFullscreen = () => {
+  const toggleFullscreen = useCallback(() => {
     if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => {});
-      setFullscreen(true);
+      document.documentElement.requestFullscreen?.().catch(() => {});
     } else {
-      document.exitFullscreen().catch(() => {});
-      setFullscreen(false);
+      document.exitFullscreen?.().catch(() => {});
     }
-  };
+  }, []);
 
   useEffect(() => {
     const onFsChange = () => setFullscreen(!!document.fullscreenElement);
@@ -80,481 +151,753 @@ export function BriefingSlides({
     return () => document.removeEventListener("fullscreenchange", onFsChange);
   }, []);
 
-  const slides = [
-    // ---------------- SLIDE 0: CAPA MONUMENTAL DO COMANDO ----------------
+  const slides: {
+    selo: string;
+    titulo: string;
+    subtitulo?: string;
+    icone?: React.ReactNode;
+    semCabecalho?: boolean;
+    corpo: React.ReactNode;
+  }[] = [
+    // -------------------------------------------------------------------
+    // 00 · CAPA
+    // -------------------------------------------------------------------
     {
       selo: "Apresentação Executiva do Comando",
       titulo: "Auditoria & Governança das Câmeras Operacionais Corporais",
       subtitulo: '16º BPM/M — "1º Ten PM Fernão" · Diretriz PM3-001/02/25',
+      semCabecalho: true,
       corpo: (
-        <div className="flex flex-col items-center justify-center text-center space-y-6 max-w-3xl mx-auto py-2">
-          {/* Brasão Monumental com efeito de destaque */}
-          <div className="relative group">
-            <div className="absolute -inset-4 rounded-full bg-gradient-to-r from-[#ca0202]/30 via-amber-500/20 to-[#ca0202]/30 blur-xl opacity-75 animate-pulse" />
-            <div className="relative w-64 sm:w-96 aspect-[3/2] overflow-hidden rounded-2xl bg-black/60 shadow-2xl ring-1 ring-white/20">
+        <div className="mx-auto flex max-w-3xl flex-col items-center justify-center space-y-6 py-1 text-center">
+          <div className="bf-entra relative" style={atraso(0)}>
+            <div className="absolute -inset-3 rounded-2xl bg-[#ca0202]/20 blur-2xl" />
+            <div className="relative aspect-[3/2] w-60 overflow-hidden rounded-2xl bg-black/60 shadow-2xl ring-1 ring-white/20 sm:w-80">
               <Image
                 src="/cop2026/cop-colete-pmesp.webp"
-                alt="Câmera operacional corporal Motorola acoplada ao uniforme da Polícia Militar do Estado de São Paulo"
+                alt="Câmera operacional corporal acoplada ao uniforme da Polícia Militar do Estado de São Paulo"
                 width={1200}
                 height={800}
                 className="h-full w-full object-cover"
                 priority
               />
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/30" />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/25" />
             </div>
           </div>
 
-          <div className="space-y-3">
-            <p className="text-xs sm:text-sm font-black tracking-[0.3em] uppercase text-[#ff5a5a]">
+          <div className="bf-entra space-y-2.5" style={atraso(1)}>
+            <p className={`${T.rotulo} text-[#ff5a5a]`}>
               Polícia Militar do Estado de São Paulo · CPM
             </p>
-            <h1 className="font-serif text-2xl sm:text-4xl lg:text-5xl font-black text-white leading-tight">
+            <h1 className={`${T.display} text-white`}>
               16º Batalhão de Polícia Militar Metropolitano
             </h1>
-            <div className="inline-flex items-center gap-2 rounded-xl bg-white/10 border border-white/20 px-4 py-1.5 backdrop-blur-md">
-              <span className="h-2.5 w-2.5 rounded-full bg-[#ca0202] animate-ping" />
-              <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-white">
-                AMBIENTE EXECUTIVO DE GESTÃO E CONTROLE
+            <p className={`${T.corpo} text-white/60`}>
+              Auditoria &amp; Governança das Câmeras Operacionais Corporais · Diretriz
+              PM3-001/02/25
+            </p>
+            <div className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-4 py-1.5 backdrop-blur-md">
+              <span className="bf-ao-vivo h-2 w-2 rounded-full bg-[#ca0202]" />
+              <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-white sm:text-xs">
+                Ambiente Executivo de Gestão e Controle
               </span>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full pt-4">
-            <div className="rounded-xl border border-white/15 bg-white/[0.07] p-3 text-center backdrop-blur-sm">
-              <span className="text-xs font-bold text-white/60 uppercase">Meta Global</span>
-              <p className="text-xl sm:text-2xl font-black text-white mt-0.5">960</p>
-              <span className="text-[10px] text-white/50">Evidências</span>
-            </div>
-            <div className="rounded-xl border border-white/15 bg-white/[0.07] p-3 text-center backdrop-blur-sm">
-              <span className="text-xs font-bold text-white/60 uppercase">Auditadas</span>
-              <p className="text-xl sm:text-2xl font-black text-[#ff5a5a] mt-0.5">{FMT.format(videos)}</p>
-              <span className="text-[10px] text-white/50">{PCT.format(pct)}% cumprido</span>
-            </div>
-            <div className="rounded-xl border border-white/15 bg-white/[0.07] p-3 text-center backdrop-blur-sm">
-              <span className="text-xs font-bold text-white/60 uppercase">Auditores</span>
-              <p className="text-xl sm:text-2xl font-black text-white mt-0.5">{auditoresTotal}</p>
-              <span className="text-[10px] text-white/50">Designados</span>
-            </div>
-            <div className="rounded-xl border border-white/15 bg-white/[0.07] p-3 text-center backdrop-blur-sm">
-              <span className="text-xs font-bold text-white/60 uppercase">Turnos Restantes</span>
-              <p className="text-xl sm:text-2xl font-black text-amber-400 mt-0.5">{p.turnosRestantes}</p>
-              <span className="text-[10px] text-white/50">de 15 turnos</span>
-            </div>
+          <div className="grid w-full grid-cols-2 gap-2.5 pt-1 sm:grid-cols-4">
+            <Kpi i={2} rotulo="Meta global" valor={p.meta} nota="evidências no mês" icone={<Target size={13} />} />
+            <Kpi
+              i={3}
+              rotulo="Auditadas"
+              valor={p.total}
+              nivel={nivel}
+              nota={`${PCT.format(p.pct)}% da meta`}
+              icone={<CheckCircle2 size={13} />}
+            />
+            <Kpi
+              i={4}
+              rotulo="Auditores"
+              valor={auditoresTotal}
+              nota={`${FMT.format(p.ativos)} com lançamento`}
+              icone={<Users size={13} />}
+            />
+            <Kpi
+              i={5}
+              rotulo="Turnos restantes"
+              valor={p.turnosRestantes}
+              nivel={p.turnosRestantes > 0 ? "atencao" : "neutro"}
+              nota={`de ${FMT.format(p.turnosPrevistos)} previstos`}
+              icone={<Timer size={13} />}
+            />
           </div>
 
-          <p className="text-xs text-white/45">
-            Dados sincronizados em tempo real com a planilha corporativa · {lidoEm}
+          <p className={`bf-entra ${T.apoio} text-white/40`} style={atraso(6)}>
+            Dados lidos ao vivo da planilha corporativa · {lidoEm}
           </p>
         </div>
       ),
     },
 
-    // ---------------- SLIDE 1: DIRETRIZ EM FOCO (7 PILARES) ----------------
+    // -------------------------------------------------------------------
+    // 01 · VEREDITO
+    // -------------------------------------------------------------------
     {
-      selo: "Norma de referência",
-      titulo: "Registro Operacional · Governança da Auditoria de COP",
-      subtitulo: "Sete pontos de relevância normativa da Diretriz PM3-001/02/25",
+      selo: "Desempenho geral do 16º BPM/M",
+      titulo: "Conformidade e ritmo da meta operacional",
+      subtitulo: `Aferição ao vivo da meta de ${FMT.format(p.meta)} evidências no ciclo`,
+      icone: <Gauge size={13} />,
       corpo: (
-        <div className="w-full">
-          <DiretrizEmFoco
-            variante="briefing"
-            hrefBase="/documentos/diretriz-pm3-001-02-25.pdf"
-          />
+        <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,360px)_1fr]">
+          <div className="bf-entra" style={atraso(0)}>
+            <AgulhaoMetas
+              pct={p.pct}
+              total={p.total}
+              meta={p.meta}
+              ritmo={ritmo}
+              turnosRestantes={p.turnosRestantes}
+              titulo='16º BPM/M — "1º Ten PM Fernão"'
+              subtitulo={{
+                linha1: `META GLOBAL — ${FMT.format(p.meta)} EVIDÊNCIAS`,
+                linha2: "DIRETRIZ PM3-001/02/25 · AMBIENTE EXECUTIVO DE GESTÃO E CONTROLE",
+                linha3: "Distribuição Proporcional por Matriz Operacional",
+              }}
+            />
+          </div>
+
+          <div className="space-y-3">
+            <Cartao nivel={nivel} i={1} className="space-y-2 p-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <Chip nivel={nivel} />
+                <span className={`${T.rotulo} text-white/50`}>{SUBTITULO_NIVEL[nivel]}</span>
+              </div>
+              <h3 className={`font-serif text-[15px] font-bold leading-snug sm:text-[17px] ${FAIXA[nivel].texto}`}>
+                {v.titulo}
+              </h3>
+              <p className={`${T.corpo} text-white/80`}>{v.detalhe}</p>
+            </Cartao>
+
+            <div className="grid gap-2.5 sm:grid-cols-3">
+              <Kpi
+                i={2}
+                rotulo="Ritmo necessário"
+                valor={ritmo}
+                nivel="atencao"
+                sufixo="/turno"
+                nota={`para fechar em ${FMT.format(p.turnosRestantes)} turno(s)`}
+                icone={<TrendingUp size={13} />}
+              />
+              <Kpi
+                i={3}
+                rotulo="Saldo restante"
+                valor={p.falta}
+                nivel={p.falta > 0 ? "critico" : "conforme"}
+                nota="evidências a recuperar"
+                icone={<Clock size={13} />}
+              />
+              <Kpi
+                i={4}
+                rotulo="Média por turno"
+                valor={p.mediaDia}
+                nota={`meta de ${FMT.format(Math.round(p.metaDia))} por turno`}
+                icone={<Activity size={13} />}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {(
+                [
+                  { n: "critico" as Nivel, faixa: "< 50%" },
+                  { n: "atencao" as Nivel, faixa: "50 – 79%" },
+                  { n: "conforme" as Nivel, faixa: "80 – 100%" },
+                  { n: "superacao" as Nivel, faixa: "> 100%" },
+                ] satisfies { n: Nivel; faixa: string }[]
+              ).map((f, k) => (
+                <Cartao
+                  key={f.n}
+                  nivel={f.n}
+                  i={5 + k}
+                  className={`p-2.5 text-center ${f.n === nivel ? "ring-1 ring-white/35" : ""}`}
+                >
+                  <p className={`${T.rotulo} ${FAIXA[f.n].texto}`}>{ROTULO_NIVEL[f.n]}</p>
+                  <p className={`dados mt-0.5 text-[12px] text-white/60`}>{f.faixa}</p>
+                </Cartao>
+              ))}
+            </div>
+          </div>
         </div>
       ),
     },
 
-    // ---------------- SLIDE 1: CONFORMIDADE & RITMO OPERACIONAL ----------------
+    // -------------------------------------------------------------------
+    // 02 · DIRETRIZ
+    // -------------------------------------------------------------------
     {
-      selo: "Desempenho Geral do 16º BPM/M",
-      titulo: "Conformidade e Ritmo da Gestão Operacional da Meta",
-      subtitulo: "Aferição em tempo real da meta mensal de 960 evidências",
+      selo: "Norma de referência",
+      titulo: "Registro operacional e governança da auditoria",
+      subtitulo: "Sete pontos de relevância normativa da Diretriz PM3-001/02/25",
+      icone: <ScrollText size={13} />,
       corpo: (
-        <div className="grid lg:grid-cols-[380px_1fr] gap-6 items-center">
-          {/* Manômetro / Agulhão Tático */}
-          <div className="flex justify-center">
-            <div className="w-full max-w-sm">
-              <AgulhaoMetas
-                pct={pct}
-                total={videos}
-                meta={meta}
-                titulo='16º BPM/M — "1º Ten PM Fernão"'
-                subtitulo={{
-                  linha1: "META GLOBAL — 960 EVIDÊNCIAS",
-                  linha2: "DIRETRIZ PM3-001/02/25 · AMBIENTE EXECUTIVO DE GESTÃO E CONTROLE",
-                  linha3: "Distribuição Proporcional por Matriz Operacional",
-                }}
+        <div className="bf-entra w-full" style={atraso(0)}>
+          <DiretrizEmFoco variante="briefing" hrefBase="/documentos/diretriz-pm3-001-02-25.pdf" />
+        </div>
+      ),
+    },
+
+    // -------------------------------------------------------------------
+    // 03 · FRAÇÕES
+    // -------------------------------------------------------------------
+    {
+      selo: "Matriz operacional proporcional",
+      titulo: "Desempenho comparativo por fração",
+      subtitulo: `Rateio da meta sobre o efetivo de ${FMT.format(auditoresTotal)} policiais designados`,
+      icone: <Layers size={13} />,
+      corpo: (
+        <div className="space-y-3">
+          <div className="grid gap-2.5 md:grid-cols-2">
+            {p.fracoes.map((f, k) => (
+              <Cartao key={f.chave} nivel={f.nivel} i={k} className="p-3.5">
+                <div className="mb-2 flex items-baseline justify-between gap-2">
+                  <span className="flex items-center gap-1.5 text-[13px] font-bold text-white sm:text-sm">
+                    <Shield size={13} className={FAIXA[f.nivel].texto} />
+                    {f.rotulo}
+                  </span>
+                  <span className={`metric-card text-[1.05rem] ${FAIXA[f.nivel].texto}`}>
+                    {PCT.format(f.pct)}%
+                  </span>
+                </div>
+
+                <Barra pct={f.pct} nivel={f.nivel} i={k} />
+
+                <dl className="mt-2.5 grid grid-cols-4 gap-1.5 border-t border-white/10 pt-2">
+                  {[
+                    { r: "Feito", d: `${FMT.format(f.feito)} / ${FMT.format(f.meta)}` },
+                    { r: "Faltam", d: FMT.format(f.falta) },
+                    { r: "Efetivo", d: `${FMT.format(f.lancaram)} / ${FMT.format(f.efetivo)}` },
+                    { r: "Ritmo", d: `${FMT.format(Math.ceil(f.ritmoNecessario))}/turno` },
+                  ].map((c) => (
+                    <div key={c.r}>
+                      <dt className={`${T.rotulo} text-white/40`}>{c.r}</dt>
+                      <dd className={`${T.dado} text-white/85`}>{c.d}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </Cartao>
+            ))}
+          </div>
+
+          <Leitura i={p.fracoes.length}>
+            A meta de cada fração é proporcional ao seu efetivo — quem tem mais policiais
+            responde por mais evidências. {criticas[0]?.rotulo} está no menor índice do
+            Batalhão ({PCT.format(criticas[0]?.pct ?? 0)}%) e precisa de{" "}
+            {FMT.format(Math.ceil(criticas[0]?.ritmoNecessario ?? 0))} evidências por turno para
+            fechar o ciclo.
+          </Leitura>
+        </div>
+      ),
+    },
+
+    // -------------------------------------------------------------------
+    // 04 · SEMANAS
+    // -------------------------------------------------------------------
+    {
+      selo: "Evolução temporal do ciclo",
+      titulo: "Cumprimento da meta por semana operacional",
+      subtitulo: "Quatro janelas de auditoria contínua dentro do mês",
+      icone: <CalendarRange size={13} />,
+      corpo: (
+        <div className="space-y-3">
+          <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
+            {p.semanasBatalhao.map((s, k) => (
+              <Cartao key={s.semana} nivel={s.nivel} i={k} className="flex flex-col gap-2 p-3.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className={`${T.rotulo} text-white/60`}>{s.rotulo}</span>
+                  <Chip nivel={s.nivel}>{PCT.format(s.pct)}%</Chip>
+                </div>
+                <p className={`${T.apoio} text-white/45`}>dias {s.diasRotulo}</p>
+                <p className={`${T.numero} text-white`}>
+                  <Contador valor={s.feito} />
+                  <span className="ml-1 text-[0.5em] font-normal text-white/50">
+                    de {FMT.format(s.meta)}
+                  </span>
+                </p>
+                <Barra pct={s.pct} nivel={s.nivel} altura="h-2" i={k} />
+                <div className="flex justify-between border-t border-white/10 pt-1.5">
+                  <span className={`${T.rotulo} text-white/40`}>Saldo</span>
+                  <span className={`${T.dado} ${FAIXA[s.nivel].texto}`}>{FMT.format(s.falta)}</span>
+                </div>
+              </Cartao>
+            ))}
+          </div>
+
+          <Bloco i={4} icone={<Activity size={15} />} titulo="Ritmo diário e faixa de controle">
+            <AreaDiaria
+              dados={p.porDia}
+              mediaDia={p.mediaDia}
+              lsc={p.lsc}
+              lic={p.lic}
+              metaDia={p.metaDia}
+              foraRotulos={foraRotulos}
+            />
+            <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1">
+              <span className={`${T.apoio} flex items-center gap-1.5 text-white/55`}>
+                <span className="h-0.5 w-4" style={{ background: INST.vermelhoClaro }} /> evidências
+                no dia
+              </span>
+              <span className={`${T.apoio} flex items-center gap-1.5 text-white/55`}>
+                <span
+                  className="h-0.5 w-4"
+                  style={{ background: `repeating-linear-gradient(90deg, ${INST.ouro} 0 4px, transparent 4px 7px)` }}
+                />
+                meta por turno ({FMT.format(Math.round(p.metaDia))})
+              </span>
+              <span className={`${T.apoio} flex items-center gap-1.5 text-white/55`}>
+                <span className="h-2.5 w-4 rounded-sm bg-white/15" /> variação normal (±3σ)
+              </span>
+              <span className={`${T.apoio} flex items-center gap-1.5 text-white/55`}>
+                <span className="h-2 w-2 rounded-full" style={{ background: INST.ouro }} /> dia fora
+                da faixa
+              </span>
+            </div>
+            <Leitura>{conclusaoRitmo(p)}</Leitura>
+          </Bloco>
+
+          <p className={`bf-entra ${SUPERFICIE} flex items-center gap-2.5 p-3 ${T.apoio} text-white/70`} style={atraso(5)}>
+            <Sparkles size={16} className="shrink-0" style={{ color: INST.ouro }} />
+            <span>
+              <strong className="text-white">Controle por ciclo:</strong> cada semana tem meta de{" "}
+              <strong className="text-white">{FMT.format(p.semanasBatalhao[0]?.meta ?? 240)}</strong>{" "}
+              evidências para o Batalhão. Regularidade semanal impede acúmulo de saldo no
+              fechamento do mês.
+            </span>
+          </p>
+        </div>
+      ),
+    },
+
+    // -------------------------------------------------------------------
+    // 05 · QUALIDADE
+    // -------------------------------------------------------------------
+    {
+      selo: `Padrão técnico · mínimo de ${p.minimo} evidências por turno`,
+      titulo: "Qualidade da auditoria e engajamento do efetivo",
+      subtitulo: "Aderência à cota mínima, dispersão da produção e alcance entre os auditores",
+      icone: <ListChecks size={13} />,
+      corpo: (
+        <div className="space-y-3">
+          <div className="grid gap-2.5 sm:grid-cols-4">
+            <Kpi
+              i={0}
+              rotulo={`Conformidade ≥ ${p.minimo}`}
+              valor={p.taxaConf}
+              casas={1}
+              sufixo="%"
+              nivel={nivelPorCumprimento(p.taxaConf, p.dados.length > 0)}
+              nota={`${FMT.format(p.conformes)} de ${FMT.format(p.dados.length)} lançamentos`}
+              icone={<CheckCircle2 size={13} />}
+            />
+            <Kpi
+              i={1}
+              rotulo="Auditores ativos"
+              valor={p.ativos}
+              nota={`de ${FMT.format(auditoresTotal)} · ${PCT.format(engajamento)}% do efetivo`}
+              icone={<Users size={13} />}
+            />
+            <Kpi
+              i={2}
+              rotulo="Mediana por turno"
+              valor={p.mediana}
+              nota={`p90 entrega ${FMT.format(p.p90)} ou mais`}
+              icone={<Percent size={13} />}
+            />
+            <Kpi
+              i={3}
+              rotulo="Desvios registrados"
+              valor={desvios}
+              nivel={desvios > 0 ? "critico" : "conforme"}
+              nota={`${FMT.format(p.naoAuditou)} não auditou · ${FMT.format(p.abaixo)} abaixo do mínimo`}
+              icone={<AlertTriangle size={13} />}
+            />
+          </div>
+
+          <div className="grid gap-2.5 lg:grid-cols-2">
+            <Bloco i={4} icone={<BarChart3 size={15} />} titulo="Evidências por lançamento">
+              <ColunasQualidade dados={p.histograma} />
+              <Leitura>{conclusaoQualidade(p)}</Leitura>
+            </Bloco>
+
+            <Bloco i={5} icone={<Layers size={15} />} titulo="Dispersão por fração">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[320px]">
+                  <thead>
+                    <tr className="border-b border-white/10">
+                      {["Fração", "Mín", "Mediana", "p90", "Máx", "n"].map((c, k) => (
+                        <th
+                          key={c}
+                          className={`${T.rotulo} pb-1.5 text-white/40 ${k === 0 ? "text-left" : "text-right"}`}
+                        >
+                          {c}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {p.dispersao.map((d) => (
+                      <tr key={d.rotulo} className="border-b border-white/[0.06]">
+                        <td className="py-1.5 text-[12.5px] text-white/85">{d.rotulo}</td>
+                        {[d.min, d.med, d.p90, d.max, d.n].map((n, k) => (
+                          <td
+                            key={k}
+                            className={`${T.dado} py-1.5 text-right ${k === 1 ? "text-white" : "text-white/60"}`}
+                          >
+                            {FMT.format(n)}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <Leitura>{conclusaoDistribuicao(p)}</Leitura>
+            </Bloco>
+          </div>
+        </div>
+      ),
+    },
+
+    // -------------------------------------------------------------------
+    // 06 · RASTREABILIDADE
+    // -------------------------------------------------------------------
+    {
+      selo: "Cadeia de custódia · Diretriz PM3-001/02/25",
+      titulo: "Rastreabilidade da evidência auditada",
+      subtitulo: "Do lançamento recebido ao ID de mídia que permite reconferir a gravação",
+      icone: <FileSearch size={13} />,
+      corpo: (
+        <div className="space-y-3">
+          <div className="grid gap-2.5 lg:grid-cols-[1fr_minmax(0,320px)]">
+            <Bloco i={0} icone={<FileSearch size={15} />} titulo="Funil de conformidade">
+              <FunilRastreio etapas={p.funil} />
+              <Leitura>{conclusaoFunil(p)}</Leitura>
+            </Bloco>
+
+            <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-1">
+              <Kpi
+                i={1}
+                rotulo="Com IDs de mídia"
+                valor={taxaIds}
+                casas={1}
+                sufixo="%"
+                nivel={nivelPorCumprimento(taxaIds, p.dados.length > 0)}
+                nota={`${FMT.format(comIds)} de ${FMT.format(p.dados.length)} lançamentos`}
+                icone={<CheckCircle2 size={13} />}
+              />
+              <Kpi
+                i={2}
+                rotulo="Sem identificação"
+                valor={p.semIds}
+                nivel={p.semIds > 0 ? "atencao" : "conforme"}
+                nota="evidência sem ID não se reconfere"
+                icone={<AlertTriangle size={13} />}
+              />
+              <Kpi
+                i={3}
+                rotulo="Partes instruídas"
+                valor={p.partes}
+                nota="lançamentos com número de Parte"
+                icone={<ScrollText size={13} />}
               />
             </div>
           </div>
 
-          {/* Destaques Didáticos & Projeção */}
-          <div className="space-y-4">
-            <div className="rounded-2xl border border-white/15 bg-gradient-to-br from-white/[0.09] to-white/[0.03] p-5 backdrop-blur-md space-y-3">
-              <div className="flex items-center gap-2 text-[#ff5a5a]">
-                <AlertTriangle size={20} />
-                <h3 className="font-serif text-lg sm:text-xl font-bold text-white">
-                  Diagnóstico Operacional do Período
-                </h3>
-              </div>
-              <p className="text-sm sm:text-base text-white/80 leading-relaxed">
-                Com <strong className="text-white font-black">{FMT.format(videos)} evidências auditadas</strong> ({PCT.format(pct)}% da meta global de 960), o Batalhão encontra-se na{" "}
-                <span className="font-black text-[#ff5a5a] uppercase">Faixa Crítica (Abaixo de 50%)</span>.
-              </p>
-            </div>
-
-            <div className="grid sm:grid-cols-2 gap-3">
-              <div className="rounded-xl border border-white/10 bg-white/[0.05] p-4">
-                <div className="flex items-center gap-2 text-amber-400 mb-1">
-                  <TrendingUp size={16} />
-                  <span className="text-xs font-bold uppercase tracking-wider">Ritmo Necessário</span>
-                </div>
-                <p className="text-2xl sm:text-3xl font-black text-white">
-                  {FMT.format(Math.ceil(p.ritmoNecessario))} <span className="text-sm font-normal text-white/60">evidências / turno</span>
-                </p>
-                <p className="text-xs text-white/50 mt-1">
-                  Para atingir os 100% nos {p.turnosRestantes} turnos restantes
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-white/10 bg-white/[0.05] p-4">
-                <div className="flex items-center gap-2 text-[#ff5a5a] mb-1">
-                  <Clock size={16} />
-                  <span className="text-xs font-bold uppercase tracking-wider">Saldo Restante</span>
-                </div>
-                <p className="text-2xl sm:text-3xl font-black text-white">
-                  {FMT.format(p.falta)} <span className="text-sm font-normal text-white/60">evidências</span>
-                </p>
-                <p className="text-xs text-white/50 mt-1">
-                  Déficit a recuperar nas 6 Frações
-                </p>
-              </div>
-            </div>
+          <div className="grid gap-2.5 lg:grid-cols-2">
+            <Bloco i={4} icone={<Users size={15} />} titulo="Produção por posto e graduação">
+              <BarrasRotulo dados={p.porPosto} />
+            </Bloco>
+            <Bloco i={5} icone={<Shield size={15} />} titulo="Produção por função no turno">
+              <BarrasRotulo dados={p.porFuncao} />
+            </Bloco>
           </div>
         </div>
       ),
     },
 
-    // ---------------- SLIDE 2: MATRIZ OPERACIONAL POR FRAÇÃO ----------------
+    // -------------------------------------------------------------------
+    // 07 · CARGA E COBERTURA
+    // -------------------------------------------------------------------
     {
-      selo: "Distribuição Proporcional por Matriz Operacional",
-      titulo: "Desempenho Comparativo",
-      subtitulo: "Rateio proporcional com base no efetivo de auditores designados",
+      selo: "Distribuição do esforço",
+      titulo: "Concentração da carga e cobertura do serviço",
+      subtitulo: "Quem sustenta a auditoria e em que dia e faixa de horário ela acontece",
+      icone: <Activity size={13} />,
       corpo: (
         <div className="space-y-3">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {p.fracoes.map((f) => {
-              const nivel = f.nivel;
-              const corBarra =
-                nivel === "superacao"
-                  ? "bg-blue-600"
-                  : nivel === "conforme"
-                  ? "bg-emerald-500"
-                  : nivel === "atencao"
-                  ? "bg-amber-500"
-                  : "bg-[#ca0202]";
-              const corTexto =
-                nivel === "superacao"
-                  ? "text-blue-400"
-                  : nivel === "conforme"
-                  ? "text-emerald-400"
-                  : nivel === "atencao"
-                  ? "text-amber-400"
-                  : "text-[#ff5a5a]";
+          <div className="grid gap-2.5 lg:grid-cols-2">
+            <Bloco i={0} icone={<TrendingUp size={15} />} titulo="Carga por auditor (Pareto)">
+              <ParetoCarga dados={p.pareto} />
+              <Leitura>{conclusaoPareto(p)}</Leitura>
+            </Bloco>
 
-              return (
-                <div
-                  key={f.chave}
-                  className="rounded-xl border border-white/15 bg-white/[0.06] p-4 hover:bg-white/[0.1] transition-all"
-                >
-                  <div className="flex items-baseline justify-between mb-1.5">
-                    <div className="flex items-center gap-2">
-                      <Shield size={14} className={corTexto} />
-                      <span className="font-bold text-white text-sm sm:text-base">{f.rotulo}</span>
+            <Bloco i={1} icone={<Clock size={15} />} titulo="Cobertura por dia e faixa horária">
+              <MatrizHorario matriz={p.matriz} max={p.maxMatriz} dias={DIAS} faixas={FAIXAS_HORA} />
+              <Leitura>{conclusaoHorario(p)}</Leitura>
+            </Bloco>
+          </div>
+
+          <div className="grid gap-2.5 sm:grid-cols-4">
+            {p.porTurno.map((t, k) => (
+              <Kpi
+                key={t.rotulo}
+                i={2 + k}
+                rotulo={`Turno ${t.rotulo}`}
+                valor={t.v}
+                nota="evidências auditadas"
+                icone={<Timer size={13} />}
+              />
+            ))}
+            <Kpi
+              i={4}
+              rotulo="Turnos cumpridos"
+              valor={p.turnosCumpridos}
+              nota={`de ${FMT.format(p.turnosPrevistos)} previstos no ciclo`}
+              icone={<CalendarRange size={13} />}
+            />
+            <Kpi
+              i={5}
+              rotulo="Dias fora da faixa"
+              valor={p.foraDeControle.length}
+              nivel={p.foraDeControle.length > 0 ? "atencao" : "conforme"}
+              nota="variação atípica a verificar"
+              icone={<AlertTriangle size={13} />}
+            />
+          </div>
+        </div>
+      ),
+    },
+
+    // -------------------------------------------------------------------
+    // 08 · EXCEÇÕES
+    // -------------------------------------------------------------------
+    {
+      selo: "Fiscalização e orientação",
+      titulo: "Exceções que exigem providência do Comando",
+      subtitulo: "Cada bloco abre no painel já filtrado, com o nome e a justificativa de quem lançou",
+      icone: <AlertTriangle size={13} />,
+      corpo: (
+        <div className="space-y-3">
+          <div className="grid gap-2.5 sm:grid-cols-3">
+            {[
+              {
+                rot: "Não auditou no turno",
+                q: p.naoAuditou,
+                nivel: (p.naoAuditou > 0 ? "critico" : "conforme") as Nivel,
+                nota: "declarou não ter auditado — exige Parte ou justificativa",
+                href: "/cop2026/dashboard?excecao=naoauditou",
+              },
+              {
+                rot: `Abaixo do mínimo de ${p.minimo}`,
+                q: p.abaixo,
+                nivel: (p.abaixo > 0 ? "atencao" : "conforme") as Nivel,
+                nota: "auditou, mas não alcançou a cota do Batalhão",
+                href: "/cop2026/dashboard?excecao=abaixo",
+              },
+              {
+                rot: "Sem IDs de mídia",
+                q: p.semIds,
+                nivel: (p.semIds > 0 ? "atencao" : "conforme") as Nivel,
+                nota: "sem o ID a evidência não é rastreável na conferência",
+                href: "/cop2026/dashboard?excecao=semids",
+              },
+            ].map((e, k) => (
+              <Link key={e.rot} href={e.href} className="block">
+                <Cartao nivel={e.nivel} i={k} className="p-4 transition-colors hover:bg-white/[0.1]">
+                  <p className={`${T.rotulo} text-white/55`}>{e.rot}</p>
+                  <p className={`mt-1 ${T.kpi} ${FAIXA[e.nivel].texto}`}>
+                    <Contador valor={e.q} />
+                  </p>
+                  <p className={`mt-1 ${T.apoio} text-white/55`}>{e.nota}</p>
+                  <p className={`mt-2 ${T.rotulo} text-white/40`}>Abrir no painel →</p>
+                </Cartao>
+              </Link>
+            ))}
+          </div>
+
+          <Bloco i={3} icone={<Layers size={15} />} titulo="Onde as exceções se concentram">
+            <ul className="space-y-2">
+              {p.fracoes.map((f, k) => {
+                const daFracao = p.dados.filter((l) => l.subunidade === f.chave);
+                const ex =
+                  daFracao.filter((l) => !l.auditou).length +
+                  daFracao.filter((l) => l.auditou && l.videos < p.minimo).length;
+                const base = Math.max(1, daFracao.length);
+                return (
+                  <li key={f.chave} className="flex items-center gap-2.5">
+                    <span className="w-24 shrink-0 truncate text-[12.5px] text-white/80 sm:w-28">
+                      {f.rotulo}
+                    </span>
+                    <div className="h-3 flex-1 overflow-hidden rounded-full bg-white/10">
+                      <div
+                        className="bf-barra h-full rounded-full"
+                        style={{
+                          ...atraso(k, 55),
+                          width: `${Math.min(100, (ex / base) * 100)}%`,
+                          background: INST.vermelhoClaro,
+                        }}
+                      />
                     </div>
-                    <span className={`font-mono text-base font-black ${corTexto}`}>
-                      {PCT.format(f.pct)}%
+                    <span className={`${T.dado} w-24 shrink-0 text-right text-white/60`}>
+                      {FMT.format(ex)} de {FMT.format(daFracao.length)}
                     </span>
-                  </div>
-
-                  {/* Barra de Progresso com Transição */}
-                  <div className="h-3 w-full overflow-hidden rounded-full bg-white/10 my-2">
-                    <div
-                      className={`h-full rounded-full ${corBarra} transition-all duration-1000`}
-                      style={{ width: `${Math.min(100, Math.max(3, f.pct))}%` }}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between text-xs text-white/65 mt-2 pt-1 border-t border-white/10">
-                    <span>
-                      Feito: <strong className="text-white">{FMT.format(f.feito)}</strong> de {FMT.format(f.meta)}
-                    </span>
-                    <span>
-                      Efetivo: <strong className="text-white">{f.efetivo} auditores</strong>
-                    </span>
-                    <span>
-                      Faltam: <strong className={corTexto}>{FMT.format(f.falta)}</strong>
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                  </li>
+                );
+              })}
+            </ul>
+            <Leitura>
+              {FMT.format(desvios)} desvio(s) em {FMT.format(p.dados.length)} lançamento(s) — a lista
+              nominal, com a justificativa registrada por cada policial, fica no painel de controle,
+              onde se filtra e se cobra fração a fração.
+            </Leitura>
+          </Bloco>
         </div>
       ),
     },
 
-    // ---------------- SLIDE 3: CICLO OPERACIONAL POR SEMANAS ----------------
+    // -------------------------------------------------------------------
+    // 09 · POR QUE AUDITAMOS
+    // -------------------------------------------------------------------
     {
-      selo: "Evolução Temporal do Mês",
-      titulo: "Cumprimento da Meta por Semanas Operacionais",
-      subtitulo: "Divisão do ciclo mensal em 4 janelas de auditoria contínua",
+      selo: "Diretriz PM3-001/02/25 · item 6.1.6",
+      titulo: "Por que auditamos",
+      subtitulo: "Cinco finalidades institucionais orientam a auditoria das evidências digitais",
+      icone: <Award size={13} />,
       corpo: (
-        <div className="space-y-4">
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {p.semanasBatalhao.map((s) => {
-              const nivel = s.nivel;
-              const cor =
-                nivel === "superacao"
-                  ? "border-blue-500/50 bg-blue-950/20"
-                  : nivel === "conforme"
-                  ? "border-emerald-500/50 bg-emerald-950/20"
-                  : nivel === "atencao"
-                  ? "border-amber-500/50 bg-amber-950/20"
-                  : "border-red-500/50 bg-red-950/20";
-              const corBadge =
-                nivel === "superacao"
-                  ? "text-blue-400 bg-blue-500/20"
-                  : nivel === "conforme"
-                  ? "text-emerald-400 bg-emerald-500/20"
-                  : nivel === "atencao"
-                  ? "text-amber-400 bg-amber-500/20"
-                  : "text-red-400 bg-red-500/20";
-              const corBarra =
-                nivel === "superacao"
-                  ? "bg-blue-600"
-                  : nivel === "conforme"
-                  ? "bg-emerald-500"
-                  : nivel === "atencao"
-                  ? "bg-amber-500"
-                  : "bg-[#ca0202]";
+        <div className="space-y-3">
+          <p className={`bf-entra ${SUPERFICIE} p-4 font-serif ${T.corpo} text-white/85`} style={atraso(0)}>
+            A <strong className="text-white">Auditoria das Evidências Digitais (COP)</strong> é o
+            exame sistemático, independente e documentado dos registros captados, realizada por meio
+            de credencial pessoal no SiGCED.
+          </p>
 
-              return (
-                <div
-                  key={s.semana}
-                  className={`rounded-2xl border p-4 flex flex-col justify-between space-y-3 backdrop-blur-sm ${cor}`}
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-black uppercase text-white/70">{s.rotulo}</span>
-                      <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${corBadge}`}>
-                        {PCT.format(s.pct)}%
-                      </span>
-                    </div>
-                    <p className="text-xs text-white/50">{s.diasRotulo}</p>
-                  </div>
-
-                  <div className="py-2">
-                    <p className="text-3xl font-black text-white">{FMT.format(s.feito)}</p>
-                    <p className="text-xs text-white/60">de {FMT.format(s.meta)} previstas</p>
-                  </div>
-
-                  <div className="h-2.5 w-full overflow-hidden rounded-full bg-white/10">
-                    <div
-                      className={`h-full rounded-full ${corBarra} transition-all duration-1000`}
-                      style={{ width: `${Math.min(100, Math.max(3, s.pct))}%` }}
-                    />
-                  </div>
-
-                  <div className="pt-2 border-t border-white/10 flex justify-between text-xs text-white/60">
-                    <span>Saldo:</span>
-                    <strong className="text-white">{FMT.format(s.falta)}</strong>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="rounded-xl border border-white/15 bg-white/[0.06] p-4 text-xs sm:text-sm text-white/75 flex items-center gap-3">
-            <Sparkles size={18} className="text-amber-400 shrink-0" />
-            <p>
-              <strong>Controle por Ciclo:</strong> Cada semana possui meta de <strong>240 evidências</strong> para o Batalhão (60 por turno). Manter a regularidade semanal impede acúmulo de saldo no fechamento do mês.
-            </p>
-          </div>
-        </div>
-      ),
-    },
-
-    // ---------------- SLIDE 4: CONTROLE DE QUALIDADE & CONFORMIDADE ----------------
-    {
-      selo: "Diretriz PM3-001/02/25 · Padrão Técnico",
-      titulo: "Qualidade da Auditoria & Engajamento do Efetivo",
-      subtitulo: "Métricas de aderência ao mínimo de 3 evidências e preenchimento de IDs de mídia",
-      corpo: (
-        <div className="space-y-4">
-          <div className="grid sm:grid-cols-3 gap-4">
-            <div className="rounded-2xl border border-white/15 bg-white/[0.07] p-5">
-              <div className="flex items-center gap-2 text-emerald-400 mb-2">
-                <CheckCircle2 size={18} />
-                <span className="text-xs font-bold uppercase tracking-wider">Conformidade ≥ 3</span>
-              </div>
-              <p className="text-3xl sm:text-4xl font-black text-white">{PCT.format(p.taxaConf)}%</p>
-              <p className="text-xs text-white/60 mt-1">
-                {p.conformes} de {p.dados.length} auditorias atingiram a cota mínima
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-white/15 bg-white/[0.07] p-5">
-              <div className="flex items-center gap-2 text-amber-400 mb-2">
-                <Users size={18} />
-                <span className="text-xs font-bold uppercase tracking-wider">Auditores Ativos</span>
-              </div>
-              <p className="text-3xl sm:text-4xl font-black text-white">{p.ativos} <span className="text-base font-normal text-white/60">/ {auditoresTotal}</span></p>
-              <p className="text-xs text-white/60 mt-1">
-                Policiais com lançamentos registrados no período
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-white/15 bg-white/[0.07] p-5">
-              <div className="flex items-center gap-2 text-[#ff5a5a] mb-2">
-                <AlertTriangle size={18} />
-                <span className="text-xs font-bold uppercase tracking-wider">Desvios Registrados</span>
-              </div>
-              <p className="text-3xl sm:text-4xl font-black text-[#ff5a5a]">{p.naoAuditou + p.abaixo}</p>
-              <p className="text-xs text-white/60 mt-1">
-                {p.naoAuditou} &quot;Não auditei&quot; + {p.abaixo} abaixo do mínimo
-              </p>
-            </div>
-          </div>
-
-          <div className="grid sm:grid-cols-2 gap-3 pt-2">
-            <div className="rounded-xl border border-white/15 bg-white/[0.05] p-4 text-xs sm:text-sm">
-              <strong className="text-white block mb-1">Mediana de Evidências por Lançamento:</strong>
-              <p className="text-white/75">
-                Mediana de <strong>{p.mediana} evidências/turno</strong>. Os 10% mais produtivos (p90) entregam <strong>{p.p90} ou mais</strong> evidências por escala.
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-white/15 bg-white/[0.05] p-4 text-xs sm:text-sm">
-              <strong className="text-white block mb-1">Rastreabilidade & IDs de Mídia:</strong>
-              <p className="text-white/75">
-                {p.dados.filter((l) => l.idsMidia.trim()).length} de {p.dados.length} lançamentos possuem identificação completa das gravações auditadas.
-              </p>
-            </div>
-          </div>
-        </div>
-      ),
-    },
-
-    // ---------------- SLIDE 5: DIRETRIZES & PLANO DE AÇÃO ----------------
-    {
-      selo: "Encerramento & Recomendações",
-      titulo: "Plano de Ação para os Turnos Restantes",
-      subtitulo: "Diretrizes executivas para Comandantes de Companhia e Oficiais de Operações",
-      corpo: (
-        <div className="space-y-4 max-w-4xl mx-auto">
-          <div className="grid sm:grid-cols-3 gap-4">
-            <div className="rounded-xl border-l-4 border-l-[#ca0202] border-white/15 bg-white/[0.06] p-4 space-y-2">
-              <span className="text-xs font-black uppercase text-[#ff5a5a]">1. Cota por Turno</span>
-              <h4 className="font-bold text-white text-base">Garantir Mínimo de 3</h4>
-              <p className="text-xs text-white/70 leading-relaxed">
-                Todo auditor escalado deve fiscalizar no mínimo 3 evidências no turno de serviço, lançando no formulário oficial imediatamente após o término.
-              </p>
-            </div>
-
-            <div className="rounded-xl border-l-4 border-l-amber-500 border-white/15 bg-white/[0.06] p-4 space-y-2">
-              <span className="text-xs font-black uppercase text-amber-400">2. Recuperação do Déficit</span>
-              <h4 className="font-bold text-white text-base">Ritmo de 73 / Turno</h4>
-              <p className="text-xs text-white/70 leading-relaxed">
-                Distribuir os lançamentos pendentes entre os auditores das frações com menor índice para fechar as 960 evidências antes do encerramento do mês.
-              </p>
-            </div>
-
-            <div className="rounded-xl border-l-4 border-l-emerald-500 border-white/15 bg-white/[0.06] p-4 space-y-2">
-              <span className="text-xs font-black uppercase text-emerald-400">3. Governança & Auditoria</span>
-              <h4 className="font-bold text-white text-base">Justificativas Formais</h4>
-              <p className="text-xs text-white/70 leading-relaxed">
-                Auditor que declarar &quot;Não auditei&quot; ou registrar menos de 3 vídeos deve apontar o número da Parte ou a justificativa operacional no CCO16.
-              </p>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-white/20 bg-gradient-to-r from-[#ca0202]/30 via-white/10 to-[#ca0202]/30 p-5 text-center backdrop-blur-md">
-            <p className="font-serif text-base sm:text-xl font-bold text-white">
-              16º BPM/M — Compromisso com a Transparência, Eficiência e a Diretriz PM3-001/02/25
-            </p>
-            <p className="text-xs text-white/60 mt-1">
-              Painel Integrado de Governança e Inteligência Operacional · COP 2026
-            </p>
-          </div>
-        </div>
-      ),
-    },
-
-    // ---------------- SLIDE 7: POR QUE AUDITAMOS? (FINALIDADES INSTITUCIONAIS) ----------------
-    {
-      selo: "Diretriz PM3-001/02/25 · Item 6.1.6",
-      titulo: "Por que Auditamos?",
-      subtitulo: "Cinco finalidades institucionais orientam toda a auditoria das evidências digitais obtidas por COP",
-      corpo: (
-        <div className="space-y-4">
-          <div className="rounded-2xl border border-white/15 bg-gradient-to-br from-white/[0.08] to-white/[0.02] p-5 backdrop-blur-md">
-            <p className="text-sm sm:text-base text-white/90 leading-relaxed font-serif">
-              A <strong className="text-white font-bold">Auditoria das Evidências Digitais (COP)</strong> é o exame sistemático, independente e documentado dos registros captados, realizada por meio de credencial pessoal no SiGCED.
-            </p>
-          </div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
             {[
               {
                 num: "01",
-                rotulo: "CONFORMIDADE",
+                rotulo: "Conformidade",
                 desc: "Verificar se os registros e procedimentos atendem aos critérios técnicos estabelecidos.",
-                cor: "text-emerald-400 border-emerald-500/30 bg-emerald-950/20",
               },
               {
                 num: "02",
-                rotulo: "FISCALIZAÇÃO E ORIENTAÇÃO",
+                rotulo: "Fiscalização e orientação",
                 desc: "Subsidiar a fiscalização de natureza pedagógica, disciplinar e procedimental.",
-                cor: "text-blue-400 border-blue-500/30 bg-blue-950/20",
               },
               {
                 num: "03",
-                rotulo: "BOAS PRÁTICAS",
+                rotulo: "Boas práticas",
                 desc: "Identificar condutas, procedimentos e soluções que possam ser reconhecidos e difundidos.",
-                cor: "text-amber-400 border-amber-500/30 bg-amber-950/20",
               },
               {
                 num: "04",
-                rotulo: "MELHORIA CONTÍNUA",
+                rotulo: "Melhoria contínua",
                 desc: "Transformar os achados da auditoria em aperfeiçoamento dos processos operacionais.",
-                cor: "text-rose-400 border-rose-500/30 bg-rose-950/20",
               },
               {
                 num: "05",
-                rotulo: "INTELIGÊNCIA GERENCIAL",
+                rotulo: "Inteligência gerencial",
                 desc: "Extrair indicadores institucionais capazes de subsidiar decisões de gestão.",
-                cor: "text-purple-400 border-purple-500/30 bg-purple-950/20",
               },
-            ].map((item) => (
-              <div
-                key={item.num}
-                className={`rounded-xl border p-4 backdrop-blur-sm transition-all hover:scale-[1.02] ${item.cor}`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-mono text-2xl font-black opacity-80">{item.num}</span>
-                  <span className="text-[11px] font-black tracking-wider uppercase px-2 py-0.5 rounded-md bg-white/10 text-white">
-                    Finalidade
+            ].map((item, k) => (
+              <Cartao key={item.num} i={k + 1} className="p-4">
+                <div className="mb-1.5 flex items-baseline justify-between">
+                  <span className="dados text-[1.5rem] font-bold" style={{ color: INST.ouro }}>
+                    {item.num}
                   </span>
+                  <span className={`${T.rotulo} text-white/40`}>Finalidade</span>
                 </div>
-                <h4 className="font-serif font-black text-sm sm:text-base text-white tracking-wide mb-1">
-                  {item.rotulo}
-                </h4>
-                <p className="text-xs text-white/75 leading-relaxed">
-                  {item.desc}
-                </p>
+                <h4 className={`${T.bloco} text-white`}>{item.rotulo}</h4>
+                <p className={`mt-1 ${T.apoio} text-white/70`}>{item.desc}</p>
+              </Cartao>
+            ))}
+          </div>
+        </div>
+      ),
+    },
+
+    // -------------------------------------------------------------------
+    // 10 · PLANO DE AÇÃO
+    // -------------------------------------------------------------------
+    {
+      selo: "Encerramento e recomendações",
+      titulo: "Plano de ação para os turnos restantes",
+      subtitulo: "Diretrizes executivas para Comandantes de Companhia e Oficiais de Operações",
+      icone: <Target size={13} />,
+      corpo: (
+        <div className="mx-auto max-w-4xl space-y-3">
+          <div className="grid gap-2.5 sm:grid-cols-3">
+            {[
+              {
+                n: "1",
+                cor: INST.vermelho,
+                selo: "Cota por turno",
+                titulo: `Garantir o mínimo de ${p.minimo}`,
+                desc: `Todo auditor escalado fiscaliza no mínimo ${p.minimo} evidências no turno e lança no formulário oficial ao encerrar o serviço.`,
+              },
+              {
+                n: "2",
+                cor: "#d97706",
+                selo: "Recuperação do saldo",
+                titulo: `Ritmo de ${FMT.format(ritmo)} por turno`,
+                desc: `Faltam ${FMT.format(p.falta)} evidências em ${FMT.format(p.turnosRestantes)} turno(s). Concentrar o reforço em ${criticas.map((f) => f.rotulo).join(", ")}.`,
+              },
+              {
+                n: "3",
+                cor: "#16a34a",
+                selo: "Governança",
+                titulo: "Justificativa formal do desvio",
+                desc: `Quem declarar "não auditei" ou ficar abaixo do mínimo aponta o número da Parte ou a justificativa operacional — ${FMT.format(desvios)} caso(s) no ciclo.`,
+              },
+            ].map((c, k) => (
+              <div
+                key={c.n}
+                className={`bf-entra ${SUPERFICIE} space-y-1.5 border-l-4 p-4`}
+                style={{ ...atraso(k), borderLeftColor: c.cor }}
+              >
+                <span className={`${T.rotulo}`} style={{ color: c.cor }}>
+                  {c.n}. {c.selo}
+                </span>
+                <h4 className="text-[14px] font-bold text-white">{c.titulo}</h4>
+                <p className={`${T.apoio} text-white/70`}>{c.desc}</p>
               </div>
             ))}
+          </div>
+
+          <Bloco i={3} icone={<ListChecks size={15} />} titulo="Onde concentrar o reforço">
+            <ul className="space-y-2.5">
+              {criticas.map((f, k) => (
+                <li key={f.chave} className="flex flex-wrap items-center gap-2.5">
+                  <span className="w-24 shrink-0 text-[12.5px] font-bold text-white sm:w-28">
+                    {f.rotulo}
+                  </span>
+                  <Barra pct={f.pct} nivel={f.nivel} altura="h-2" i={k} />
+                  <span className={`${T.dado} shrink-0 text-white/70`}>
+                    faltam {FMT.format(f.falta)} · {FMT.format(Math.ceil(f.ritmoNecessario))}/turno ·{" "}
+                    {FMT.format(f.lancaram)} de {FMT.format(f.efetivo)} lançaram
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </Bloco>
+
+          <div
+            className="bf-entra rounded-xl border border-white/20 p-4 text-center backdrop-blur-md"
+            style={{
+              ...atraso(4),
+              background: `linear-gradient(90deg, ${INST.vermelho}33, rgba(255,255,255,0.07), ${INST.vermelho}33)`,
+            }}
+          >
+            <p className="font-serif text-[15px] font-bold text-white sm:text-lg">
+              16º BPM/M — Compromisso com a transparência, a eficiência e a Diretriz PM3-001/02/25
+            </p>
+            <p className={`mt-1 ${T.apoio} text-white/55`}>
+              Ambiente Executivo de Gestão e Controle · Auditoria de COP 2026 · {lidoEm}
+            </p>
           </div>
         </div>
       ),
@@ -562,7 +905,10 @@ export function BriefingSlides({
   ];
 
   const total = slides.length;
-  const ir = useCallback((d: number) => setI((v) => Math.min(total - 1, Math.max(0, v + d))), [total]);
+  const ir = useCallback(
+    (d: number) => setI((x) => Math.min(total - 1, Math.max(0, x + d))),
+    [total]
+  );
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -574,133 +920,140 @@ export function BriefingSlides({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [ir, total]);
+  }, [ir, total, toggleFullscreen]);
 
   const s = slides[i];
+  const dd = (n: number) => String(n).padStart(2, "0");
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#0b0b0e] text-white relative overflow-hidden select-none">
-      {/* Background Operacional Sutil */}
-      <div className="absolute inset-0 pointer-events-none opacity-20 mix-blend-luminosity">
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="h-full w-full object-cover"
-        >
+    <div className="briefing-raiz relative flex min-h-screen select-none flex-col overflow-hidden bg-[#0b0b0e] text-white">
+      {/* Fundo operacional. Fica bem abaixo do limiar de leitura: o vídeo é
+          ambientação, e qualquer coisa acima disso disputa com o número. */}
+      <div className="nao-imprime pointer-events-none absolute inset-0 opacity-[0.14] mix-blend-luminosity">
+        <video autoPlay loop muted playsInline className="h-full w-full object-cover">
           <source src="/media/clip_patrulha_noturna.mp4" type="video/mp4" />
         </video>
       </div>
-      <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-[#0b0b0e]/95 via-[#0b0b0e]/85 to-[#0b0b0e]/95" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#0b0b0e]/95 via-[#0b0b0e]/88 to-[#0b0b0e]/96" />
 
-      {/* ---------------- BARRA SUPERIOR DE CONTROLE EXECUTIVO ---------------- */}
-      <div className="relative z-20 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 bg-[#0b0b0e]/80 px-4 py-3 sm:px-6 sm:py-3.5 backdrop-blur-md">
-        <div className="flex items-center gap-3">
+      {/* ---------------- BARRA SUPERIOR ---------------- */}
+      <header className="nao-imprime relative z-20 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 bg-[#0b0b0e]/85 px-4 py-2.5 backdrop-blur-md sm:px-6">
+        <div className="flex items-center gap-2.5">
           <Link
             href="/cop2026/dashboard"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-white/20 bg-white/5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-white transition-all hover:border-[#ca0202] hover:bg-[#ca0202]/15 shadow-sm"
-            title="Retornar ao Dashboard de Controle"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-white/20 bg-white/5 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-white transition-all hover:border-[#ca0202] hover:bg-[#ca0202]/15"
+            title="Retornar ao painel de controle"
           >
-            <BarChart3 size={15} />
-            <span className="hidden sm:inline">Painel de Controle</span>
+            <BarChart3 size={14} />
+            <span className="hidden sm:inline">Painel de controle</span>
           </Link>
           <Link
             href="/cop2026"
-            className="hidden items-center gap-1 text-xs font-semibold text-white/60 transition-colors hover:text-white sm:inline-flex"
-            title="Ir para página de lançamento"
+            className="inline-flex items-center gap-1 rounded-lg border border-white/20 bg-white/5 px-2.5 py-1.5 text-[11px] font-semibold text-white/60 transition-colors hover:border-white hover:text-white sm:border-0 sm:bg-transparent sm:px-0 sm:py-0"
           >
             <Home size={13} />
-            <span>Início</span>
+            <span className="hidden sm:inline">Início</span>
           </Link>
         </div>
 
-        {/* Indicador Central de Slide */}
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-mono font-bold text-white/50">SLIDE</span>
-          <span className="rounded-md bg-[#ca0202] px-2 py-0.5 text-xs font-mono font-black text-white">
-            0{i + 1} / 0{total}
+        <div className="flex min-w-0 items-center gap-2">
+          <span className={`${T.rotulo} text-white/40`}>Slide</span>
+          <span className="dados rounded-md bg-[#ca0202] px-2 py-0.5 text-[11px] font-bold text-white">
+            {dd(i + 1)} / {dd(total)}
           </span>
-          <span className="hidden md:inline text-xs font-serif font-bold text-white/70 uppercase tracking-wider truncate max-w-[280px]">
+          <span className="hidden max-w-[300px] truncate font-serif text-[11px] font-bold uppercase tracking-wider text-white/65 md:inline">
             · {s.selo}
           </span>
         </div>
 
-        {/* Ações Rápidas: Tela Cheia & Imprimir */}
         <div className="flex items-center gap-2">
           {email && (
-            <span className="hidden items-center gap-2 text-[12px] text-white/45 lg:inline-flex mr-2">
+            <span className="mr-1 hidden items-center gap-2 text-[11px] text-white/40 lg:inline-flex">
               {ehAdmin && (
                 <a href="/cop2026/admin" className="font-bold hover:text-white">
                   Autorizados
                 </a>
               )}
-              <span className="font-mono">{email}</span>
+              <span className="dados">{email}</span>
             </span>
           )}
           <button
             onClick={toggleFullscreen}
-            className="inline-flex items-center gap-1.5 rounded-md border border-white/20 bg-white/5 px-2.5 py-1.5 text-xs font-bold uppercase tracking-wide text-white/80 transition-colors hover:border-white hover:text-white cursor-pointer"
-            title="Alternar Modo Tela Cheia (Atalho: tecla F)"
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-white/20 bg-white/5 px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-white/80 transition-colors hover:border-white hover:text-white"
+            title="Alternar tela cheia (tecla F)"
           >
             {fullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-            <span className="hidden md:inline">{fullscreen ? "Sair Tela Cheia" : "Tela Cheia"}</span>
+            <span className="hidden md:inline">{fullscreen ? "Sair da tela cheia" : "Tela cheia"}</span>
           </button>
           <button
             onClick={() => window.print()}
-            className="inline-flex items-center gap-1.5 rounded-md border border-white/20 bg-white/5 px-2.5 py-1.5 text-xs font-bold uppercase tracking-wide text-white/80 transition-colors hover:border-[#ca0202] hover:text-white cursor-pointer"
-            title="Imprimir apresentação ou salvar como PDF"
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-white/20 bg-white/5 px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-white/80 transition-colors hover:border-[#ca0202] hover:text-white"
+            title="Imprimir ou salvar em PDF"
           >
             <Printer size={14} />
             <span className="hidden sm:inline">PDF</span>
           </button>
+          {email && (
+            <a
+              href="/api/cop2026/acesso/sair"
+              className="inline-flex items-center gap-1.5 rounded-md border border-white/20 bg-white/5 px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-white/80 transition-colors hover:border-[#ca0202] hover:text-white"
+              title="Encerrar sessão"
+            >
+              <LogOut size={14} />
+              <span className="hidden sm:inline">Sair</span>
+            </a>
+          )}
         </div>
+      </header>
+
+      {/* Progresso da apresentação */}
+      <div className="relative z-20 h-0.5 w-full bg-white/10">
+        <div
+          className="h-full bg-[#ca0202] transition-all duration-500"
+          style={{ width: `${((i + 1) / total) * 100}%` }}
+        />
       </div>
 
-      {/* ---------------- CORPO DO SLIDE ATUAL COM ANIMAÇÃO ---------------- */}
-      <div className="relative z-10 flex flex-1 items-center justify-center px-4 py-6 sm:px-8 sm:py-8 overflow-y-auto">
-        <div key={i} className="w-full max-w-5xl animate-[slideIn_350ms_cubic-bezier(0.16,1,0.3,1)]">
-          {/* Cabeçalho do Slide */}
-          <div className="mb-6">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/15 px-3 py-1 text-xs font-black uppercase tracking-wider text-[#ff5a5a] backdrop-blur-sm">
-              <Award size={12} />
-              <span>{s.selo}</span>
+      {/* ---------------- CORPO ---------------- */}
+      <main className="relative z-10 flex flex-1 items-start justify-center overflow-y-auto px-4 py-5 sm:px-8 sm:py-7">
+        <div key={i} className="w-full max-w-6xl">
+          {!s.semCabecalho && (
+            <div className="bf-entra mb-4" style={atraso(0)}>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[#ff5a5a] backdrop-blur-sm">
+                {s.icone ?? <Award size={12} />}
+                {s.selo}
+              </span>
+              <h2 className={`mt-2 ${T.titulo} text-white`}>{s.titulo}</h2>
+              {s.subtitulo && (
+                <p className={`mt-1 ${T.corpo} text-white/55`}>{s.subtitulo}</p>
+              )}
             </div>
-            <h2 className="mt-2 font-serif text-2xl sm:text-3xl lg:text-4xl font-black text-white leading-tight">
-              {s.titulo}
-            </h2>
-            {s.subtitulo && (
-              <p className="mt-1 text-xs sm:text-sm text-white/60 tracking-wide font-medium">
-                {s.subtitulo}
-              </p>
-            )}
-          </div>
-
-          {/* Conteúdo Dinâmico */}
+          )}
           <div>{s.corpo}</div>
         </div>
-      </div>
+      </main>
 
-      {/* ---------------- BARRA INFERIOR DE NAVEGAÇÃO & PROGRESSO ---------------- */}
-      <div className="relative z-20 flex items-center justify-between border-t border-white/10 bg-[#0b0b0e]/90 px-4 py-3 sm:px-6 sm:py-4 backdrop-blur-md">
+      {/* ---------------- NAVEGAÇÃO ---------------- */}
+      <nav className="relative z-20 flex items-center justify-between gap-3 border-t border-white/10 bg-[#0b0b0e]/90 px-4 py-2.5 backdrop-blur-md sm:px-6 sm:py-3">
         <button
           onClick={() => ir(-1)}
           disabled={i === 0}
-          className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2.5 text-xs sm:text-sm font-bold uppercase tracking-wider transition-all hover:bg-white/20 disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
+          className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-white/10 px-3.5 py-2 text-[11px] font-bold uppercase tracking-wider transition-all hover:bg-white/20 disabled:pointer-events-none disabled:opacity-30 sm:text-xs"
         >
-          <ArrowLeft size={16} /> <span className="hidden sm:inline">Anterior</span>
+          <ArrowLeft size={15} />
+          <span className="hidden sm:inline">Anterior</span>
         </button>
 
-        {/* Seletor Rápido de Slides com Clique Direto */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          {slides.map((_, k) => (
+        <div className="flex items-center gap-1.5">
+          {slides.map((sl, k) => (
             <button
               key={k}
               onClick={() => setI(k)}
-              className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer ${
-                k === i ? "w-8 sm:w-10 bg-[#ca0202]" : "w-2.5 bg-white/25 hover:bg-white/50"
+              className={`h-2 cursor-pointer rounded-full transition-all duration-300 ${
+                k === i ? "w-7 bg-[#ca0202] sm:w-9" : "w-2 bg-white/25 hover:bg-white/50"
               }`}
-              title={`Ir para o Slide ${k + 1}`}
+              title={`${dd(k + 1)} · ${sl.selo}`}
+              aria-label={`Ir para o slide ${k + 1}: ${sl.titulo}`}
             />
           ))}
         </div>
@@ -708,30 +1061,18 @@ export function BriefingSlides({
         <button
           onClick={() => ir(1)}
           disabled={i === total - 1}
-          className="inline-flex items-center gap-2 rounded-xl bg-[#ca0202] px-4 py-2.5 text-xs sm:text-sm font-bold uppercase tracking-wider text-white transition-all hover:bg-[#e40707] hover:shadow-lg hover:shadow-[#ca0202]/30 disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
+          className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-[#ca0202] px-3.5 py-2 text-[11px] font-bold uppercase tracking-wider text-white transition-all hover:bg-[#e40707] hover:shadow-lg hover:shadow-[#ca0202]/30 disabled:pointer-events-none disabled:opacity-30 sm:text-xs"
         >
-          <span className="hidden sm:inline">Próximo</span> <ArrowRight size={16} />
+          <span className="hidden sm:inline">Próximo</span>
+          <ArrowRight size={15} />
         </button>
-      </div>
+      </nav>
 
-      {/* ---------------- RODAPÉ DE SEGURANÇA & CRÉDITOS ---------------- */}
-      <div className="relative z-20 flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t border-white/10 bg-[#0b0b0e] px-4 py-2.5 sm:px-6 text-white">
+      {/* ---------------- RODAPÉ ---------------- */}
+      <footer className="nao-imprime relative z-20 hidden flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t border-white/10 bg-[#0b0b0e] px-4 py-2 text-white sm:flex sm:px-6">
         <SelosSeguranca />
         <AssinaturaDesenvolvimento />
-      </div>
-
-      <style>{`
-        @keyframes slideIn {
-          from {
-            opacity: 0;
-            transform: translateY(12px) scale(0.99);
-          }
-          to {
-            opacity: 1;
-            transform: none;
-          }
-        }
-      `}</style>
+      </footer>
     </div>
   );
 }

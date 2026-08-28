@@ -423,6 +423,36 @@ body {
 }
 
 /* ============================================================================
+   Pulso da Matriz de Faixas (velocímetro de metas).
+   A cor viva é injetada pelo componente via a custom property `--faixa`
+   (COR_FAIXA do nível atual). Como a faixa muda com o resultado, todo elemento
+   que carrega estas classes acompanha a cor — vermelho→laranja→verde→azul.
+   ============================================================================ */
+@keyframes pulso-faixa {
+  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--faixa, #ca0202) 55%, transparent); }
+  70%  { box-shadow: 0 0 0 13px color-mix(in srgb, var(--faixa, #ca0202) 0%, transparent); }
+  100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--faixa, #ca0202) 0%, transparent); }
+}
+.pulso-faixa { animation: pulso-faixa 1.5s ease-out infinite; }
+
+@keyframes pulso-faixa-card {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--faixa, #ca0202) 0%, transparent); }
+  50%      { box-shadow: 0 0 0 5px color-mix(in srgb, var(--faixa, #ca0202) 14%, transparent),
+                         0 0 26px color-mix(in srgb, var(--faixa, #ca0202) 20%, transparent); }
+}
+.pulso-faixa-card { animation: pulso-faixa-card 1.8s ease-in-out infinite; }
+
+@keyframes pulso-faixa-texto {
+  0%, 100% { text-shadow: 0 0 0 color-mix(in srgb, var(--faixa, #ca0202) 0%, transparent); }
+  50%      { text-shadow: 0 0 18px color-mix(in srgb, var(--faixa, #ca0202) 60%, transparent); }
+}
+.pulso-faixa-texto { animation: pulso-faixa-texto 1.7s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pulso-faixa, .pulso-faixa-card, .pulso-faixa-texto { animation: none; }
+}
+
+/* ============================================================================
    Faixa de imagens em rolagem contínua (página oficial do 16º BPM/M).
    A trilha repete o mesmo bloco duas vezes e desliza exatamente metade da
    própria largura — por isso o laço é imperceptível. Sem JS.
@@ -516,4 +546,91 @@ body {
 
 @media print {
   .card-semana { box-shadow: none; }
+}
+
+/* ============================================================================
+   BRIEFING EXECUTIVO (/cop2026/briefing) — movimento
+
+   O briefing é projetado em telão, para o Comando, e roda sozinho. O movimento
+   aqui tem uma função só: dizer em que ordem se lê o slide. Entrada em cascata
+   (`--bf-d` cresce com o índice do item), barra que cresce da esquerda, número
+   que conta. Nada pisca, nada gira, nada se repete infinitamente exceto o
+   indicador "ao vivo" — em reunião, movimento perpétuo rouba a fala de quem
+   está apresentando.
+
+   Toda animação desta seção morre em prefers-reduced-motion (regra no fim).
+   ============================================================================ */
+@keyframes bf-surge {
+  from { opacity: 0; transform: translateY(10px) scale(0.985); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes bf-cresce {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+@keyframes bf-sobe {
+  from { transform: scaleY(0); }
+  to   { transform: scaleY(1); }
+}
+@keyframes bf-vivo {
+  0%, 100% { opacity: 1;    box-shadow: 0 0 0 0 rgba(202, 2, 2, 0.55); }
+  50%      { opacity: 0.45; box-shadow: 0 0 0 6px rgba(202, 2, 2, 0); }
+}
+@keyframes bf-traco {
+  from { stroke-dashoffset: var(--bf-traco, 1200); }
+  to   { stroke-dashoffset: 0; }
+}
+
+/* Entrada em cascata. O atraso vem do índice do item, não do CSS: quem chama
+   passa --bf-d. */
+.bf-entra {
+  animation: bf-surge 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--bf-d, 0ms);
+}
+
+/* Barra de progresso horizontal: cresce da esquerda até a largura que o
+   `style` já definiu. scaleX preserva o valor real da barra. */
+.bf-barra {
+  transform-origin: left center;
+  animation: bf-cresce 820ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--bf-d, 120ms);
+}
+
+/* Coluna vertical (histograma, produção diária). */
+.bf-coluna {
+  transform-origin: bottom center;
+  animation: bf-sobe 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--bf-d, 100ms);
+}
+
+/* Traço de linha em SVG desenhando-se. */
+.bf-linha {
+  stroke-dasharray: var(--bf-traco, 1200);
+  animation: bf-traco 1400ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--bf-d, 200ms);
+}
+
+/* Único movimento perpétuo permitido: o ponto de dado ao vivo. */
+.bf-ao-vivo { animation: bf-vivo 2s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .bf-entra,
+  .bf-barra,
+  .bf-coluna,
+  .bf-linha,
+  .bf-ao-vivo {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    stroke-dashoffset: 0 !important;
+  }
+}
+
+/* O briefing e branco sobre quase-preto na tela. O navegador nao imprime o
+   fundo, entao o texto saia invisivel e o botao PDF devolvia folha em
+   branco. No papel a peca inverte: tinta escura sobre o branco da folha. */
+@media print {
+  .briefing-raiz { background: #fff !important; min-height: 0 !important; overflow: visible !important; }
+  .briefing-raiz * { color: #111 !important; border-color: rgba(17, 17, 17, 0.25) !important; }
+  .briefing-raiz .overflow-y-auto { overflow: visible !important; }
 }
