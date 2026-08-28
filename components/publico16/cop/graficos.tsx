@@ -709,7 +709,7 @@ export function QuadroSemanalBatalhao({
   onSelecionarSemana?: (semana: string) => void;
 }) {
   return (
-    <div className="grid grid-cols-2 gap-3 sm:gap-3.5 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-4 lg:gap-5">
       {semanas.map((s) => {
         const ativa = semanaAtiva === String(s.semana);
         return (
@@ -718,7 +718,7 @@ export function QuadroSemanalBatalhao({
             type="button"
             onClick={() => onSelecionarSemana?.(ativa ? "todas" : String(s.semana))}
             className={cn(
-              "card-semana group flex min-h-[158px] flex-col rounded-xl border-2 p-3 text-left sm:p-3.5",
+              "card-semana group flex min-h-[190px] flex-col rounded-2xl border-2 p-4 text-left shadow-[0_7px_18px_rgba(15,23,42,0.09)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_24px_rgba(15,23,42,0.15)] sm:min-h-[204px] sm:p-5",
               ativa
                 ? "border-vermelho bg-gradient-to-b from-red-50 via-white to-red-50/50 shadow-md ring-2 ring-vermelho"
                 : "border-slate-300/85 bg-gradient-to-b from-[#ffffff] via-[#f8fafc] to-[#edf3f8] hover:border-vermelho/60"
@@ -727,21 +727,21 @@ export function QuadroSemanalBatalhao({
             aria-label={`Filtrar por ${s.rotulo} — ${PCT.format(s.pct)}% da meta`}
           >
             <div className="flex items-center justify-between gap-1">
-              <span className="font-serif text-[13px] font-black text-[#1d1d1d] group-hover:text-vermelho sm:text-sm">
+              <span className="font-serif text-sm font-black uppercase tracking-wide text-[#1d1d1d] group-hover:text-vermelho sm:text-base">
                 {s.rotulo}
               </span>
               <Selo nivel={s.nivel} />
             </div>
-            <p className="mt-0.5 text-[11px] font-bold text-slate-600">Dias {s.diasRotulo}</p>
+            <p className="mt-1 text-xs font-bold text-slate-600 sm:text-[13px]">Dias {s.diasRotulo}</p>
 
-            <div className="mt-2.5 sm:mt-3 flex flex-wrap items-baseline justify-between gap-1">
-              <span className="metric-card text-2xl font-black text-[#1d1d1d] sm:text-3xl">
+            <div className="mt-5 flex flex-wrap items-baseline justify-between gap-2">
+              <span className="metric-card text-3xl font-black text-[#1d1d1d] sm:text-4xl">
                 {FMT.format(s.feito)}
                 <span className="text-xs font-bold text-slate-500"> / {FMT.format(s.meta)}</span>
               </span>
               <span
                 className={cn(
-                  "dados rounded-lg border px-2 py-0.5 text-[11px] font-black",
+                  "dados rounded-lg border px-2.5 py-1 text-xs font-black shadow-xs",
                   CAIXA_FAIXA[s.nivel]
                 )}
               >
@@ -749,7 +749,7 @@ export function QuadroSemanalBatalhao({
               </span>
             </div>
 
-            <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-slate-200">
+            <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-slate-200 shadow-inner">
               <div
                 className="h-full rounded-full transition-all duration-700"
                 style={{
@@ -759,7 +759,7 @@ export function QuadroSemanalBatalhao({
               />
             </div>
 
-            <p className="mt-2.5 text-[11px] font-bold text-slate-700">
+            <p className="mt-4 text-xs font-bold text-slate-700 sm:text-[13px]">
               {s.falta > 0 ? (
                 <>
                   Faltam <strong className="dados font-black text-[#ca0202]">{FMT.format(s.falta)}</strong> p/ meta
