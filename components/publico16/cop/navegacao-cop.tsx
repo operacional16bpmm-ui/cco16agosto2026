@@ -79,17 +79,27 @@ export function NavegacaoCop({
             <ArrowLeft className="h-4 w-4" />
           </Link>
 
-          <Link href="/cop2026" className="flex items-center gap-2.5 group">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-vermelho text-white font-serif font-black text-sm shadow-sm transition-transform group-hover:scale-105">
-              16
-            </span>
+          <Link href="/cop2026" className="flex items-center gap-3 group">
+            {/* Emblema de Auditoria & Fiscalização de COP 2026 */}
+            <div className="relative flex items-center justify-center rounded-full overflow-hidden shadow-md ring-2 ring-vermelho/60 transition-transform duration-300 group-hover:scale-105 group-hover:ring-vermelho shrink-0">
+              <Image
+                src="/brand/emblema-cop2026.jpg"
+                alt="Emblema de Auditoria de COP 2026"
+                width={48}
+                height={48}
+                className="h-10 w-10 sm:h-11 sm:w-11 object-cover"
+                priority
+              />
+            </div>
             <div>
               <p className="font-serif text-sm sm:text-base font-black uppercase leading-tight text-[#1d1d1d]">
-                Portal CCO 16º BPM/M
+                Auditoria de COP 2026
               </p>
-              <p className="text-[11px] font-semibold text-slate-500">
-                {tituloPagina}
-              </p>
+              <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-600">
+                <span className="text-vermelho">Controle & Fiscalização</span>
+                <span>·</span>
+                <span className="text-slate-500">{tituloPagina}</span>
+              </div>
             </div>
           </Link>
         </div>
