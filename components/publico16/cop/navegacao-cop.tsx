@@ -82,7 +82,7 @@ export function NavegacaoCop({
           <Link href="/cop2026" className="flex items-center group">
             {/* Logo Auditoria COP 2026 */}
             <Image
-              src="/brand/logo-auditoria-cop2026.webp"
+              src="/brand/logo-auditoria-cop2026-transparent.png"
               alt="16º BPM/M · Auditoria COP 2026 — Controle e Fiscalização das Câmeras Operacionais Corporais"
               width={280}
               height={80}

@@ -448,7 +448,7 @@ export function DashboardCop({
           {/* Identidade completa da Auditoria COP 2026 */}
           <div className="relative shrink-0 flex items-center justify-center md:pr-8 md:border-r md:border-slate-300/70">
             <Image
-              src="/brand/logo-auditoria-cop2026.png"
+              src="/brand/logo-auditoria-cop2026-transparent.png"
               alt="16º BPM/M — Auditoria COP 2026 — Controle e Fiscalização das Câmeras Operacionais Corporais"
               width={1536}
               height={1536}

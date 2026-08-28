@@ -76,7 +76,7 @@ export function CabecalhoInventario() {
 
           <div className="ml-auto flex shrink-0 items-center justify-center rounded-2xl border border-white/25 bg-white/92 p-2 shadow-[0_14px_35px_rgba(0,0,0,0.38)] backdrop-blur-sm sm:p-3">
             <Image
-              src="/brand/logo-auditoria-cop2026.png"
+              src="/brand/logo-auditoria-cop2026-transparent.png"
               alt="16º BPM/M — Auditoria COP 2026"
               width={1536}
               height={1536}
