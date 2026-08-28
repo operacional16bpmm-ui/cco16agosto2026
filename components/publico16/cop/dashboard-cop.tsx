@@ -48,7 +48,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Cartao, Selo, SemDados } from "./primitivos";
 import { PaletaComando } from "./paleta-comando";
-import { DashboardLayout } from "./dashboard-layout";
+import { DashboardKpiLayout, DashboardLayout } from "./dashboard-layout";
 import {
   AgulhaoMetas,
   BarrasSimples,
@@ -312,9 +312,7 @@ export function DashboardCop({
       key={k.rotulo}
       className={cn(
         "group relative overflow-hidden rounded-2xl border-2 border-slate-300/85 bg-white shadow-[0_4px_16px_rgba(15,23,42,0.06)] transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_12px_28px_rgba(202,2,2,0.22)] hover:border-vermelho",
-        principal
-          ? "min-h-[220px] p-6 sm:min-h-[250px] sm:p-7"
-          : "min-h-[148px] p-4 sm:min-h-[164px] sm:p-5"
+        principal ? "h-full p-5 sm:p-6" : "h-full p-4 sm:p-5"
       )}
     >
       <div className="absolute inset-0 z-0 overflow-hidden">
@@ -898,15 +896,10 @@ export function DashboardCop({
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <DashboardKpiLayout>
               {kpisPrincipais.map((k) => renderKpi(k, true))}
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-3">
               {kpisApoio.map((k) => renderKpi(k, false))}
-            </div>
-
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border-2 border-slate-300/85 bg-gradient-to-r from-[#ffffff] via-[#f8fafc] to-[#edf3f8] px-4 py-3 text-[12.5px] text-texto-suave shadow-xs">
+              <div key="resumo-indicadores" className="flex h-full flex-wrap items-center justify-between gap-3 rounded-2xl border-2 border-slate-300/85 bg-gradient-to-r from-[#ffffff] via-[#f8fafc] to-[#edf3f8] px-4 py-3 text-[12.5px] text-texto-suave shadow-xs">
               <span>
                 Mediana por lançamento: <strong className="dados text-branco font-bold">{FMT.format(p.mediana)}</strong> · p90{" "}
                 <strong className="dados text-branco font-bold">{FMT.format(p.p90)}</strong>
@@ -918,7 +911,8 @@ export function DashboardCop({
               <span>
                 Partes confeccionadas: <strong className="dados text-branco font-bold">{FMT.format(p.partes)}</strong>
               </span>
-            </div>
+              </div>
+            </DashboardKpiLayout>
           </div>
 
           {/* Lado Direito: Agulhão / Manômetro de Atingimento */}

@@ -1,6 +1,6 @@
 "use client";
 
-import { Children, type ReactNode, useEffect, useMemo, useState } from "react";
+import { Children, createContext, type ReactNode, useContext, useEffect, useMemo, useState } from "react";
 import { GripVertical, LayoutDashboard, Lock, RotateCcw, Unlock } from "lucide-react";
 import {
   ResponsiveGridLayout,
@@ -13,18 +13,20 @@ import { toast } from "sonner";
 
 type Breakpoint = "lg" | "md" | "sm" | "xs";
 
-const STORAGE_KEY = "cop2026-dashboard-layout-v1";
+const STORAGE_KEY = "cop2026-dashboard-layout-v2";
+const KPI_STORAGE_KEY = "cop2026-dashboard-kpi-layout-v1";
+const DashboardEditingContext = createContext(false);
 
 const DEFAULT_LAYOUT: ResponsiveLayouts<Breakpoint> = {
   lg: [
-    { i: "situacao", x: 0, y: 0, w: 12, h: 19, minW: 5, minH: 10 },
-    { i: "semanal", x: 0, y: 19, w: 12, h: 14, minW: 5, minH: 8 },
-    { i: "onde-agir", x: 0, y: 33, w: 12, h: 17, minW: 5, minH: 9 },
-    { i: "atencao", x: 0, y: 50, w: 12, h: 13, minW: 5, minH: 8 },
-    { i: "analise", x: 0, y: 63, w: 12, h: 20, minW: 6, minH: 10 },
-    { i: "tabela", x: 0, y: 83, w: 12, h: 18, minW: 6, minH: 10 },
-    { i: "lancamentos", x: 0, y: 101, w: 12, h: 18, minW: 6, minH: 10 },
-    { i: "galeria", x: 0, y: 119, w: 12, h: 12, minW: 4, minH: 7 },
+    { i: "situacao", x: 0, y: 0, w: 12, h: 24, minW: 5, minH: 13 },
+    { i: "semanal", x: 0, y: 24, w: 12, h: 14, minW: 5, minH: 8 },
+    { i: "onde-agir", x: 0, y: 38, w: 12, h: 17, minW: 5, minH: 9 },
+    { i: "atencao", x: 0, y: 55, w: 12, h: 13, minW: 5, minH: 8 },
+    { i: "analise", x: 0, y: 68, w: 12, h: 20, minW: 6, minH: 10 },
+    { i: "tabela", x: 0, y: 88, w: 12, h: 18, minW: 6, minH: 10 },
+    { i: "lancamentos", x: 0, y: 106, w: 12, h: 18, minW: 6, minH: 10 },
+    { i: "galeria", x: 0, y: 124, w: 12, h: 12, minW: 4, minH: 7 },
   ],
   md: [],
   sm: [],
@@ -112,6 +114,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   }
 
   return (
+    <DashboardEditingContext.Provider value={editing}>
     <div ref={containerRef}>
       <div className="nao-imprime sticky top-2 z-40 mb-4 flex flex-wrap items-center gap-2 rounded-2xl border-2 border-slate-300 bg-white/95 p-2.5 shadow-lg backdrop-blur">
         <span className="mr-auto inline-flex items-center gap-2 px-2 text-xs font-black uppercase tracking-wider text-slate-800">
@@ -155,6 +158,87 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
           resizeConfig={{ enabled: editing, handles: ["se", "sw", "ne", "nw"] }}
           onLayoutChange={onLayoutChange}
           className="dashboard-configurable-grid"
+        >
+          {items}
+        </ResponsiveGridLayout>
+      )}
+    </div>
+    </DashboardEditingContext.Provider>
+  );
+}
+
+const DEFAULT_KPI_LAYOUT: ResponsiveLayouts<Breakpoint> = {
+  lg: [
+    { i: "Cumprimento da meta", x: 0, y: 0, w: 6, h: 6, minW: 3, minH: 4 },
+    { i: "Ritmo necessário", x: 6, y: 0, w: 6, h: 6, minW: 3, minH: 4 },
+    { i: "Evidências auditadas", x: 0, y: 6, w: 4, h: 4, minW: 2, minH: 3 },
+    { i: "Auditores ativos", x: 4, y: 6, w: 4, h: 4, minW: 2, minH: 3 },
+    { i: "Conformidade (≥3)", x: 8, y: 6, w: 4, h: 4, minW: 2, minH: 3 },
+    { i: "resumo-indicadores", x: 0, y: 10, w: 12, h: 2, minW: 4, minH: 2 },
+  ],
+  md: [],
+  sm: [],
+  xs: [],
+};
+
+export function DashboardKpiLayout({ children }: { children: ReactNode }) {
+  const editing = useContext(DashboardEditingContext);
+  const { width, containerRef, mounted } = useContainerWidth({ measureBeforeMount: true });
+  const [layouts, setLayouts] = useState<ResponsiveLayouts<Breakpoint>>(() => makeResponsive(DEFAULT_KPI_LAYOUT));
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(KPI_STORAGE_KEY);
+      if (saved) setLayouts(makeResponsive(JSON.parse(saved) as ResponsiveLayouts<Breakpoint>));
+    } catch {
+      window.localStorage.removeItem(KPI_STORAGE_KEY);
+    } finally {
+      setHydrated(true);
+    }
+  }, []);
+
+  const items = useMemo(
+    () =>
+      Children.toArray(children).map((child) => {
+        const rawKey = typeof child === "object" && child && "key" in child ? String(child.key) : "indicador";
+        const key = rawKey.replace(/^\.\$/, "");
+        return (
+          <div key={key} className={editing ? "dashboard-kpi dashboard-kpi-editing" : "dashboard-kpi"}>
+            {editing && (
+              <div className="dashboard-kpi-handle nao-imprime" title={`Mover ${key}`}>
+                <GripVertical size={14} aria-hidden />
+                <span className="truncate">{key === "resumo-indicadores" ? "Resumo operacional" : key}</span>
+              </div>
+            )}
+            <div className="dashboard-kpi-content">{child}</div>
+          </div>
+        );
+      }),
+    [children, editing]
+  );
+
+  function onLayoutChange(_current: Layout, next: ResponsiveLayouts<Breakpoint>) {
+    setLayouts(next);
+    if (hydrated) window.localStorage.setItem(KPI_STORAGE_KEY, JSON.stringify(next));
+  }
+
+  return (
+    <div ref={containerRef} className="min-w-0">
+      {mounted && (
+        <ResponsiveGridLayout<Breakpoint>
+          width={width}
+          breakpoints={{ lg: 700, md: 520, sm: 360, xs: 0 }}
+          cols={{ lg: 12, md: 8, sm: 1, xs: 1 }}
+          layouts={layouts}
+          rowHeight={34}
+          margin={{ lg: [14, 14], md: [12, 12], sm: [10, 10], xs: [8, 8] }}
+          containerPadding={null}
+          compactor={verticalCompactor}
+          dragConfig={{ enabled: editing, handle: ".dashboard-kpi-handle", bounded: true }}
+          resizeConfig={{ enabled: editing, handles: ["se", "sw", "ne", "nw"] }}
+          onLayoutChange={onLayoutChange}
+          className="dashboard-kpi-grid"
         >
           {items}
         </ResponsiveGridLayout>

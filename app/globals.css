@@ -320,6 +320,50 @@ body {
   cursor: grabbing;
 }
 
+.dashboard-kpi {
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 1rem;
+  container-type: size;
+}
+
+.dashboard-kpi-content {
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
+}
+
+.dashboard-kpi-editing {
+  border: 2px solid rgba(202, 2, 2, 0.8);
+  background: white;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.2), 0 0 0 3px rgba(202, 2, 2, 0.1);
+}
+
+.dashboard-kpi-editing .dashboard-kpi-content {
+  height: calc(100% - 30px);
+}
+
+.dashboard-kpi-handle {
+  display: flex;
+  height: 30px;
+  cursor: grab;
+  align-items: center;
+  gap: 0.3rem;
+  background: linear-gradient(90deg, #8e0000, #ca0202);
+  padding: 0 0.55rem;
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 900;
+  user-select: none;
+}
+
+.dashboard-kpi-handle:active { cursor: grabbing; }
+
+@container (max-width: 320px) {
+  .dashboard-kpi .metric-hero { font-size: clamp(1.75rem, 16cqi, 3.25rem); }
+  .dashboard-kpi p, .dashboard-kpi span { line-height: 1.15; }
+}
+
 .react-grid-item {
   transition: transform 180ms ease, width 180ms ease, height 180ms ease;
 }
@@ -374,7 +418,9 @@ body {
     margin-bottom: 1.5rem;
   }
   .dashboard-widget,
-  .dashboard-widget-content {
+  .dashboard-widget-content,
+  .dashboard-kpi,
+  .dashboard-kpi-content {
     height: auto !important;
     overflow: visible !important;
   }
