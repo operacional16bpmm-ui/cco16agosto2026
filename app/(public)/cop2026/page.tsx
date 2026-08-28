@@ -108,28 +108,60 @@ export default async function Cop2026Page() {
         </div>
       </header>
 
-      {/* Arte da campanha, em faixa própria de ponta a ponta. O título e o
-          resumo da diretriz já estão na própria imagem, então a página não os
-          repete em texto: fica só o h1 para leitor de tela e buscador. */}
-      <div className="relative h-[42vh] min-h-[260px] w-full overflow-hidden bg-[#07070a] sm:h-[430px]">
-        {/* A arte é quase quadrada; o mesmo frame desfocado preenche as
-            laterais no desktop em vez de deixar duas faixas pretas. */}
-        <Image
-          src="/cop2026/hero.webp"
-          alt=""
-          aria-hidden
-          fill
-          sizes="100vw"
-          className="scale-110 object-cover opacity-35 blur-2xl"
-        />
-        <Image
-          src="/cop2026/hero.webp"
-          alt="Auditoria de COP 2026 do 16º BPM/M. Controle do cumprimento da Diretriz PM3-001/02/25, fiscalização e classificação das evidências digitais, mínimo de 3 evidências auditadas por turno, diariamente."
-          fill
-          sizes="100vw"
-          className="object-contain"
-          priority
-        />
+      {/* Hero Cinematográfico com Vídeo Tático em Loop Silencioso */}
+      <div className="relative min-h-[380px] sm:min-h-[460px] w-full overflow-hidden bg-[#070b14] flex items-center justify-center border-b-4 border-vermelho">
+        {/* Background Video */}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 h-full w-full object-cover opacity-40 scale-105 pointer-events-none"
+        >
+          <source src="/media/cop-hero.mp4" type="video/mp4" />
+        </video>
+        
+        {/* Camada de Gradiente / Vidro Fumê */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#070b14] via-[#070b14]/60 to-black/40 pointer-events-none" />
+
+        {/* Conteúdo Nobre Sobreposto */}
+        <div className="relative z-10 mx-auto max-w-4xl px-4 py-12 text-center flex flex-col items-center">
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-vermelho/60 bg-black/70 px-4 py-1.5 backdrop-blur-md shadow-xl">
+            <span className="h-2.5 w-2.5 rounded-full bg-vermelho animate-pulse" />
+            <span className="text-[11px] sm:text-xs font-black uppercase tracking-widest text-white">
+              Diretriz PM3-001/02/25 · Em Vigor
+            </span>
+          </div>
+
+          <h1 className="font-serif text-3xl sm:text-5xl font-black uppercase tracking-wider text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] leading-tight">
+            Auditoria de COP 2026
+          </h1>
+          
+          <p className="mt-2 text-base sm:text-xl font-bold text-vermelho uppercase tracking-widest drop-shadow">
+            16º Batalhão de Polícia Militar Metropolitano
+          </p>
+
+          <p className="mt-3 max-w-2xl text-xs sm:text-sm text-slate-200 font-medium leading-relaxed drop-shadow">
+            Controle e fiscalização das Câmeras Operacionais Portáteis · Lançamento diário obrigatório de no mínimo 3 evidências por turno.
+          </p>
+
+          <div className="mt-7 flex flex-wrap items-center justify-center gap-3.5">
+            <a
+              href={URL_FORMULARIO}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-xl bg-vermelho px-8 py-4 text-sm sm:text-base font-black uppercase tracking-wider text-white shadow-[0_8px_30px_rgba(202,2,2,0.5)] transition-all duration-300 hover:scale-105 hover:bg-vermelho-escuro"
+            >
+              Preencher Auditoria do Turno →
+            </a>
+            <a
+              href="/cop2026/dashboard"
+              className="inline-flex items-center gap-2 rounded-xl border-2 border-white/30 bg-white/10 px-6 py-3.5 text-sm font-bold uppercase tracking-wider text-white backdrop-blur-md transition-all hover:bg-white/20 hover:border-white"
+            >
+              Ver Dashboard de Metas
+            </a>
+          </div>
+        </div>
       </div>
 
       <AcessoRapido urlFormulario={URL_FORMULARIO} urlPlanilha={URL_PLANILHA} />
