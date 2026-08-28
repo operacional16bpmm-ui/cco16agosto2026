@@ -217,8 +217,8 @@ export function AgulhaoMetas({
   pct,
   total,
   meta,
-  titulo = "Termômetro de Cumprimento",
-  subtitulo = "Atingimento relativo à meta do período",
+  titulo = "Ritmo Operacional do Efetivo",
+  subtitulo = "Ciclo completo de 960 evidências distribuídas proporcionalmente",
 }: {
   pct: number;
   total: number;
@@ -239,12 +239,12 @@ export function AgulhaoMetas({
   const corAgulha = pct >= 80 ? "#16a34a" : pct >= 50 ? "#d97706" : "#ca0202";
 
   return (
-    <div className="card-interativo flex flex-col items-center justify-between rounded-xl border border-borda bg-tatico-super p-5 shadow-inst">
+    <div className="card-interativo flex flex-col items-center justify-between rounded-2xl border border-borda/80 bg-gradient-to-b from-[#ffffff] via-[#fcfdff] to-[#f3f7fa] p-5 sm:p-6 shadow-md">
       <div className="w-full text-center">
-        <p className="font-serif text-[14px] font-bold uppercase tracking-wide text-branco">
+        <p className="font-serif text-base font-bold text-branco tracking-wide">
           {titulo}
         </p>
-        <p className="mt-0.5 text-[11.5px] text-texto-suave">{subtitulo}</p>
+        <p className="mt-0.5 text-xs text-texto-suave font-medium">{subtitulo}</p>
       </div>
 
       <div className="relative mt-2 flex items-center justify-center">
@@ -298,28 +298,27 @@ export function AgulhaoMetas({
           {/* Rótulos dos marcos no arco */}
           <text x="36" y="142" fontSize="10" fontWeight="600" fill="#55535e" textAnchor="middle" className="dados">0%</text>
           <text x="140" y="20" fontSize="10" fontWeight="600" fill="#55535e" textAnchor="middle" className="dados">50%</text>
-          <text x="228" y="60" fontSize="10" fontWeight="600" fill="#55535e" textAnchor="middle" className="dados">80%</text>
+          <text x="216" y="55" fontSize="10" fontWeight="600" fill="#55535e" textAnchor="middle" className="dados">80%</text>
           <text x="244" y="142" fontSize="10" fontWeight="600" fill="#55535e" textAnchor="middle" className="dados">100%</text>
         </svg>
       </div>
 
-      {/* Painel Central de Leitura Numérica */}
-      <div className="mt-1 flex flex-col items-center">
-        <div className="flex items-baseline gap-1">
-          <span className="metric-hero text-3xl sm:text-4xl font-extrabold text-branco">
-            {PCT.format(pct)}%
-          </span>
-        </div>
-        <p className="dados mt-1 text-[12.5px] font-semibold text-texto-suave">
-          <strong className="text-branco">{FMT.format(total)}</strong> de {FMT.format(meta)} evidências
+      {/* Métrica Central de Alto Impacto */}
+      <div className="mt-1 text-center">
+        <p className="metric-hero text-4xl sm:text-5xl font-black text-branco">
+          {PCT.format(pct)}%
+        </p>
+        <p className="mt-1 text-xs sm:text-sm font-semibold text-texto-suave">
+          <strong className="dados text-branco font-extrabold">{FMT.format(total)}</strong> de{" "}
+          <span className="dados">{FMT.format(meta)} evidências</span>
         </p>
         <div className="mt-2">
           <Selo nivel={nivel} />
         </div>
       </div>
 
-      {/* Legenda Operacional Sóbria */}
-      <div className="mt-4 grid w-full grid-cols-3 gap-1.5 border-t border-borda/60 pt-3 text-center text-[10.5px]">
+      {/* Régua de Zonas de Atingimento */}
+      <div className="mt-4 grid w-full grid-cols-3 gap-1 border-t border-borda/60 pt-2.5 text-center">
         <div className="rounded border border-sinal-critico/30 bg-sinal-critico-suave p-1">
           <span className="block font-bold text-sinal-critico">&lt; 50%</span>
           <span className="text-[9.5px] text-texto-suave">Abaixo da Meta</span>
@@ -351,7 +350,7 @@ export function RankingFracoes({
     <ul className="space-y-3.5">
       {dados.map((d) => (
         <li key={d.chave}>
-          <div className="card-interativo w-full rounded-xl border border-borda bg-tatico-super p-4 text-left">
+          <div className="card-interativo w-full rounded-2xl border border-borda/80 bg-gradient-to-r from-[#ffffff] via-[#fcfdff] to-[#f5f8fc] p-4 text-left shadow-sm">
             <button
               type="button"
               onClick={() => onSelecionar?.(d.chave)}
@@ -359,7 +358,7 @@ export function RankingFracoes({
               aria-label={`Filtrar por ${d.rotulo} — ${PCT.format(d.pct)}% da meta`}
             >
               <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-                <span className="flex items-center gap-2 text-[14px] font-bold text-branco">
+                <span className="flex items-center gap-2 text-sm sm:text-base font-bold text-branco">
                   {d.rotulo}
                   <Selo nivel={d.nivel} />
                   {d.pctBatalhao !== undefined && (
@@ -473,10 +472,10 @@ export function QuadroSemanalBatalhao({
             type="button"
             onClick={() => onSelecionarSemana?.(ativa ? "todas" : String(s.semana))}
             className={cn(
-              "card-interativo group rounded-xl border p-3 sm:p-4 text-left",
+              "card-interativo group rounded-2xl border p-3.5 sm:p-4 text-left shadow-sm",
               ativa
-                ? "border-vermelho bg-vermelho/10 shadow-inst ring-2 ring-vermelho/80"
-                : "border-borda bg-tatico-super hover:border-vermelho/50 hover:bg-branco/[0.03]"
+                ? "border-vermelho bg-gradient-to-b from-vermelho/15 via-[#fcfdff] to-[#f4f7fb] shadow-md ring-2 ring-vermelho/80"
+                : "border-borda/80 bg-gradient-to-b from-[#ffffff] via-[#fcfdff] to-[#f3f7fa] hover:border-vermelho/50"
             )}
             aria-pressed={ativa}
             aria-label={`Filtrar por ${s.rotulo} — ${PCT.format(s.pct)}% da meta`}

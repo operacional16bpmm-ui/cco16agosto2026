@@ -501,18 +501,18 @@ export function DashboardCop({
       )}
 
       {/* ---------------- Camada 1: Situação ---------------- */}
-      <section aria-label="Situação" className="mb-6">
-        <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+      <section aria-label="Situação" className="mb-8">
+        <div className="grid gap-5 lg:grid-cols-[1fr_340px]">
           {/* Lado Esquerdo: Diagnóstico e KPIs */}
           <div className="flex flex-col justify-between gap-4">
             <div
-              className="flex flex-wrap items-start gap-3 rounded-xl border-l-4 bg-tatico-super p-5 shadow-inst"
+              className="flex flex-wrap items-start gap-3.5 rounded-2xl border-l-4 border-borda/80 bg-gradient-to-r from-[#ffffff] via-[#fcfdff] to-[#f4f7fb] p-5 sm:p-6 shadow-md"
               style={{ borderLeftColor: `var(--sinal-${v.nivel})` }}
             >
               <Selo nivel={v.nivel} />
               <div className="min-w-0 flex-1">
                 <p className="font-serif text-lg font-bold leading-snug text-branco">{v.titulo}</p>
-                <p className="mt-1 text-[13.5px] text-texto-suave">{v.detalhe}</p>
+                <p className="mt-1 text-[13.5px] text-texto-suave leading-relaxed">{v.detalhe}</p>
               </div>
             </div>
 
@@ -520,29 +520,29 @@ export function DashboardCop({
               {kpis.map((k) => (
                 <div
                   key={k.rotulo}
-                  className="card-interativo cartao-painel rounded-xl border border-borda bg-tatico-super p-4.5 shadow-inst"
+                  className="card-interativo cartao-painel rounded-2xl border border-borda/80 bg-gradient-to-b from-[#ffffff] via-[#fcfdff] to-[#f4f7fb] p-5 shadow-sm"
                 >
                   <div className="flex items-center justify-between text-texto-suave">
-                    <span className="rotulo-dado">{k.rotulo}</span>
-                    <span className="text-vermelho/80">{k.icone}</span>
+                    <span className="rotulo-dado font-bold uppercase tracking-wider text-xs">{k.rotulo}</span>
+                    <span className="text-vermelho">{k.icone}</span>
                   </div>
-                  <p className="metric-hero mt-2.5 text-3xl sm:text-4xl text-branco">{k.valor}</p>
-                  <p className="mt-2 text-[12.5px] font-medium text-texto-suave">{k.nota}</p>
+                  <p className="metric-hero mt-2 text-3xl sm:text-4xl font-black text-branco">{k.valor}</p>
+                  <p className="mt-1.5 text-[12.5px] font-medium text-texto-suave">{k.nota}</p>
                 </div>
               ))}
             </div>
 
-            <div className="flex flex-wrap gap-x-6 gap-y-2 rounded-lg border border-borda bg-tatico-super px-4 py-3 text-[12.5px] text-texto-suave">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-borda/80 bg-gradient-to-r from-[#ffffff] to-[#f4f7fb] px-4 py-3 text-[12.5px] text-texto-suave shadow-xs">
               <span>
-                Mediana por lançamento <strong className="dados text-branco">{FMT.format(p.mediana)}</strong> · p90{" "}
-                <strong className="dados text-branco">{FMT.format(p.p90)}</strong>
+                Mediana por lançamento: <strong className="dados text-branco font-bold">{FMT.format(p.mediana)}</strong> · p90{" "}
+                <strong className="dados text-branco font-bold">{FMT.format(p.p90)}</strong>
               </span>
               <span>
-                Turnos cumpridos <strong className="dados text-branco">{FMT.format(p.turnosCumpridos)}</strong> de{" "}
+                Turnos cumpridos: <strong className="dados text-branco font-bold">{FMT.format(p.turnosCumpridos)}</strong> de{" "}
                 {FMT.format(p.turnosPrevistos)}
               </span>
               <span>
-                Partes confeccionadas <strong className="dados text-branco">{FMT.format(p.partes)}</strong>
+                Partes confeccionadas: <strong className="dados text-branco font-bold">{FMT.format(p.partes)}</strong>
               </span>
             </div>
           </div>
@@ -552,8 +552,8 @@ export function DashboardCop({
             pct={p.pct}
             total={p.total}
             meta={p.meta}
-            titulo={f.fracao === "todas" ? "Atingimento do Batalhão" : `Atingimento · ${ROTULO_SUBUNIDADE[f.fracao] ?? f.fracao}`}
-            subtitulo={f.semana !== "todas" ? `Recorte da Semana ${f.semana}` : "Ciclo completo de 960 evidências"}
+            titulo={f.fracao === "todas" ? "Desempenho Geral do 16º Batalhão" : `Ritmo Operacional · ${ROTULO_SUBUNIDADE[f.fracao] ?? f.fracao}`}
+            subtitulo={f.semana !== "todas" ? `Recorte da Semana ${f.semana}` : "Ciclo completo de 960 evidências distribuídas proporcionalmente"}
           />
         </div>
       </section>

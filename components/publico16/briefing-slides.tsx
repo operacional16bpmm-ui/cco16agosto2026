@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, Printer } from "lucide-react";
+import Link from "next/link";
+import { ArrowLeft, ArrowRight, BarChart3, Home, Printer } from "lucide-react";
 import { ROTULO_SUBUNIDADE, type LancamentoCop, type MetaSubunidade } from "@/lib/cop2026";
 import { AssinaturaDesenvolvimento, SelosSeguranca } from "@/components/publico16/cop/rodape-cop";
 
@@ -125,8 +126,28 @@ export function BriefingSlides({
       ),
     },
     {
-      selo: "Determinação",
-      titulo: "Mínimo de 3 evidências por turno",
+      selo: "Quem respondeu NÃO auditei",
+      titulo: `${FMT.format(naoAuditou)} ocorrências`,
+      corpo: (
+        <p className="text-lg leading-relaxed text-white/75 sm:text-2xl">
+          Policial escalado que declarou não ter auditado nenhuma câmera no turno. Toda ocorrência
+          exige a justificativa operacional lançada no formulário.
+        </p>
+      ),
+    },
+    {
+      selo: "Abaixo do mínimo de 3 por turno",
+      titulo: `${FMT.format(abaixo)} ocorrências`,
+      corpo: (
+        <p className="text-lg leading-relaxed text-white/75 sm:text-2xl">
+          Lançamentos com 1 ou 2 evidências auditadas. A meta individual é de no mínimo 3 por
+          turno: desvio pontual se justifica, mas a repetição compromete a cota da subunidade.
+        </p>
+      ),
+    },
+    {
+      selo: "Como manter o Batalhão na meta",
+      titulo: "Mínimo de 3 por turno",
       corpo: (
         <p className="text-lg leading-relaxed text-white/75 sm:text-2xl">
           Com os IDs das mídias ou gravações informados no formulário, todos os dias, por todos os
@@ -152,29 +173,51 @@ export function BriefingSlides({
 
   return (
     <div className="flex min-h-screen flex-col bg-[#0b0b0e] text-white">
-      <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
-        <p className="font-serif text-lg font-bold uppercase tracking-wide">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-4 py-3 sm:px-6 sm:py-4">
+        <div className="flex items-center gap-3">
+          <Link
+            href="/cop2026/dashboard"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-white/20 bg-white/5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-white transition-colors hover:border-[#ca0202] hover:bg-[#ca0202]/10"
+            title="Retornar ao Dashboard de Controle"
+          >
+            <BarChart3 size={15} />
+            <span>Voltar ao Dashboard</span>
+          </Link>
+          <Link
+            href="/cop2026"
+            className="hidden items-center gap-1 text-xs font-semibold text-white/60 transition-colors hover:text-white sm:inline-flex"
+            title="Ir para página de lançamento"
+          >
+            <Home size={13} />
+            <span>Início</span>
+          </Link>
+        </div>
+
+        <p className="font-serif text-sm font-bold uppercase tracking-wide text-white sm:text-base">
           Briefing · Auditoria de COP
         </p>
-        {email && (
-          <span className="ml-auto mr-3 hidden items-center gap-2 text-[12px] text-white/45 sm:inline-flex">
-            {ehAdmin && (
-              <a href="/cop2026/admin" className="font-bold hover:text-white">
-                Autorizados
+
+        <div className="flex items-center gap-2">
+          {email && (
+            <span className="hidden items-center gap-2 text-[12px] text-white/45 md:inline-flex">
+              {ehAdmin && (
+                <a href="/cop2026/admin" className="font-bold hover:text-white">
+                  Autorizados
+                </a>
+              )}
+              <span className="font-mono">{email}</span>
+              <a href="/api/cop2026/acesso/sair" className="font-bold hover:text-white">
+                Sair
               </a>
-            )}
-            {email}
-            <a href="/api/cop2026/acesso/sair" className="font-bold hover:text-white">
-              Sair
-            </a>
-          </span>
-        )}
-        <button
-          onClick={() => window.print()}
-          className="inline-flex items-center gap-2 rounded-md border border-white/20 px-4 py-2 text-sm font-bold uppercase tracking-wide text-white/70 transition-colors hover:border-[#ca0202] hover:text-white"
-        >
-          <Printer size={17} /> Imprimir / PDF
-        </button>
+            </span>
+          )}
+          <button
+            onClick={() => window.print()}
+            className="inline-flex items-center gap-1.5 rounded-md border border-white/20 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-white/70 transition-colors hover:border-[#ca0202] hover:text-white"
+          >
+            <Printer size={15} /> <span className="hidden sm:inline">Imprimir / PDF</span>
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-1 items-center justify-center px-6 py-10">

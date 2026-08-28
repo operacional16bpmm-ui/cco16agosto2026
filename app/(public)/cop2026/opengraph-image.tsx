@@ -3,13 +3,13 @@ import path from "node:path";
 import { ImageResponse } from "next/og";
 
 /**
- * Cartão de pré-visualização oficial do link /cop2026 para WhatsApp e redes.
- * Padrão CComSoc / PMESP: Azul Noite (#16294a), Vermelho PM (#ca0202), Ouro (#ded845).
+ * Cartão de pré-visualização oficial do link /cop2026 para WhatsApp e redes sociais.
+ * Padrão CComSoc / PMESP: Azul Noite (#0b1222), Vermelho PM (#ca0202), Ouro (#ded845).
  */
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export const alt =
-  "16º BPM/M — Auditoria de COP 2026 · Painel de Controle Operacional de Câmeras Portáteis";
+  "16º BPM/M — Auditoria de COP 2026 · Controle e Fiscalização das Câmeras Operacionais Portáteis";
 
 export const runtime = "nodejs";
 
@@ -26,8 +26,8 @@ export default async function OpengraphImage() {
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
-          padding: "56px 64px",
-          background: "linear-gradient(135deg, #16294a 0%, #0d1a33 50%, #080f1f 100%)",
+          padding: "48px 56px",
+          background: "linear-gradient(135deg, #090e1a 0%, #0f192c 50%, #060a12 100%)",
           color: "#ffffff",
           fontFamily: "sans-serif",
           position: "relative",
@@ -41,113 +41,150 @@ export default async function OpengraphImage() {
             left: 0,
             right: 0,
             height: "8px",
-            background: "linear-gradient(90deg, #ca0202 0%, #ab9142 50%, #305388 100%)",
+            background: "linear-gradient(90deg, #ca0202 0%, #ded845 50%, #305388 100%)",
           }}
         />
 
-        {/* Cabeçalho Oficial */}
-        <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={brasaoUri} alt="" width={96} height={136} />
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <span
-              style={{
-                fontSize: 20,
-                letterSpacing: 3,
-                textTransform: "uppercase",
-                color: "#ded845",
-                fontWeight: 700,
-              }}
-            >
-              Polícia Militar do Estado de São Paulo
-            </span>
-            <span style={{ fontSize: 32, fontWeight: 800, color: "#ffffff", marginTop: 4 }}>
-              16º Batalhão de Polícia Militar Metropolitano
-            </span>
-            <span style={{ fontSize: 18, color: "#94a3b8", marginTop: 2 }}>
-              Sala de Operações e Centro de Controle Operacional (CCO)
-            </span>
+        {/* Cabeçalho Oficial com Brasão */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={brasaoUri} alt="" width={88} height={124} />
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <span
+                style={{
+                  fontSize: 16,
+                  letterSpacing: 3,
+                  textTransform: "uppercase",
+                  color: "#ded845",
+                  fontWeight: 700,
+                }}
+              >
+                Polícia Militar do Estado de São Paulo
+              </span>
+              <span style={{ fontSize: 28, fontWeight: 800, color: "#ffffff", marginTop: 2 }}>
+                16º Batalhão de Polícia Militar Metropolitano
+              </span>
+              <span style={{ fontSize: 16, color: "#94a3b8", marginTop: 2 }}>
+                Diretriz nº PM3-001/02/25 · Preenchimento Diário Obrigatório
+              </span>
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              padding: "8px 20px",
+              borderRadius: 12,
+              background: "rgba(202, 2, 2, 0.15)",
+              border: "1px solid rgba(202, 2, 2, 0.4)",
+              color: "#ff5a5a",
+              fontSize: 15,
+              fontWeight: 800,
+              letterSpacing: 2,
+              textTransform: "uppercase",
+            }}
+          >
+            Portal CCO-16
           </div>
         </div>
 
-        {/* Bloco Central */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        {/* Bloco Central com Destaque de Auditoria */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 16,
+            padding: "28px 32px",
+            background: "rgba(19, 29, 49, 0.75)",
+            borderRadius: 20,
+            border: "1px solid rgba(255, 255, 255, 0.1)",
+          }}
+        >
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <span
               style={{
                 display: "flex",
-                padding: "6px 18px",
+                padding: "6px 16px",
                 borderRadius: 8,
                 background: "#ca0202",
                 color: "#ffffff",
-                fontSize: 20,
+                fontSize: 15,
                 fontWeight: 800,
-                letterSpacing: 2,
+                letterSpacing: 1.5,
                 textTransform: "uppercase",
               }}
             >
-              Sala de Comando
+              Auditoria de COP 2026
             </span>
             <span
               style={{
                 display: "flex",
-                padding: "6px 18px",
+                padding: "6px 16px",
                 borderRadius: 8,
                 background: "rgba(222, 216, 69, 0.15)",
                 border: "1px solid rgba(222, 216, 69, 0.4)",
                 color: "#ded845",
-                fontSize: 18,
+                fontSize: 14,
                 fontWeight: 700,
               }}
             >
-              Meta: 240 evidências / semana
+              Meta: 960 Evidências (240/semana)
             </span>
           </div>
 
           <span
             style={{
-              fontSize: 74,
+              fontSize: 34,
               fontWeight: 900,
-              lineHeight: 1.05,
-              letterSpacing: -1.5,
+              lineHeight: 1.2,
               color: "#ffffff",
             }}
           >
-            Auditoria de COP 2026
+            Controle e Fiscalização das Câmeras Operacionais Portáteis
           </span>
 
-          <span style={{ fontSize: 26, color: "#cbd5e1", lineHeight: 1.35, maxWidth: 980 }}>
-            Painel Executivo em tempo real · Manômetro de Atingimento, ranking das 6 Companhias e controle de metas semanais.
+          <span style={{ fontSize: 17, color: "#cbd5e1", lineHeight: 1.4 }}>
+            Acompanhamento ao vivo por fração (EM · 1ª Cia · 2ª Cia · 3ª Cia · 4ª Cia · Força Tática) e
+            lançamento diário obrigatório pelo efetivo.
           </span>
         </div>
 
-        {/* Rodapé com Selos e Metadados */}
+        {/* Rodapé de Navegação */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            borderTop: "2px solid rgba(255,255,255,0.12)",
-            paddingTop: 20,
-            fontSize: 22,
-            color: "#94a3b8",
+            borderTop: "1px solid rgba(255, 255, 255, 0.12)",
+            paddingTop: 16,
           }}
         >
-          <div style={{ display: "flex", gap: 24 }}>
-            <span style={{ fontWeight: 700, color: "#ffffff" }}>
-              🎯 Meta Geral: 960 Evidências
+          <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: "#ffffff", display: "flex", alignItems: "center", gap: 6 }}>
+              🔴 Lançar Auditoria (Forms)
             </span>
-            <span>•</span>
-            <span style={{ fontWeight: 700, color: "#ffffff" }}>
-              👥 Quadro COP: 570 PMs
+            <span style={{ fontSize: 14, fontWeight: 700, color: "#ffffff", display: "flex", alignItems: "center", gap: 6 }}>
+              📊 Dashboard de Controle
+            </span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: "#ffffff", display: "flex", alignItems: "center", gap: 6 }}>
+              📋 Briefing Executivo
             </span>
           </div>
-          <span style={{ color: "#ded845", fontWeight: 700 }}>
-            Diretriz nº PM3-001/02/25
+
+          <span
+            style={{
+              fontSize: 13,
+              fontFamily: "monospace",
+              color: "#ded845",
+              fontWeight: 700,
+            }}
+          >
+            portal-cco16.vercel.app/cop2026
           </span>
         </div>
       </div>
     ),
-    size
+    { ...size }
   );
 }

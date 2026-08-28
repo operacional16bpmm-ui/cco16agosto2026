@@ -105,24 +105,30 @@ export function Cartao({
   return (
     <section
       className={cn(
-        "cartao-painel flex flex-col rounded-xl border border-borda bg-tatico-super p-5 shadow-inst",
+        "cartao-painel flex flex-col rounded-2xl border border-borda/80 bg-gradient-to-b from-[#ffffff] via-[#fcfdff] to-[#f3f7fa] p-5 sm:p-6 shadow-md transition-all",
         className
       )}
     >
-      <header className="mb-4 flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="font-serif text-[15px] font-bold uppercase tracking-wide text-branco">
+      <header className="mb-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <div>
+          <h3 className="font-serif text-base sm:text-lg font-bold text-branco tracking-wide">
             {titulo}
           </h3>
-          {nota && <p className="mt-0.5 text-[12.5px] text-texto-suave">{nota}</p>}
+          {nota && <p className="text-[12px] font-medium text-texto-suave">{nota}</p>}
         </div>
-        {ajuda && <ComoLer titulo={titulo}>{ajuda}</ComoLer>}
+        {ajuda && (
+          <div className="ml-auto">
+            <ComoLer titulo={titulo}>{ajuda}</ComoLer>
+          </div>
+        )}
       </header>
-      <div className="min-w-0 flex-1">{children}</div>
+
+      <div className="flex-1">{children}</div>
+
       {conclusao && (
-        <p className="mt-4 border-l-2 border-vermelho/50 pl-3 text-[12.5px] leading-relaxed text-texto-suave">
+        <footer className="mt-4 border-t border-borda/60 pt-3 text-[12.5px] leading-relaxed text-texto-suave">
           {conclusao}
-        </p>
+        </footer>
       )}
     </section>
   );
