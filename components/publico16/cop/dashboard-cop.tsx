@@ -812,17 +812,17 @@ export function DashboardCop({
               className="relative overflow-hidden flex flex-wrap items-start gap-3.5 rounded-2xl border-l-4 border-2 border-slate-300/85 bg-gradient-to-r from-[#ffffff] via-[#f8fafc] to-[#edf3f8] p-5 sm:p-6 shadow-[0_4px_16px_rgba(15,23,42,0.06)]"
               style={{ borderLeftColor: `var(--sinal-${v.nivel})` }}
             >
-              {/* Vídeo Operacional em Cores Vivas e Efeito Iluminado */}
-              <video
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-45 saturate-150 contrast-110 scale-105"
-              >
-                <source src="/media/cop-hero.mp4" type="video/mp4" />
-              </video>
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-white/90 via-white/70 to-white/60" />
+              {/* Foto operacional nítida — câmera corporal como âncora visual */}
+              <Image
+                src="/media/cop-camera.jpg"
+                alt=""
+                aria-hidden
+                fill
+                priority
+                sizes="(max-width: 1024px) 100vw, 720px"
+                className="pointer-events-none absolute inset-0 h-full w-full object-cover object-right opacity-90"
+              />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-white via-white/80 to-transparent" />
 
               <div className="relative z-10 flex flex-wrap items-start gap-3.5 w-full">
                 <Selo nivel={v.nivel} />
@@ -899,11 +899,13 @@ export function DashboardCop({
               f.fracao === "todas"
                 ? {
                     linha1: "META GLOBAL — 960 EVIDÊNCIAS",
-                    linha2: "Distribuição Proporcional por Matriz Operacional",
+                    linha2: "DIRETRIZ PM3-001/02/25 · AMBIENTE EXECUTIVO DE GESTÃO E CONTROLE",
+                    linha3: "Distribuição Proporcional por Matriz Operacional",
                   }
                 : {
                     linha1: `META ${ROTULO_SUBUNIDADE[f.fracao] ?? f.fracao}: ${FMT.format(p.meta)} EVIDÊNCIAS`,
-                    linha2: "Distribuição Proporcional por Matriz Operacional",
+                    linha2: "DIRETRIZ PM3-001/02/25 · AMBIENTE EXECUTIVO DE GESTÃO E CONTROLE",
+                    linha3: "Distribuição Proporcional por Matriz Operacional",
                   }
             }
           />

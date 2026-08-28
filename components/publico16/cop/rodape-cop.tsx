@@ -27,7 +27,7 @@ import { cn } from "@/lib/utils";
 
 /** Bumpada à mão a cada entrega relevante. Serve para o Comando saber de qual
  *  versão é o print que está circulando na reunião. */
-export const VERSAO_PORTAL = "2026.08";
+export const VERSAO_PORTAL = "16.0";
 
 const ASSINATURA = "Sd PM 231.936-5 Fabrício Pires";
 

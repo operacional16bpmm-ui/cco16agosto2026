@@ -368,14 +368,15 @@ export function AgulhaoMetas({
   titulo = '16º BPM/M — "1º Ten PM Fernão"',
   subtitulo = {
     linha1: "META GLOBAL — 960 EVIDÊNCIAS",
-    linha2: "Distribuição Proporcional por Matriz Operacional",
+    linha2: "DIRETRIZ PM3-001/02/25 · AMBIENTE EXECUTIVO DE GESTÃO E CONTROLE",
+    linha3: "Distribuição Proporcional por Matriz Operacional",
   },
 }: {
   pct: number;
   total: number;
   meta: number;
   titulo?: string;
-  subtitulo?: string | { linha1: string; linha2?: string };
+  subtitulo?: string | { linha1: string; linha2?: string; linha3?: string };
 }) {
   // A agulha não satura mais em 100%: só para no fim do arco de superação.
   const pctBruto = Number.isFinite(pct) ? pct : 0;
@@ -422,6 +423,11 @@ export function AgulhaoMetas({
                 {subtitulo.linha2 && (
                   <span className="text-[10px] sm:text-[10.5px] font-bold text-slate-700 text-center">
                     {subtitulo.linha2}
+                  </span>
+                )}
+                {subtitulo.linha3 && (
+                  <span className="text-[9.5px] sm:text-[10px] font-semibold text-slate-600 text-center">
+                    {subtitulo.linha3}
                   </span>
                 )}
               </>

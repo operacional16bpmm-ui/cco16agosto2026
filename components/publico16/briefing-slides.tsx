@@ -23,6 +23,7 @@ import {
 import { ROTULO_SUBUNIDADE, type LancamentoCop, type MetaSubunidade } from "@/lib/cop2026";
 import { AssinaturaDesenvolvimento, SelosSeguranca } from "@/components/publico16/cop/rodape-cop";
 import { calcularPainel, FMT, PCT } from "@/lib/cop2026-metricas";
+import { DiretrizEmFoco } from "@/components/publico16/diretriz-em-foco";
 import { AgulhaoMetas } from "@/components/publico16/cop/graficos";
 
 /**
@@ -148,6 +149,21 @@ export function BriefingSlides({
       ),
     },
 
+    // ---------------- SLIDE 1: DIRETRIZ EM FOCO (7 PILARES) ----------------
+    {
+      selo: "Norma de referência",
+      titulo: "Registro Operacional · Governança da Auditoria de COP",
+      subtitulo: "Sete pontos de relevância normativa da Diretriz PM3-001/02/25",
+      corpo: (
+        <div className="w-full">
+          <DiretrizEmFoco
+            variante="briefing"
+            hrefBase="/documentos/diretriz-pm3-001-02-25.pdf"
+          />
+        </div>
+      ),
+    },
+
     // ---------------- SLIDE 1: CONFORMIDADE & RITMO OPERACIONAL ----------------
     {
       selo: "Desempenho Geral do 16º BPM/M",
@@ -163,7 +179,11 @@ export function BriefingSlides({
                 total={videos}
                 meta={meta}
                 titulo='16º BPM/M — "1º Ten PM Fernão"'
-                subtitulo="DIRETRIZ PM3-001/02/25 · AMBIENTE EXECUTIVO DE GESTÃO E CONTROLE"
+                subtitulo={{
+                  linha1: "META GLOBAL — 960 EVIDÊNCIAS",
+                  linha2: "DIRETRIZ PM3-001/02/25 · AMBIENTE EXECUTIVO DE GESTÃO E CONTROLE",
+                  linha3: "Distribuição Proporcional por Matriz Operacional",
+                }}
               />
             </div>
           </div>

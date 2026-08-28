@@ -12,6 +12,7 @@ import {
 import type { Metadata } from "next";
 import { AcessoRapido } from "@/components/publico16/acesso-rapido";
 import { DiretrizCop } from "@/components/publico16/diretriz-cop";
+import { DiretrizEmFoco } from "@/components/publico16/diretriz-em-foco";
 import { Instagram16 } from "@/components/publico16/instagram-16";
 import { RodapeCop } from "@/components/publico16/cop/rodape-cop";
 import {
@@ -228,6 +229,8 @@ export default async function Cop2026Page() {
         </div>
       </section>
 
+      <DiretrizEmFoco />
+
       <AcessoRapido urlFormulario={URL_FORMULARIO} urlPlanilha={URL_PLANILHA} />
 
       <main className="mx-auto max-w-6xl px-4 py-8">
@@ -260,7 +263,9 @@ export default async function Cop2026Page() {
           </div>
         )}
 
-        <DiretrizCop />
+        <div id="diretriz-pdf" className="scroll-mt-8">
+          <DiretrizCop />
+        </div>
 
         <p className="mt-8 border-t border-branco/10 pt-4 text-[13px] leading-relaxed text-branco/40">
           Leitura direta da planilha de respostas do formulário &quot;Auditoria COP Motorola · 16
