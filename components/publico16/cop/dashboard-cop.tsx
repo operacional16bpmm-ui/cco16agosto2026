@@ -873,7 +873,6 @@ export function DashboardCop({
             total={p.total}
             meta={p.meta}
             titulo={f.fracao === "todas" ? '16º BPM/M — "1º Ten PM Fernão"' : `Ritmo Operacional · ${ROTULO_SUBUNIDADE[f.fracao] ?? f.fracao}`}
-            subtitulo={f.semana !== "todas" ? `Recorte da Semana ${f.semana}` : "Ciclo completo de 960 evidências distribuídas proporcionalmente"}
           />
         </div>
       </section>

@@ -252,14 +252,16 @@ export function AgulhaoMetas({
       </video>
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/90 via-white/70 to-white/90" />
 
-      {/* Título e Subtítulo com Alto Contraste */}
+      {/* Título com Alto Contraste */}
       <div className="relative z-10 w-full text-center">
         <p className="font-serif text-base sm:text-lg font-black uppercase tracking-wider text-[#1d1d1d]">
           {titulo}
         </p>
-        <p className="mt-1 text-xs font-bold text-slate-700 bg-white/80 backdrop-blur-xs py-0.5 px-2.5 rounded-md inline-block border border-slate-200">
-          {subtitulo}
-        </p>
+        {subtitulo && (
+          <p className="mt-1 text-xs font-bold text-slate-700 bg-white/80 backdrop-blur-xs py-0.5 px-2.5 rounded-md inline-block border border-slate-200">
+            {subtitulo}
+          </p>
+        )}
       </div>
 
       <div className="relative z-10 mt-2 flex items-center justify-center">
