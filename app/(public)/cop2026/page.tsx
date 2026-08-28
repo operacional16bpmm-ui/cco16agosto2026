@@ -85,7 +85,7 @@ export default async function Cop2026Page() {
                 alt="Brasão do 16º BPM/M"
                 width={2481}
                 height={3508}
-                className="h-56 w-auto drop-shadow-[0_18px_34px_rgba(7,24,45,0.4)] sm:h-72 md:h-96"
+                className="h-auto w-40 drop-shadow-[0_18px_34px_rgba(7,24,45,0.4)] sm:w-48 md:w-64"
                 priority
               />
             </div>
@@ -111,7 +111,7 @@ export default async function Cop2026Page() {
                 alt="16º BPM/M · Auditoria COP 2026"
                 width={1536}
                 height={1536}
-                className="h-48 w-auto drop-shadow-[0_16px_30px_rgba(7,24,45,0.34)] sm:h-64 md:h-80"
+                className="h-auto w-48 drop-shadow-[0_16px_30px_rgba(7,24,45,0.34)] sm:w-64 md:w-80"
               />
             </div>
           </div>
