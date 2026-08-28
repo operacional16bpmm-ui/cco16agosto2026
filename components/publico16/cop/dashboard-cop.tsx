@@ -877,11 +877,11 @@ export function DashboardCop({
               f.fracao === "todas"
                 ? {
                     linha1: "META GLOBAL — 960 EVIDÊNCIAS",
-                    linha2: "(Distribuição Proporcional por Matriz Operacional)",
+                    linha2: "Distribuição Proporcional por Matriz Operacional",
                   }
                 : {
                     linha1: `META ${ROTULO_SUBUNIDADE[f.fracao] ?? f.fracao}: ${FMT.format(p.meta)} EVIDÊNCIAS`,
-                    linha2: "(Distribuição Proporcional por Matriz Operacional)",
+                    linha2: "Distribuição Proporcional por Matriz Operacional",
                   }
             }
           />

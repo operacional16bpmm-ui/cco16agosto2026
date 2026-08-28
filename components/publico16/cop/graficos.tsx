@@ -221,7 +221,7 @@ export function AgulhaoMetas({
   titulo = '16º BPM/M — "1º Ten PM Fernão"',
   subtitulo = {
     linha1: "META GLOBAL — 960 EVIDÊNCIAS",
-    linha2: "(Distribuição Proporcional por Matriz Operacional)",
+    linha2: "Distribuição Proporcional por Matriz Operacional",
   },
 }: {
   pct: number;
