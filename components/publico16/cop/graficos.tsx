@@ -584,7 +584,7 @@ export function RankingFracoes({
 
               <div className="mt-2.5 h-3 overflow-hidden rounded-full bg-slate-200">
                 <div
-                  className="h-full rounded-full"
+                  className="h-full rounded-full transition-all duration-700"
                   style={{ width: `${Math.min(100, d.pct)}%`, background: COR_NIVEL[d.nivel] }}
                 />
               </div>
@@ -629,7 +629,7 @@ export function RankingFracoes({
                     </div>
                     <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-200">
                       <div
-                        className="h-full rounded-full"
+                        className="h-full rounded-full transition-all duration-700"
                         style={{
                           width: `${Math.min(100, s.pct)}%`,
                           background: COR_NIVEL[s.nivel],
@@ -702,7 +702,7 @@ export function QuadroSemanalBatalhao({
 
             <div className="mt-2.5 h-2.5 overflow-hidden rounded-full bg-slate-200">
               <div
-                className="h-full rounded-full"
+                className="h-full rounded-full transition-all duration-700"
                 style={{
                   width: `${Math.min(100, s.pct)}%`,
                   background: COR_NIVEL[s.nivel],
