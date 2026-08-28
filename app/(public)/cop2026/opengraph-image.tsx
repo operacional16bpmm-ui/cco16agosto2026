@@ -9,7 +9,7 @@ import { ImageResponse } from "next/og";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export const alt =
-  "16º BPM/M — Auditoria de COP 2026 · Controle e Fiscalização das Câmeras Operacionais Portáteis";
+  "16º BPM/M — Auditoria de COP 2026 · Controle e Fiscalização das Câmeras Operacionais Corporais";
 
 export const runtime = "nodejs";
 
@@ -141,7 +141,7 @@ export default async function OpengraphImage() {
               color: "#ffffff",
             }}
           >
-            Controle e Fiscalização das Câmeras Operacionais Portáteis
+            Controle e Fiscalização das Câmeras Operacionais Corporais
           </span>
 
           <span style={{ fontSize: 17, color: "#cbd5e1", lineHeight: 1.4 }}>

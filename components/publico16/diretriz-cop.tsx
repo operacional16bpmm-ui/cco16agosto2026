@@ -5,7 +5,7 @@ import { Download, Maximize2 } from "lucide-react";
 import { IconeDiretriz } from "@/components/publico16/icones-cop";
 
 /**
- * Quadro com a Diretriz nº PM3-001/02/25 (Câmeras Operacionais Portáteis)
+ * Quadro com a Diretriz nº PM3-001/02/25 (Câmeras Operacionais Corporais)
  * embutida em PDF, para o policial ler e rolar a norma sem sair da página —
  * antes era preciso procurar o arquivo no Drive do Batalhão.
  */
@@ -47,7 +47,7 @@ export function DiretrizCop() {
               <h2 className="font-serif text-xl font-bold leading-tight text-white sm:text-2xl">
                 Diretriz nº PM3-001/02/25
               </h2>
-              <p className="text-[14px] text-white/65">Câmeras Operacionais Portáteis (COP)</p>
+              <p className="text-[14px] text-white/65">Câmeras Operacionais Corporais (COP)</p>
             </div>
           </div>
           <a

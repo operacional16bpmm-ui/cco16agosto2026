@@ -151,7 +151,7 @@ export default async function Cop2026Page() {
           </p>
 
           <p className="mt-3 max-w-2xl text-xs sm:text-sm text-slate-200 font-medium leading-relaxed drop-shadow">
-            Controle e fiscalização das Câmeras Operacionais Portáteis · Lançamento diário obrigatório de no mínimo 3 evidências por turno.
+            Controle e fiscalização das Câmeras Operacionais Corporais · Lançamento diário obrigatório de no mínimo 3 evidências por turno.
           </p>
 
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3.5">
