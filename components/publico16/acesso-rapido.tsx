@@ -20,7 +20,8 @@ type Atalho = {
   nota: string;
   href: string;
   botaoTexto: string;
-  foto: string;
+  foto?: string;
+  video?: string;
   icone: React.ReactNode;
   externo?: boolean;
   restrito?: boolean;
@@ -41,7 +42,8 @@ export function AcessoRapido({
       nota: "Formulário da Auditoria",
       href: urlFormulario,
       botaoTexto: "Preencher Agora",
-      foto: "/media/foto_operacao.jpg",
+      video: "/media/clip_patrulha_noturna.mp4",
+      foto: "/media/foto-viatura.jpg",
       icone: <FileCheck2 className="h-6 w-6 text-white" />,
       externo: true,
       destaque: true,
@@ -112,21 +114,34 @@ export function AcessoRapido({
                     : "border-slate-300/85 shadow-[0_6px_20px_rgba(15,23,42,0.08)] hover:border-[#ca0202] hover:shadow-[0_16px_36px_rgba(202,2,2,0.22)]"
                 )}
               >
-                {/* 1. Imagem Real da Operação em Background com Zoom no Hover */}
+                {/* 1. Mídia de Fundo: Vídeo de Viatura com Giroflex/Light Ligado ou Foto Real em Degradê */}
                 <div className="absolute inset-0 z-0 overflow-hidden">
-                  <Image
-                    src={a.foto}
-                    alt={a.rotulo}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 25vw"
-                    className="object-cover transition-transform duration-700 ease-out group-hover:scale-110"
-                  />
+                  {a.video ? (
+                    <video
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      className="h-full w-full object-cover scale-110 transition-transform duration-700 ease-out group-hover:scale-125"
+                    >
+                      <source src={a.video} type="video/mp4" />
+                    </video>
+                  ) : a.foto ? (
+                    <Image
+                      src={a.foto}
+                      alt={a.rotulo}
+                      fill
+                      sizes="(max-width: 768px) 100vw, 25vw"
+                      className="object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                    />
+                  ) : null}
+
                   {/* 2. Degradê Tático Escuro para Contraste Absoluto dos Textos e Botões */}
                   <div
                     className={cn(
                       "absolute inset-0 transition-opacity duration-500",
                       isDestaque
-                        ? "bg-gradient-to-t from-[#09090b] via-[#09090b]/85 to-[#09090b]/60"
+                        ? "bg-gradient-to-t from-[#09090b] via-[#09090b]/80 to-[#09090b]/40 group-hover:via-[#09090b]/70"
                         : "bg-gradient-to-t from-[#090b10] via-[#0b1222]/90 to-[#0b1222]/70 group-hover:via-[#0b1222]/80"
                     )}
                   />
