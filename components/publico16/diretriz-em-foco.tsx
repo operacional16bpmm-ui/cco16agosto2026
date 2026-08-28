@@ -12,7 +12,7 @@ const PONTOS_DIRETRIZ = [
     numero: "02",
     titulo: "ETIQUETAS DIGITAIS",
     texto: "Classificação das evidências",
-    imagem: "/16bpmm/carrossel/slide-4.jpg",
+    imagem: "/media/foto-viatura.jpg",
   },
   {
     numero: "03",
