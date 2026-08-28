@@ -152,15 +152,14 @@ export default async function Cop2026Page() {
             sizes="(min-width: 1280px) 58vw, 62vw"
             className="object-cover object-[35%_center]"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#070b14] via-[#070b14]/55 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-l from-[#070b14]/85 via-transparent to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#070b14] via-transparent to-[#070b14]/40" />
+          {/* Fade só na borda esquerda para casar com o texto e o fundo:
+              o resto da foto fica limpo. */}
+          <div className="absolute inset-y-0 left-0 w-[38%] bg-gradient-to-r from-[#070b14] via-[#070b14]/70 to-transparent" />
         </div>
 
-        {/* Duas camadas: uma escurece a base para o texto assentar, a outra
-            puxa a imagem para a direita, longe da coluna de leitura. */}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#070b14] via-[#070b14]/85 to-[#070b14]/30 lg:to-transparent" />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#070b14] via-transparent to-[#070b14]/70" />
+        {/* No mobile a foto está escondida, então o gradiente cheio ajuda o
+            texto no vídeo; no desktop ele para bem antes da foto. */}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#070b14] via-[#070b14]/85 to-[#070b14]/30 lg:hidden" />
 
         <div className="relative mx-auto max-w-6xl px-4 py-14 sm:py-20">
           <p className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.22em] text-white/55">
