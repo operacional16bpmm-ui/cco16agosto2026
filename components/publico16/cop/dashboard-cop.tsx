@@ -10,6 +10,7 @@ import {
   Download,
   FileWarning,
   Filter,
+  Loader2,
   Printer,
   RefreshCw,
   SlidersHorizontal,
@@ -18,6 +19,7 @@ import {
   Users,
   X,
 } from "lucide-react";
+import { toPng } from "html-to-image";
 import {
   ROTULO_SUBUNIDADE,
   RITMO_GLOBAL_RESTANTE,
@@ -192,7 +194,9 @@ export function DashboardCop({
   const [aba, setAba] = useState<Aba>("ritmo");
   const [ordem, setOrdem] = useState<{ col: Coluna; desc: boolean }>({ col: "videos", desc: true });
   const [atualizando, setAtualizando] = useState(false);
+  const [exportandoBriefing, setExportandoBriefing] = useState(false);
   const primeiroRender = useRef(true);
+  const painelBriefingRef = useRef<HTMLElement>(null);
 
   /* O recorte vive na URL para o link ser colável no WhatsApp com o filtro
      dentro. `history.replaceState` em vez de router.replace: trocar de filtro
@@ -222,6 +226,32 @@ export function DashboardCop({
 
   const p = useMemo(() => calcularPainel(lancamentos, metas, f), [lancamentos, metas, f]);
   const v = veredito(p);
+
+  const exportarBriefingPng = useCallback(async () => {
+    if (!painelBriefingRef.current || exportandoBriefing) return;
+
+    setExportandoBriefing(true);
+    try {
+      const dataUrl = await toPng(painelBriefingRef.current, {
+        cacheBust: true,
+        pixelRatio: 2.5,
+        backgroundColor: "#edf2f7",
+        filter: (child: HTMLElement) =>
+          child.tagName !== "VIDEO" && child.dataset.noBriefing !== "true",
+      });
+      const link = document.createElement("a");
+      link.download = `briefing-estatico-cop-2026-${new Date().toISOString().slice(0, 10)}.png`;
+      link.href = dataUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success("Briefing estático exportado em PNG.");
+    } catch {
+      toast.error("Não foi possível gerar o briefing em PNG. Tente novamente.");
+    } finally {
+      setExportandoBriefing(false);
+    }
+  }, [exportandoBriefing]);
 
   const definir = (patch: Partial<Filtros>) => setF((a) => ({ ...a, ...patch }));
 
@@ -878,7 +908,7 @@ export function DashboardCop({
       )}
 
       {/* ---------------- Camada 1: Situação ---------------- */}
-      <section aria-label="Situação" className="mb-8">
+      <section ref={painelBriefingRef} aria-label="Situação" className="relative mb-8">
         <div className="grid gap-5 lg:grid-cols-12 lg:items-stretch">
           {/* Faixa superior: diagnóstico executivo ocupando toda a largura */}
           <div
@@ -896,7 +926,36 @@ export function DashboardCop({
             />
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-slate-950/75 via-slate-900/40 to-white/95" />
 
-            <div className="relative z-10 ml-[18%] flex w-[82%] flex-wrap items-center gap-3.5 md:ml-[24%] md:w-[76%] lg:ml-[22%] lg:w-[76%]">
+            <button
+              type="button"
+              onClick={exportarBriefingPng}
+              disabled={exportandoBriefing}
+              data-no-briefing="true"
+              aria-label="Exportar briefing estático em PNG"
+              className="group absolute right-3 top-3 z-20 inline-flex items-center gap-2 overflow-hidden rounded-xl border border-[#ca0202]/60 bg-[#07182d] px-3 py-2 text-left text-white shadow-[0_8px_20px_rgba(7,24,45,0.28)] transition-all duration-300 hover:-translate-y-0.5 hover:border-[#ca0202] hover:bg-[#ca0202] hover:shadow-[0_12px_24px_rgba(202,2,2,0.30)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ca0202] disabled:cursor-wait disabled:opacity-80 sm:right-4 sm:top-4 sm:px-3.5"
+            >
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/25 bg-white/10 transition-transform duration-300 group-hover:scale-110 group-hover:bg-white/20">
+                {exportandoBriefing ? (
+                  <Loader2 size={17} className="animate-spin" aria-hidden="true" />
+                ) : (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className="h-[18px] w-[18px]" aria-hidden="true">
+                    <path d="M6.5 3.5h7l4 4v13h-11z" />
+                    <path d="M13.5 3.5v4h4" />
+                    <path d="M8.5 15.5h7" />
+                    <path d="M12 10.5v5" />
+                    <path d="m9.8 13.3 2.2 2.2 2.2-2.2" />
+                  </svg>
+                )}
+              </span>
+              <span className="leading-tight">
+                <span className="block text-[9px] font-bold uppercase tracking-[0.16em] text-white/70 group-hover:text-white/85">Modelo estático</span>
+                <span className="mt-0.5 block text-[11px] font-black uppercase tracking-[0.06em] sm:text-xs">
+                  {exportandoBriefing ? "Gerando PNG..." : "Exportar briefing PNG"}
+                </span>
+              </span>
+            </button>
+
+            <div className="relative z-10 ml-[18%] flex w-[82%] flex-wrap items-center gap-3.5 pr-28 md:ml-[24%] md:w-[76%] lg:ml-[22%] lg:w-[76%]">
               <Selo nivel={v.nivel} />
               <div className="min-w-0 flex-1 rounded-xl border border-white/80 bg-white/[0.92] px-4 py-3 shadow-lg backdrop-blur-sm">
                 <p className="font-serif text-lg font-black leading-snug text-slate-950 drop-shadow-sm sm:text-xl">{v.titulo}</p>
