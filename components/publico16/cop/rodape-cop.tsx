@@ -143,45 +143,51 @@ export function RodapeCop({
         }}
       />
 
-      <div className={cn("relative mx-auto px-5 py-10", largura)}>
-        <div className="grid gap-8 md:grid-cols-[auto_1fr] md:items-start">
-          <div className="flex items-start gap-4">
+      <div className={cn("relative mx-auto px-5 py-7 sm:py-8", largura)}>
+        <div className="grid gap-7 lg:grid-cols-[minmax(240px,0.9fr)_minmax(0,1.55fr)_minmax(240px,0.9fr)] lg:items-center lg:gap-0">
+          {/* Identidade do portal */}
+          <div className="flex items-center gap-4 lg:pr-8">
             <Image
               src="/brand/16bpmm.png"
               alt=""
               aria-hidden
               width={168}
               height={240}
-              className="h-14 w-auto opacity-90"
+              className="h-16 w-auto shrink-0 opacity-95"
             />
-            <div>
-              <p className="font-serif text-base font-bold uppercase leading-tight tracking-wide text-ouro">
+            <div className="min-w-0">
+              <p className="font-serif text-base font-bold uppercase leading-tight tracking-wide text-ouro sm:text-lg">
                 Portal CCO-16
               </p>
-              <p className="mt-1.5 text-[12.5px] leading-relaxed text-branco/60">
+              <p className="mt-1.5 text-[12.5px] leading-relaxed text-branco/70">
                 Auditoria de COP 2026 · 16º BPM/M
                 <br />
                 Uso restrito ao serviço.
               </p>
-              {nota && <p className="mt-2 max-w-xs text-[12px] leading-relaxed text-branco/40">{nota}</p>}
+              {nota && <p className="mt-2 max-w-xs text-[11.5px] leading-relaxed text-branco/45">{nota}</p>}
             </div>
           </div>
 
-          <div className="md:justify-self-end">
-            <p className="rotulo-dado text-ouro/80">Segurança do acesso</p>
-            <SelosSeguranca className="mt-3 md:justify-end" />
-            <p className="mt-3 max-w-md text-[11px] leading-relaxed text-branco/35 md:text-right">
-              Mecanismos implementados e verificáveis no próprio sistema — não são certificações
-              de terceiros.
+          {/* Segurança: bloco central, concentrado e fácil de ler */}
+          <div className="border-y border-branco/10 py-5 text-center lg:border-x lg:border-y-0 lg:px-8 lg:py-1">
+            <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+              <p className="rotulo-dado text-ouro/90">Segurança do acesso</p>
+              <span aria-hidden className="hidden h-3 w-px bg-branco/20 sm:block" />
+              <p className="text-[10.5px] font-semibold text-branco/40">Mecanismos verificáveis no próprio sistema</p>
+            </div>
+            <SelosSeguranca className="mt-3 justify-center" />
+            <p className="mx-auto mt-3 max-w-xl text-[10.5px] leading-relaxed text-branco/40">
+              Camadas de autenticação, sessão, criptografia, rastreabilidade e proteção de dados — sem certificações de terceiros.
             </p>
           </div>
-        </div>
 
-        <div className="mt-9 flex flex-wrap items-end justify-between gap-6 border-t border-branco/10 pt-6">
-          <AssinaturaDesenvolvimento />
-          <p className="text-[11px] leading-relaxed text-branco/35">
-            © {new Date().getFullYear()} 16º BPM/M — Polícia Militar do Estado de São Paulo.
-          </p>
+          {/* Assinatura e direitos */}
+          <div className="flex flex-col gap-4 lg:items-end lg:pl-8">
+            <AssinaturaDesenvolvimento className="lg:max-w-[260px]" />
+            <p className="border-t border-branco/10 pt-3 text-[10.5px] leading-relaxed text-branco/40 lg:w-full lg:text-right">
+              © {new Date().getFullYear()} 16º BPM/M — Polícia Militar do Estado de São Paulo.
+            </p>
+          </div>
         </div>
       </div>
     </footer>
