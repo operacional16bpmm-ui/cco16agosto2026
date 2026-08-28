@@ -125,7 +125,7 @@ export function AcessoRapido({
                       loop
                       muted
                       playsInline
-                      className="h-full w-full object-cover scale-110 transition-transform duration-700 ease-out group-hover:scale-125"
+                      className="h-full w-full object-cover scale-110 saturate-140 contrast-110 transition-transform duration-700 ease-out group-hover:scale-125"
                     >
                       <source src={a.video} type="video/mp4" />
                     </video>
@@ -135,7 +135,7 @@ export function AcessoRapido({
                       alt={a.rotulo}
                       fill
                       sizes="(max-width: 768px) 100vw, 25vw"
-                      className="object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                      className="object-cover saturate-125 contrast-105 transition-transform duration-700 ease-out group-hover:scale-110"
                     />
                   ) : null}
 

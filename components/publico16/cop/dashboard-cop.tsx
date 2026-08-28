@@ -790,17 +790,17 @@ export function DashboardCop({
               className="relative overflow-hidden flex flex-wrap items-start gap-3.5 rounded-2xl border-l-4 border-2 border-slate-300/85 bg-gradient-to-r from-[#ffffff] via-[#f8fafc] to-[#edf3f8] p-5 sm:p-6 shadow-[0_4px_16px_rgba(15,23,42,0.06)]"
               style={{ borderLeftColor: `var(--sinal-${v.nivel})` }}
             >
-              {/* Vídeo Operacional Evidente em Background */}
+              {/* Vídeo Operacional em Cores Vivas e Efeito Iluminado */}
               <video
                 autoPlay
                 loop
                 muted
                 playsInline
-                className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-35 mix-blend-luminosity scale-105"
+                className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-45 saturate-150 contrast-110 scale-105"
               >
                 <source src="/media/cop-hero.mp4" type="video/mp4" />
               </video>
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-white/95 via-white/80 to-white/70" />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-white/90 via-white/70 to-white/60" />
 
               <div className="relative z-10 flex flex-wrap items-start gap-3.5 w-full">
                 <Selo nivel={v.nivel} />
@@ -815,18 +815,18 @@ export function DashboardCop({
               {kpis.map((k) => (
                 <div
                   key={k.rotulo}
-                  className="group relative overflow-hidden rounded-2xl border-2 border-slate-300/85 bg-white p-5 shadow-[0_4px_16px_rgba(15,23,42,0.06)] transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_12px_28px_rgba(202,2,2,0.18)] hover:border-vermelho"
+                  className="group relative overflow-hidden rounded-2xl border-2 border-slate-300/85 bg-white p-5 shadow-[0_4px_16px_rgba(15,23,42,0.06)] transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_12px_28px_rgba(202,2,2,0.22)] hover:border-vermelho"
                 >
-                  {/* Foto Real da Operação em Background com Efeito de Movimento */}
+                  {/* Foto Real da Operação em Cores Vivas e Efeito de Movimento */}
                   <div className="absolute inset-0 z-0 overflow-hidden">
                     <Image
                       src={k.foto}
                       alt={k.rotulo}
                       fill
                       sizes="(max-width: 768px) 100vw, 25vw"
-                      className="object-cover opacity-20 transition-transform duration-700 ease-out group-hover:scale-115 group-hover:opacity-30 mix-blend-multiply"
+                      className="object-cover opacity-35 saturate-135 contrast-105 transition-transform duration-700 ease-out group-hover:scale-115 group-hover:opacity-55"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-white via-white/90 to-white/75" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-white/95 via-white/80 to-white/65" />
                   </div>
 
                   {/* Conteúdo em Alto Contraste e Evidência */}
