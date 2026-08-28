@@ -54,6 +54,7 @@ import {
   AgulhaoMetas,
   BarrasSimples,
   Boxplot,
+  COR_FAIXA,
   Funil,
   Heatmap,
   Histograma,
@@ -1124,7 +1125,7 @@ export function DashboardCop({
                         className="dados flex h-full items-center justify-end rounded pr-2.5 text-[11.5px] font-bold text-white transition-[width] duration-700"
                         style={{
                           width: `${Math.max(8, largura)}%`,
-                          background: `linear-gradient(90deg, rgba(0,0,0,0.42) 0%, rgba(0,0,0,0) 100%), var(--sinal-${fracao.nivel})`,
+                          background: `linear-gradient(90deg, rgba(0,0,0,0.42) 0%, rgba(0,0,0,0) 100%), ${COR_FAIXA[fracao.nivel]}`,
                         }}
                       >
                         {PCT.format(fracao.pct)}%

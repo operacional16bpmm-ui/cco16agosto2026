@@ -57,10 +57,11 @@ const TOOLTIP = {
 // ---------------------------------------------------------------------------
 // Semáforo de faixas — parametrização do Comando
 // ---------------------------------------------------------------------------
-/** Cores vivas das faixas para o velocímetro e para as caixas de percentual.
- *  As barras de progresso continuam no `COR_NIVEL` (tokens do tema); aqui o
- *  contraste precisa ser alto porque o painel é projetado em telão. */
-const COR_FAIXA: Record<Nivel, string> = {
+/** Cores vivas das faixas (quente→frio) para o velocímetro, as caixas de
+ *  percentual e as barras das frações: <50 vermelho · 50–79 laranja ·
+ *  80–100 verde · >100 azul. Contraste alto porque o painel é projetado em
+ *  telão. */
+export const COR_FAIXA: Record<Nivel, string> = {
   superacao: "#2563eb",
   conforme: "#16a34a",
   atencao: "#d97706",
