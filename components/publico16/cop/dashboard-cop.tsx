@@ -443,15 +443,15 @@ export function DashboardCop({
           <span className="h-px flex-1 bg-slate-300/80" aria-hidden />
         </div>
 
-        <div className="flex flex-col md:flex-row items-center md:items-stretch justify-center md:justify-start gap-6 md:gap-8">
-          {/* Identidade completa da Auditoria COP 2026 */}
-          <div className="relative shrink-0 flex items-center justify-center md:pr-8 md:border-r md:border-slate-300/70">
+        <div className="flex flex-col md:flex-row items-center md:items-stretch justify-center md:justify-between gap-6 md:gap-8">
+          {/* Brasão oficial do 16º BPM/M */}
+          <div className="relative shrink-0 flex items-center justify-center md:pr-6 md:border-r md:border-slate-300/70">
             <Image
-              src="/brand/logo-auditoria-cop2026-transparent.png"
-              alt="16º BPM/M — Auditoria COP 2026 — Controle e Fiscalização das Câmeras Operacionais Corporais"
-              width={1536}
-              height={1536}
-              className="h-52 sm:h-64 md:h-72 lg:h-80 w-auto object-contain drop-shadow-[0_12px_30px_rgba(0,0,0,0.22)]"
+              src="/16bpmm/geral/brasao.png"
+              alt="Brasão do 16º BPM/M"
+              width={300}
+              height={300}
+              className="h-28 sm:h-32 md:h-40 w-auto object-contain drop-shadow-[0_10px_22px_rgba(7,24,45,0.24)]"
               priority
             />
           </div>
@@ -483,6 +483,17 @@ export function DashboardCop({
                 Ambiente Executivo de Gestão e Controle
               </span>
             </div>
+          </div>
+
+          {/* Logomarca da Auditoria COP 2026 */}
+          <div className="order-3 flex shrink-0 items-center justify-center md:order-none md:pl-2">
+            <Image
+              src="/brand/logo-auditoria-cop2026-transparent.png"
+              alt="16º BPM/M — Auditoria COP 2026"
+              width={1536}
+              height={1536}
+              className="h-28 w-auto object-contain drop-shadow-[0_10px_22px_rgba(7,24,45,0.24)] sm:h-32 md:h-40"
+            />
           </div>
         </div>
 
