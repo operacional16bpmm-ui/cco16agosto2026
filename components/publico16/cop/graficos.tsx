@@ -106,9 +106,9 @@ function nivelDeFecho(nivel: Nivel): Nivel {
  */
 const CX = 140;
 const CY = 125;
-const RAIO_EXT = 95;
-const RAIO_INT = 68;
-const RAIO_ROTULO = 110;
+const RAIO_EXT = 103;
+const RAIO_INT = 63;
+const RAIO_ROTULO = 114;
 const ANG_0 = 180; // 0%
 const ANG_100 = 0; // 100%
 const ANG_FIM = -15; // fim da faixa de superação
@@ -393,6 +393,12 @@ export function AgulhaoMetas({
   const needleLen = 78;
   const nx = CX + needleLen * Math.cos(rad);
   const ny = CY - needleLen * Math.sin(rad);
+  const needleDx = nx - CX;
+  const needleDy = ny - CY;
+  const needleNorm = Math.hypot(needleDx, needleDy) || 1;
+  const needlePx = (-needleDy / needleNorm) * 7;
+  const needlePy = (needleDx / needleNorm) * 7;
+  const needlePath = `M ${nn(CX - needlePx)} ${nn(CY - needlePy)} L ${nn(nx)} ${nn(ny)} L ${nn(CX + needlePx)} ${nn(CY + needlePy)} Z`;
 
   const nivel: Nivel = nivelPorCumprimento(pct, true);
   const corAgulha = COR_FAIXA[nivel];
@@ -471,7 +477,7 @@ export function AgulhaoMetas({
   }, [exportando, pct, total, meta]);
 
   return (
-    <div ref={painelRef} className="relative flex h-full w-full max-w-none flex-col items-center justify-between overflow-hidden rounded-2xl border-2 border-slate-300/85 bg-gradient-to-b from-[#ffffff] via-[#f8fafc] to-[#edf3f8] p-5 shadow-[0_8px_24px_rgba(15,23,42,0.10)] sm:p-6 card-interativo">
+    <div ref={painelRef} className="relative flex h-full w-full max-w-none flex-col items-center justify-between overflow-hidden rounded-2xl border-2 border-slate-300/85 bg-gradient-to-b from-[#ffffff] via-[#f8fafc] to-[#edf3f8] p-5 shadow-[0_14px_38px_rgba(15,23,42,0.18),0_4px_12px_rgba(202,2,2,0.08)] ring-1 ring-slate-400/30 sm:p-6 card-interativo">
       {/* Botão de Exportar / Compartilhar PNG no topo direito */}
       <div data-no-export="true" className="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 z-20">
         <button
@@ -550,17 +556,20 @@ export function AgulhaoMetas({
       </div>
 
       <div className="relative z-10 mt-2 flex items-center justify-center">
-        <svg viewBox="0 0 280 168" className="h-40 w-68 overflow-visible">
+        <svg viewBox="0 0 280 168" className="h-44 w-full max-w-[390px] overflow-visible">
           <defs>
-            <filter id="needleShadow" x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.35" />
+            <filter id="needleShadow" x="-30%" y="-30%" width="160%" height="160%">
+              <feDropShadow dx="0" dy="3" stdDeviation="3.5" floodOpacity="0.42" />
+            </filter>
+            <filter id="arcShadow" x="-20%" y="-20%" width="140%" height="160%">
+              <feDropShadow dx="0" dy="3" stdDeviation="2.5" floodOpacity="0.16" />
             </filter>
           </defs>
 
           {/* Faixas: crítica (180°→90°), atenção (90°→36°), conformidade
               (36°→0°) e superação (0°→-15°, além do fim da escala). */}
           {FATIAS_ARCO.map((f) => (
-            <path key={f.nivel} d={f.d} fill={COR_FAIXA[f.nivel]} opacity={0.95} />
+            <path key={f.nivel} d={f.d} fill={COR_FAIXA[f.nivel]} opacity={0.97} filter="url(#arcShadow)" />
           ))}
 
           {/* Divisores sutis entre faixas */}
@@ -572,24 +581,27 @@ export function AgulhaoMetas({
               x2={nn(d.int.x)}
               y2={nn(d.int.y)}
               stroke="#ffffff"
-              strokeWidth="2"
+              strokeWidth="2.5"
               opacity="0.8"
             />
           ))}
 
-          {/* Agulha Indicadora — tremor sutil, como aparelho analógico */}
+          {/* Agulha Indicadora — corpo triangular, contrapeso e tremor sutil */}
           <g filter="url(#needleShadow)" className="animar-tremer-agulha">
+            <circle cx={CX} cy={CY} r="13" fill="#ffffff" opacity="0.9" />
+            <path d={needlePath} fill={corAgulha} stroke="#1d1d1d" strokeWidth="1.4" strokeLinejoin="round" />
             <line
               x1={CX}
               y1={CY}
               x2={nx}
               y2={ny}
-              stroke={corAgulha}
-              strokeWidth="4"
+              stroke="#ffffff"
+              strokeWidth="1.5"
               strokeLinecap="round"
+              opacity="0.65"
             />
-            <circle cx={CX} cy={CY} r="8" fill="#1d1d1d" stroke={corAgulha} strokeWidth="3" />
-            <circle cx={CX} cy={CY} r="2.5" fill="#ffffff" />
+            <circle cx={CX} cy={CY} r="9.5" fill="#1d1d1d" stroke={corAgulha} strokeWidth="3.5" />
+            <circle cx={CX} cy={CY} r="3" fill="#ffffff" />
           </g>
 
           {/* Rótulos dos marcos, posicionados no próprio ângulo da fronteira */}
@@ -615,10 +627,10 @@ export function AgulhaoMetas({
 
       {/* Métrica Central — número empilhado, sem gap fantasma da vírgula */}
       <div className="relative z-10 mt-1 text-center flex flex-col items-center">
-        <div className="flex flex-col items-center rounded-3xl bg-white/95 border border-slate-300 px-7 py-3 shadow-[0_2px_10px_rgba(15,23,42,0.06),inset_0_1px_0_rgba(255,255,255,0.9)]">
+        <div className="flex min-w-[190px] flex-col items-center rounded-3xl border-2 border-slate-300 bg-white/95 px-7 py-3.5 shadow-[0_6px_18px_rgba(15,23,42,0.14),inset_0_1px_0_rgba(255,255,255,0.9)]">
           <span
-            className="text-5xl sm:text-6xl font-black text-[#1d1d1d] leading-none"
-            style={{ letterSpacing: "-0.02em", fontFeatureSettings: '"tnum" 0' }}
+            className="whitespace-nowrap text-6xl font-black leading-none text-[#1d1d1d] drop-shadow-sm sm:text-7xl"
+            style={{ letterSpacing: "-0.035em", fontFeatureSettings: '"tnum" 0' }}
           >
             {PCT.format(pct)}%
           </span>
@@ -647,14 +659,14 @@ export function AgulhaoMetas({
 
       {/* Régua de Zonas — cada card leva barra superior colorida; a faixa
           onde a leitura atual cai fica com anel vermelho de destaque. */}
-      <div className="relative z-10 mt-4 grid w-full grid-cols-2 sm:grid-cols-4 gap-2 border-t-2 border-slate-200 pt-3 text-center">
+      <div className="relative z-10 mt-4 grid w-full grid-cols-2 gap-2.5 border-t-2 border-slate-300 pt-3 text-center sm:grid-cols-4">
         {REGUA_FAIXAS.map((f) => {
           const ativo = f.nivel === nivel;
           return (
             <div
               key={f.nivel}
               className={cn(
-                "relative overflow-hidden rounded-xl border-2 pt-2.5 pb-2 px-1.5 shadow-xs",
+                "relative flex min-h-[78px] flex-col justify-center overflow-hidden rounded-xl border-2 px-1.5 py-2.5 shadow-[0_4px_10px_rgba(15,23,42,0.08)] backdrop-blur-sm",
                 f.caixa,
                 ativo && "ring-2 ring-offset-2 ring-offset-white ring-[#ca0202]"
               )}
@@ -664,12 +676,12 @@ export function AgulhaoMetas({
                 className="absolute inset-x-0 top-0 h-1.5"
                 style={{ background: COR_FAIXA[f.nivel] }}
               />
-              <span className={cn("block text-xs font-black leading-tight", f.valor)}>
+              <span className={cn("block font-sans text-[11px] font-black leading-tight tracking-[0.02em] sm:text-xs", f.valor)}>
                 {f.intervalo}
               </span>
               <span
                 className={cn(
-                  "mt-0.5 block text-[10px] uppercase tracking-tight leading-tight",
+                  "mt-1 block font-sans text-[10px] font-extrabold uppercase leading-tight tracking-[0.04em] sm:text-[10.5px]",
                   f.rotulo
                 )}
               >
