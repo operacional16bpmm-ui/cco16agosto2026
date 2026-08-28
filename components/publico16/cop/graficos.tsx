@@ -240,30 +240,33 @@ export function AgulhaoMetas({
 
   return (
     <div className="relative overflow-hidden card-interativo flex flex-col items-center justify-between rounded-2xl border-2 border-slate-300/85 bg-gradient-to-b from-[#ffffff] via-[#f8fafc] to-[#edf3f8] p-5 sm:p-6 shadow-[0_4px_16px_rgba(15,23,42,0.06)]">
-      {/* Vídeo de Viatura em Segundo Plano */}
+      {/* Vídeo de Viatura em Segundo Plano Mais Forte */}
       <video
         autoPlay
         loop
         muted
         playsInline
-        className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-25 mix-blend-luminosity scale-110"
+        className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-45 mix-blend-luminosity scale-110"
       >
         <source src="/media/clip_patrulha_noturna.mp4" type="video/mp4" />
       </video>
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/90 via-white/80 to-white/95" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/95 via-white/80 to-white/95" />
 
+      {/* Título e Subtítulo com Alto Contraste */}
       <div className="relative z-10 w-full text-center">
-        <p className="font-serif text-base font-bold text-branco tracking-wide">
+        <p className="font-serif text-base sm:text-lg font-black uppercase tracking-wider text-[#1d1d1d]">
           {titulo}
         </p>
-        <p className="mt-0.5 text-xs text-texto-suave font-medium">{subtitulo}</p>
+        <p className="mt-1 text-xs font-bold text-slate-700 bg-white/80 backdrop-blur-xs py-0.5 px-2.5 rounded-md inline-block border border-slate-200">
+          {subtitulo}
+        </p>
       </div>
 
       <div className="relative z-10 mt-2 flex items-center justify-center">
         <svg viewBox="0 0 280 150" className="h-36 w-68 overflow-visible">
           <defs>
             <filter id="needleShadow" x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.3" />
+              <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.35" />
             </filter>
           </defs>
 
@@ -271,26 +274,26 @@ export function AgulhaoMetas({
           <path
             d="M 45 125 A 95 95 0 0 1 140 30 L 140 57 A 68 68 0 0 0 72 125 Z"
             fill="#ca0202"
-            opacity={0.9}
+            opacity={0.95}
           />
 
           {/* Segmento 2: Amarelo (50% a 80% = 90° a 36°) */}
           <path
             d="M 140 30 A 95 95 0 0 1 216.85 69.16 L 195.01 85.03 A 68 68 0 0 0 140 57 Z"
             fill="#d97706"
-            opacity={0.92}
+            opacity={0.95}
           />
 
           {/* Segmento 3: Verde (>= 80% = 36° a 0°) */}
           <path
             d="M 216.85 69.16 A 95 95 0 0 1 235 125 L 208 125 A 68 68 0 0 0 195.01 85.03 Z"
             fill="#16a34a"
-            opacity={0.92}
+            opacity={0.95}
           />
 
           {/* Divisores sutis entre faixas */}
-          <line x1="140" y1="30" x2="140" y2="57" stroke="#ffffff" strokeWidth="2" opacity="0.6" />
-          <line x1="216.85" y1="69.16" x2="195.01" y2="85.03" stroke="#ffffff" strokeWidth="2" opacity="0.6" />
+          <line x1="140" y1="30" x2="140" y2="57" stroke="#ffffff" strokeWidth="2" opacity="0.8" />
+          <line x1="216.85" y1="69.16" x2="195.01" y2="85.03" stroke="#ffffff" strokeWidth="2" opacity="0.8" />
 
           {/* Agulha Indicadora */}
           <g filter="url(#needleShadow)" className="transition-all duration-700 ease-out">
@@ -307,24 +310,27 @@ export function AgulhaoMetas({
             <circle cx={cx} cy={cy} r="2.5" fill="#ffffff" />
           </g>
 
-          {/* Rótulos dos marcos no arco */}
-          <text x="36" y="142" fontSize="10" fontWeight="600" fill="#55535e" textAnchor="middle" className="dados">0%</text>
-          <text x="140" y="20" fontSize="10" fontWeight="600" fill="#55535e" textAnchor="middle" className="dados">50%</text>
-          <text x="216" y="55" fontSize="10" fontWeight="600" fill="#55535e" textAnchor="middle" className="dados">80%</text>
-          <text x="244" y="142" fontSize="10" fontWeight="600" fill="#55535e" textAnchor="middle" className="dados">100%</text>
+          {/* Rótulos dos marcos no arco em preto de alto contraste */}
+          <text x="36" y="142" fontSize="10.5" fontWeight="800" fill="#1d1d1d" textAnchor="middle" className="dados">0%</text>
+          <text x="140" y="18" fontSize="10.5" fontWeight="800" fill="#1d1d1d" textAnchor="middle" className="dados">50%</text>
+          <text x="216" y="52" fontSize="10.5" fontWeight="800" fill="#1d1d1d" textAnchor="middle" className="dados">80%</text>
+          <text x="244" y="142" fontSize="10.5" fontWeight="800" fill="#1d1d1d" textAnchor="middle" className="dados">100%</text>
         </svg>
       </div>
 
       {/* Métrica Central de Alto Impacto */}
-      <div className="mt-1 text-center">
-        <p className="metric-hero text-4xl sm:text-5xl font-black text-branco">
-          {PCT.format(pct)}%
+      <div className="relative z-10 mt-1 text-center flex flex-col items-center">
+        <div className="inline-flex items-baseline gap-1.5 rounded-2xl bg-white/95 border-2 border-slate-300 px-5 py-1.5 shadow-sm">
+          <span className="metric-hero text-4xl sm:text-5xl font-black text-[#1d1d1d] tracking-tight">
+            {PCT.format(pct)}%
+          </span>
+          <span className="text-xs font-black uppercase tracking-wider text-slate-600">da meta</span>
+        </div>
+        <p className="mt-2 text-xs sm:text-sm font-bold text-slate-800 bg-white/85 px-3 py-1 rounded-lg border border-slate-200 shadow-2xs">
+          <strong className="dados text-[#ca0202] font-black text-sm sm:text-base">{FMT.format(total)}</strong> de{" "}
+          <span className="dados font-extrabold text-[#1d1d1d]">{FMT.format(meta)} evidências</span>
         </p>
-        <p className="mt-1 text-xs sm:text-sm font-semibold text-texto-suave">
-          <strong className="dados text-branco font-extrabold">{FMT.format(total)}</strong> de{" "}
-          <span className="dados">{FMT.format(meta)} evidências</span>
-        </p>
-        <div className="mt-2">
+        <div className="mt-2.5">
           <Selo nivel={nivel} />
         </div>
       </div>
