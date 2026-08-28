@@ -220,7 +220,7 @@ export function AgulhaoMetas({
   titulo = '16º BPM/M — "1º Ten PM Fernão"',
   subtitulo = {
     linha1: "META GLOBAL — 960 EVIDÊNCIAS",
-    linha2: "(Distribuição Proporcional por Matriz Operacional)",
+    linha2: "Distribuição Proporcional por Matriz Operacional",
   },
 }: {
   pct: number;
@@ -355,7 +355,7 @@ export function AgulhaoMetas({
         </div>
         <div className="rounded-xl border-2 border-amber-200 bg-amber-50 p-1.5 shadow-2xs">
           <span className="block text-xs font-black text-amber-700">50% a 79%</span>
-          <span className="text-[10px] font-bold text-amber-900 uppercase tracking-tight">Em Atingimento</span>
+          <span className="text-[10px] font-bold text-amber-900 uppercase tracking-tight leading-tight">Faixa de Atenção da Meta</span>
         </div>
         <div className="rounded-xl border-2 border-emerald-200 bg-emerald-50 p-1.5 shadow-2xs">
           <span className="block text-xs font-black text-emerald-700">≥ 80%</span>
