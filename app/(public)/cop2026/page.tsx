@@ -78,14 +78,14 @@ export default async function Cop2026Page() {
             <span className="hidden sm:inline">Polícia Militar</span>
           </div>
 
-          <div className="grid items-center gap-x-4 gap-y-5 md:grid-cols-[minmax(130px,180px)_minmax(0,1fr)_minmax(130px,180px)] md:gap-x-5">
-            <div className="flex justify-center md:justify-end">
+          <div className="mx-auto grid max-w-5xl items-center gap-y-5 md:grid-cols-[180px_minmax(0,1fr)_190px] md:gap-x-0">
+            <div className="flex justify-center md:justify-end md:pr-0">
               <Image
                 src="/brand/brasao-16bpmm-hd.png"
                 alt="Brasão do 16º BPM/M"
                 width={2481}
                 height={3508}
-                className="h-36 w-auto drop-shadow-[0_14px_28px_rgba(7,24,45,0.35)] sm:h-44 md:h-52"
+                className="h-40 w-auto drop-shadow-[0_14px_28px_rgba(7,24,45,0.35)] sm:h-48 md:h-56"
                 priority
               />
             </div>
@@ -105,13 +105,13 @@ export default async function Cop2026Page() {
                 </div>
             </div>
 
-            <div className="flex justify-center md:justify-start">
+            <div className="flex justify-center md:justify-start md:pl-0">
               <Image
                 src="/brand/logo-auditoria-cop2026-transparent.png"
                 alt="16º BPM/M · Auditoria COP 2026"
                 width={1536}
                 height={1536}
-                className="h-32 w-auto drop-shadow-[0_12px_24px_rgba(7,24,45,0.28)] sm:h-40 md:h-44"
+                className="h-36 w-auto drop-shadow-[0_12px_24px_rgba(7,24,45,0.28)] sm:h-44 md:h-48"
               />
             </div>
           </div>

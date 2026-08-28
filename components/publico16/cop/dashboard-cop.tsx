@@ -443,7 +443,7 @@ export function DashboardCop({
           <span className="h-px flex-1 bg-slate-300/80" aria-hidden />
         </div>
 
-        <div className="flex flex-col md:flex-row items-center md:items-stretch justify-center md:justify-between gap-6 md:gap-8">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 md:grid md:grid-cols-[180px_minmax(0,1fr)_190px] md:items-stretch md:gap-x-0">
           {/* Brasão oficial do 16º BPM/M */}
           <div className="relative shrink-0 flex items-center justify-center md:pr-6 md:border-r md:border-slate-300/70">
             <Image
@@ -451,7 +451,7 @@ export function DashboardCop({
               alt="Brasão do 16º BPM/M"
               width={2481}
               height={3508}
-              className="h-36 sm:h-40 md:h-48 w-auto object-contain drop-shadow-[0_14px_28px_rgba(7,24,45,0.34)]"
+              className="h-40 sm:h-44 md:h-52 w-auto object-contain drop-shadow-[0_14px_28px_rgba(7,24,45,0.34)]"
               priority
             />
           </div>
@@ -492,7 +492,7 @@ export function DashboardCop({
               alt="16º BPM/M — Auditoria COP 2026"
               width={1536}
               height={1536}
-              className="h-28 w-auto object-contain drop-shadow-[0_10px_22px_rgba(7,24,45,0.24)] sm:h-32 md:h-40"
+              className="h-36 w-auto object-contain drop-shadow-[0_12px_26px_rgba(7,24,45,0.3)] sm:h-40 md:h-48"
             />
           </div>
         </div>
