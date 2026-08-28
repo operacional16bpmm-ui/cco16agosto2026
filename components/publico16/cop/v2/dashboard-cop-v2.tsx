@@ -971,7 +971,7 @@ export function DashboardCopV2({
           </div>
 
           <p className="text-xs sm:text-sm text-slate-300 mb-5 leading-relaxed font-serif">
-            A <strong className="text-white font-bold">Auditoria das Evidências Digitais (COP)</strong> é o exame sistemático, independente e documentado dos registros captados por Câmeras Operacionais Corporais, realizada por meio de credencial pessoal de acesso ao SiGCED, com cinco finalidades institucionais:
+            A <strong className="text-white font-bold">Auditoria das Evidências Digitais (COP)</strong> é o exame sistemático, independente e documentado dos registros captados por Câmeras Operacionais Corporais, realizada por meio de credencial pessoal de acesso ao SiGCED, com base nas <strong class="text-white font-bold">cinco finalidades institucionais</strong> que orientam toda a auditoria das evidências digitais obtidas por COP:
           </p>
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
@@ -979,13 +979,13 @@ export function DashboardCopV2({
               {
                 num: "01",
                 rotulo: "CONFORMIDADE",
-                desc: "Verificar a conformidade com critérios técnicos estabelecidos.",
+                desc: "Verificar se os registros e procedimentos atendem aos critérios técnicos estabelecidos.",
                 borda: "border-emerald-500/30 bg-emerald-950/20 text-emerald-400",
               },
               {
                 num: "02",
                 rotulo: "FISCALIZAÇÃO E ORIENTAÇÃO",
-                desc: "Realizar fiscalização de natureza pedagógica, disciplinar e procedimental.",
+                desc: "Subsidiar a fiscalização de natureza pedagógica, disciplinar e procedimental.",
                 borda: "border-blue-500/30 bg-blue-950/20 text-blue-400",
               },
               {
@@ -997,13 +997,13 @@ export function DashboardCopV2({
               {
                 num: "04",
                 rotulo: "MELHORIA CONTÍNUA",
-                desc: "Promover melhorias nos processos operacionais.",
+                desc: "Transformar os achados da auditoria em aperfeiçoamento dos processos operacionais.",
                 borda: "border-rose-500/30 bg-rose-950/20 text-rose-400",
               },
               {
                 num: "05",
                 rotulo: "INTELIGÊNCIA GERENCIAL",
-                desc: "Propiciar a extração de indicadores institucionais para subsidiar a gestão.",
+                desc: "Extrair indicadores institucionais capazes de subsidiar decisões de gestão.",
                 borda: "border-purple-500/30 bg-purple-950/20 text-purple-400",
               },
             ].map((item) => (

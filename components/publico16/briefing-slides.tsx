@@ -489,13 +489,13 @@ export function BriefingSlides({
               {
                 num: "01",
                 rotulo: "CONFORMIDADE",
-                desc: "Verificar a conformidade com critérios técnicos estabelecidos.",
+                desc: "Verificar se os registros e procedimentos atendem aos critérios técnicos estabelecidos.",
                 cor: "text-emerald-400 border-emerald-500/30 bg-emerald-950/20",
               },
               {
                 num: "02",
                 rotulo: "FISCALIZAÇÃO E ORIENTAÇÃO",
-                desc: "Realizar fiscalização de natureza pedagógica, disciplinar e procedimental.",
+                desc: "Subsidiar a fiscalização de natureza pedagógica, disciplinar e procedimental.",
                 cor: "text-blue-400 border-blue-500/30 bg-blue-950/20",
               },
               {
@@ -507,13 +507,13 @@ export function BriefingSlides({
               {
                 num: "04",
                 rotulo: "MELHORIA CONTÍNUA",
-                desc: "Promover melhorias contínuas nos processos operacionais.",
+                desc: "Transformar os achados da auditoria em aperfeiçoamento dos processos operacionais.",
                 cor: "text-rose-400 border-rose-500/30 bg-rose-950/20",
               },
               {
                 num: "05",
                 rotulo: "INTELIGÊNCIA GERENCIAL",
-                desc: "Propiciar a extração de indicadores institucionais para subsidiar a gestão.",
+                desc: "Extrair indicadores institucionais capazes de subsidiar decisões de gestão.",
                 cor: "text-purple-400 border-purple-500/30 bg-purple-950/20",
               },
             ].map((item) => (
