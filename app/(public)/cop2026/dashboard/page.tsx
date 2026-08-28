@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { DashboardCop } from "@/components/publico16/cop/dashboard-cop";
-import { NavegacaoCop } from "@/components/publico16/cop/navegacao-cop";
+import { DashboardCopV2 } from "@/components/publico16/cop/v2/dashboard-cop-v2";
+import { NavegacaoV2 } from "@/components/publico16/cop/v2/navegacao-v2";
 import { RodapeCop } from "@/components/publico16/cop/rodape-cop";
 import { lerAuditoriaCop2026 } from "@/lib/cop2026";
 import { lerFiltros } from "@/lib/cop2026-metricas";
@@ -8,7 +8,7 @@ import { ehAdminCop } from "@/lib/cop2026-acesso";
 import { exigirAcessoCop } from "@/lib/db/cop2026-autorizados";
 
 export const metadata: Metadata = {
-  title: "Dashboard de controle · Auditoria de COP 2026",
+  title: "Dashboard de controle · Auditoria de COP 2026 · 16º BPM/M",
   robots: { index: false, follow: false },
 };
 
@@ -28,16 +28,15 @@ export default async function DashboardPage({
   ]);
 
   return (
-    <div className="tema-institucional min-h-screen bg-tatico-fundo text-[15px] text-branco">
-      <NavegacaoCop
+    <div className="min-h-screen bg-gradient-to-b from-[#070b14] via-[#0b1222] to-[#060911] text-slate-100 selection:bg-ouro/30">
+      <NavegacaoV2
         lidoEm={lidoEm}
         email={acesso?.email}
         ehAdmin={ehAdminCop(acesso?.email)}
-        tituloPagina="Dashboard de controle"
       />
 
       <main className="pt-4 sm:pt-6">
-        <DashboardCop
+        <DashboardCopV2
           lancamentos={lancamentos}
           metas={metas}
           lidoEm={lidoEm}

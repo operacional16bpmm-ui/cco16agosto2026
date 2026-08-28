@@ -16,8 +16,10 @@ import {
   RefreshCw,
   Search,
   Shield,
+  SlidersHorizontal,
   TrendingUp,
   Users,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -227,17 +229,25 @@ export function DashboardCopV2({
     },
   ];
 
+  const [gavetaFiltrosAberta, setGavetaFiltrosAberta] = useState(false);
+  const totalFiltrosAtivos = [
+    f.fracao !== "todas",
+    f.semana !== "todas",
+    f.turno !== "todos",
+    Boolean(f.de || f.ate),
+    Boolean(f.excecao),
+    Boolean(f.busca),
+  ].filter(Boolean).length;
+
   return (
     <div className="mx-auto max-w-[1440px] px-4 sm:px-6 pb-16">
-      {/* ---------------- Barra de Filtros Escura Tática ---------------- */}
-      <div className="sticky top-[100px] z-20 -mx-4 sm:-mx-6 mb-6 border-b border-white/10 bg-[#070b14]/95 px-4 sm:px-6 py-3 backdrop-blur-md shadow-2xl">
-        <div className="flex flex-wrap items-center gap-2.5 text-xs sm:text-sm">
-          <div className="hidden sm:flex items-center gap-1.5 font-bold uppercase tracking-wider text-slate-400">
-            <Filter className="h-4 w-4 text-ouro" />
-            <span>Filtros:</span>
-          </div>
-
-          <div className="w-full sm:w-auto flex-1 sm:flex-none">
+      {/* ---------------- Barra de Filtros Escura Tática Responsiva ---------------- */}
+      <div className="sticky top-[54px] sm:top-[64px] z-30 -mx-4 sm:-mx-6 mb-6 border-b border-white/15 bg-[#070b14]/95 px-4 sm:px-6 py-2.5 backdrop-blur-md shadow-2xl">
+        
+        {/* MOBILE (linha única 48px, carrossel de semanas e gaveta tática) */}
+        <div className="flex items-center justify-between gap-2 lg:hidden">
+          {/* Busca Rápida */}
+          <div className="shrink-0">
             <PaletaComando
               lancamentos={lancamentos}
               onSelecionarFracao={(fracao) => {
@@ -252,54 +262,127 @@ export function DashboardCopV2({
             />
           </div>
 
-          <select
-            value={f.fracao}
-            onChange={(e) => definir({ fracao: e.target.value })}
-            className="w-full sm:w-auto rounded-xl border border-white/10 bg-[#0d1627] px-3 py-2 font-semibold text-white text-xs sm:text-sm focus:border-ouro focus:outline-none"
-          >
-            <option value="todas">Todas as Frações</option>
-            {metas.map((m) => (
-              <option key={m.subunidade} value={m.subunidade}>
-                {ROTULO_SUBUNIDADE[m.subunidade] ?? m.subunidade}
-              </option>
-            ))}
-          </select>
+          {/* Pílulas Rápidas de Semanas (Scroll Horizontal Suave) */}
+          <div className="flex flex-1 items-center gap-1.5 overflow-x-auto py-0.5 scrollbar-none">
+            {[
+              { id: "todas", label: "Mês" },
+              { id: "1", label: "Sem 1" },
+              { id: "2", label: "Sem 2" },
+              { id: "3", label: "Sem 3" },
+              { id: "4", label: "Sem 4" },
+            ].map((item) => {
+              const ativo = f.semana === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => definir({ semana: item.id })}
+                  className={cn(
+                    "shrink-0 rounded-full px-3 py-1 text-xs font-bold transition-all",
+                    ativo
+                      ? "bg-vermelho text-white shadow-xs"
+                      : "bg-[#0d1627] text-slate-300 hover:bg-white/10 border border-white/10"
+                  )}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
 
-          <select
-            value={f.semana}
-            onChange={(e) => definir({ semana: e.target.value })}
-            className="w-full sm:w-auto rounded-xl border border-white/10 bg-[#0d1627] px-3 py-2 font-semibold text-white text-xs sm:text-sm focus:border-ouro focus:outline-none"
-          >
-            <option value="todas">Ciclo Completo (4 Semanas)</option>
-            <option value="1">Semana 1 (01 a 07)</option>
-            <option value="2">Semana 2 (08 a 14)</option>
-            <option value="3">Semana 3 (15 a 21)</option>
-            <option value="4">Semana 4 (22 a 31)</option>
-          </select>
-
-          <select
-            value={f.turno}
-            onChange={(e) => definir({ turno: e.target.value })}
-            className="w-full sm:w-auto rounded-xl border border-white/10 bg-[#0d1627] px-3 py-2 font-semibold text-white text-xs sm:text-sm focus:border-ouro focus:outline-none"
-          >
-            <option value="todos">Todos os Turnos</option>
-            <option value="diurno">Diurno</option>
-            <option value="noturno">Noturno</option>
-          </select>
-
+          {/* Botão Gaveta de Filtros */}
           <button
             type="button"
-            onClick={() => setF(FILTROS_VAZIOS)}
-            className="rounded-xl border border-white/10 px-3 py-2 font-bold text-slate-400 hover:border-red-500/40 hover:text-red-400 text-xs"
+            onClick={() => setGavetaFiltrosAberta(true)}
+            className={cn(
+              "relative shrink-0 inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all",
+              totalFiltrosAtivos > 0
+                ? "border-vermelho bg-vermelho/20 text-vermelho shadow-xs"
+                : "border-white/15 bg-[#0d1627] text-slate-300 hover:bg-white/10"
+            )}
+            aria-label="Abrir filtros avançados"
           >
-            Limpar
+            <SlidersHorizontal size={14} />
+            <span>Filtros</span>
+            {totalFiltrosAtivos > 0 && (
+              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-vermelho text-[10px] font-black text-white">
+                {totalFiltrosAtivos}
+              </span>
+            )}
           </button>
+        </div>
 
-          <div className="ml-auto flex items-center gap-2">
+        {/* DESKTOP (Linha completa e espaçosa) */}
+        <div className="hidden lg:flex items-center justify-between gap-3 text-xs sm:text-sm">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 font-bold uppercase tracking-wider text-ouro text-xs">
+              <Filter className="h-4 w-4" /> Recorte:
+            </span>
+
+            <PaletaComando
+              lancamentos={lancamentos}
+              onSelecionarFracao={(fracao) => {
+                definir({ fracao });
+                toast.info(`Filtro aplicado: ${ROTULO_SUBUNIDADE[fracao] ?? fracao}`);
+              }}
+              onSelecionarSemana={(semana) => {
+                definir({ semana });
+                toast.info(`Filtro aplicado: Semana ${semana}`);
+              }}
+              onExportarCsv={baixarLancamentosCsv}
+            />
+
+            <select
+              value={f.fracao}
+              onChange={(e) => definir({ fracao: e.target.value })}
+              className="rounded-xl border border-white/15 bg-[#0d1627] px-3 py-1.5 font-bold text-white shadow-xs focus:border-ouro focus:outline-none"
+            >
+              <option value="todas">Todas as Frações (Batalhão)</option>
+              {metas.map((m) => (
+                <option key={m.subunidade} value={m.subunidade}>
+                  {ROTULO_SUBUNIDADE[m.subunidade] ?? m.subunidade}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={f.semana}
+              onChange={(e) => definir({ semana: e.target.value })}
+              className="rounded-xl border border-white/15 bg-[#0d1627] px-3 py-1.5 font-bold text-white shadow-xs focus:border-ouro focus:outline-none"
+            >
+              <option value="todas">Ciclo Completo (4 Semanas)</option>
+              <option value="1">Semana 1 (01 a 07)</option>
+              <option value="2">Semana 2 (08 a 14)</option>
+              <option value="3">Semana 3 (15 a 21)</option>
+              <option value="4">Semana 4 (22 a 31)</option>
+            </select>
+
+            <select
+              value={f.turno}
+              onChange={(e) => definir({ turno: e.target.value })}
+              className="rounded-xl border border-white/15 bg-[#0d1627] px-3 py-1.5 font-bold text-white shadow-xs focus:border-ouro focus:outline-none"
+            >
+              <option value="todos">Todos os Turnos</option>
+              <option value="diurno">Diurno</option>
+              <option value="noturno">Noturno</option>
+            </select>
+
+            {totalFiltrosAtivos > 0 && (
+              <button
+                type="button"
+                onClick={() => setF(FILTROS_VAZIOS)}
+                className="rounded-xl border border-red-500/40 bg-red-950/40 px-3 py-1.5 font-bold text-red-400 hover:bg-red-900/50 transition-colors text-xs"
+              >
+                Limpar ({totalFiltrosAtivos})
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={atualizar}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-2 font-semibold text-slate-300 hover:text-white text-xs transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-3 py-1.5 font-semibold text-slate-300 hover:text-white text-xs transition-colors"
             >
               <RefreshCw className={cn("h-3.5 w-3.5", atualizando && "animate-spin")} />
               <span>Atualizar</span>
@@ -307,7 +390,7 @@ export function DashboardCopV2({
             <button
               type="button"
               onClick={() => window.print()}
-              className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-2 font-semibold text-slate-300 hover:text-white text-xs transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-3 py-1.5 font-semibold text-slate-300 hover:text-white text-xs transition-colors"
             >
               <Printer className="h-3.5 w-3.5" />
               <span>Imprimir</span>
@@ -315,6 +398,141 @@ export function DashboardCopV2({
           </div>
         </div>
       </div>
+
+      {/* ---------------- GAVETA TÁTICA MOBILE (BOTTOM SHEET DARK) ---------------- */}
+      {gavetaFiltrosAberta && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex flex-col justify-end bg-black/80 backdrop-blur-sm lg:hidden animate-in fade-in"
+        >
+          <div
+            className="fixed inset-0"
+            onClick={() => setGavetaFiltrosAberta(false)}
+            aria-hidden="true"
+          />
+          <div className="relative z-10 max-h-[85vh] overflow-y-auto rounded-t-3xl border-t-2 border-ouro bg-[#0b1222] p-5 shadow-2xl">
+            <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-slate-700" />
+            
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div>
+                <p className="font-serif text-lg font-extrabold uppercase tracking-wide text-white">
+                  Filtros & Recortes
+                </p>
+                <p className="text-xs text-slate-400">Isole frações, semanas e turnos de auditoria</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setGavetaFiltrosAberta(false)}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-slate-300 hover:bg-white/20"
+                aria-label="Fechar gaveta"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-4 py-4">
+              {/* Fração */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                  Fração / Subunidade
+                </label>
+                <select
+                  value={f.fracao}
+                  onChange={(e) => definir({ fracao: e.target.value })}
+                  className="w-full rounded-xl border border-white/15 bg-[#0d1627] p-3 font-bold text-white text-sm focus:border-ouro"
+                >
+                  <option value="todas">Todas as frações (Batalhão)</option>
+                  {metas.map((m) => (
+                    <option key={m.subunidade} value={m.subunidade}>
+                      {ROTULO_SUBUNIDADE[m.subunidade] ?? m.subunidade}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Semana */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                  Semana Operacional
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { id: "todas", label: "Todas (Mês)" },
+                    { id: "1", label: "Semana 1 (01–07)" },
+                    { id: "2", label: "Semana 2 (08–14)" },
+                    { id: "3", label: "Semana 3 (15–21)" },
+                    { id: "4", label: "Semana 4 (22–31)" },
+                  ].map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => definir({ semana: s.id })}
+                      className={cn(
+                        "rounded-xl border p-2.5 text-center text-xs font-bold transition-all",
+                        f.semana === s.id
+                          ? "border-ouro bg-ouro/20 text-ouro shadow-xs"
+                          : "border-white/10 bg-[#0d1627] text-slate-300"
+                      )}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Turno */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                  Turno
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { id: "todos", label: "Todos" },
+                    { id: "diurno", label: "Diurno" },
+                    { id: "noturno", label: "Noturno" },
+                  ].map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => definir({ turno: t.id })}
+                      className={cn(
+                        "rounded-xl border p-2.5 text-center text-xs font-bold transition-all",
+                        f.turno === t.id
+                          ? "border-ouro bg-ouro/20 text-ouro shadow-xs"
+                          : "border-white/10 bg-[#0d1627] text-slate-300"
+                      )}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Ações da Gaveta */}
+            <div className="mt-4 grid grid-cols-2 gap-3 border-t border-white/10 pt-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setF(FILTROS_VAZIOS);
+                  setGavetaFiltrosAberta(false);
+                }}
+                className="rounded-xl border border-white/15 bg-white/5 py-3 text-center text-sm font-bold text-slate-300 hover:bg-white/10"
+              >
+                Limpar Tudo
+              </button>
+              <button
+                type="button"
+                onClick={() => setGavetaFiltrosAberta(false)}
+                className="rounded-xl bg-ouro py-3 text-center text-sm font-extrabold text-[#0b1222] shadow-md hover:bg-ouro/90"
+              >
+                Aplicar Recorte
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {erro && (
         <div className="mb-6 flex items-start gap-3 rounded-2xl border border-red-500/40 bg-red-950/40 p-4 text-red-300 shadow-xl">
