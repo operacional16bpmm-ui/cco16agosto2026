@@ -78,14 +78,14 @@ export default async function Cop2026Page() {
             <span className="hidden sm:inline">Polícia Militar</span>
           </div>
 
-          <div className="mx-auto grid max-w-5xl items-center gap-y-5 md:grid-cols-[180px_minmax(0,1fr)_190px] md:gap-x-0">
+          <div className="mx-auto grid max-w-5xl items-center gap-y-5 md:grid-cols-[220px_minmax(0,1fr)_220px] md:gap-x-0">
             <div className="flex justify-center md:justify-end md:pr-0">
               <Image
                 src="/brand/brasao-16bpmm-hd.png"
                 alt="Brasão do 16º BPM/M"
                 width={2481}
                 height={3508}
-                className="h-40 w-auto drop-shadow-[0_14px_28px_rgba(7,24,45,0.35)] sm:h-48 md:h-56"
+                className="h-56 w-auto drop-shadow-[0_18px_34px_rgba(7,24,45,0.4)] sm:h-72 md:h-96"
                 priority
               />
             </div>
@@ -111,7 +111,7 @@ export default async function Cop2026Page() {
                 alt="16º BPM/M · Auditoria COP 2026"
                 width={1536}
                 height={1536}
-                className="h-36 w-auto drop-shadow-[0_12px_24px_rgba(7,24,45,0.28)] sm:h-44 md:h-48"
+                className="h-48 w-auto drop-shadow-[0_16px_30px_rgba(7,24,45,0.34)] sm:h-64 md:h-80"
               />
             </div>
           </div>
