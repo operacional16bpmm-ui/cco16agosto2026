@@ -197,7 +197,7 @@ export function DashboardCop({
   const [atualizando, setAtualizando] = useState(false);
   const [exportandoBriefing, setExportandoBriefing] = useState(false);
   const primeiroRender = useRef(true);
-  const painelBriefingRef = useRef<HTMLElement>(null);
+  const painelBriefingRef = useRef<HTMLDivElement>(null);
 
   /* O recorte vive na URL para o link ser colável no WhatsApp com o filtro
      dentro. `history.replaceState` em vez de router.replace: trocar de filtro
@@ -245,7 +245,11 @@ export function DashboardCop({
       // Captura sempre uma cópia estática: vídeos e controles interativos não
       // entram na rasterização e não conseguem travar a geração do arquivo.
       const copia = node.cloneNode(true) as HTMLElement;
-      copia.querySelectorAll("video, button").forEach((elemento) => elemento.remove());
+      // Só saem o vídeo de fundo e o próprio botão de exportar (data-no-briefing).
+      // Os cards clicáveis (semanas, frações) SÃO conteúdo e precisam ficar no PNG.
+      copia
+        .querySelectorAll('video, [data-no-briefing="true"]')
+        .forEach((elemento) => elemento.remove());
       copia.style.position = "fixed";
       copia.style.left = "-100000px";
       copia.style.top = "0";
@@ -257,7 +261,7 @@ export function DashboardCop({
       } finally {
         copia.remove();
       }
-      const nomeArquivo = `briefing-estatico-cop-2026-${new Date().toISOString().slice(0, 10)}.png`;
+      const nomeArquivo = `painel-cop-2026-${new Date().toISOString().slice(0, 10)}.png`;
       const blob = await (await fetch(dataUrl)).blob();
       const urlDownload = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -271,7 +275,7 @@ export function DashboardCop({
         URL.revokeObjectURL(urlDownload);
         link.remove();
       }, 1000);
-      toast.success("Briefing estático exportado em PNG.");
+      toast.success("Painel completo exportado em PNG.");
     } catch {
       toast.error("Não foi possível gerar o briefing em PNG. Tente novamente.");
     } finally {
@@ -938,8 +942,12 @@ export function DashboardCop({
         </p>
       )}
 
+      {/* O bloco exportado em PNG abarca a Situação (KPIs + termômetro) e a
+          camada semanal (Meta Semanal + Companhias/Força Tática): é o conjunto
+          que o Comando lê junto para decidir, então sai junto no arquivo. */}
+      <div ref={painelBriefingRef} className="bg-[#edf2f7]">
       {/* ---------------- Camada 1: Situação ---------------- */}
-      <section ref={painelBriefingRef} aria-label="Situação" className="relative mb-8">
+      <section aria-label="Situação" className="relative mb-8">
         <div className="grid gap-5 lg:grid-cols-12 lg:items-stretch">
           {/* Faixa superior: diagnóstico executivo ocupando toda a largura */}
           <div
@@ -1016,8 +1024,8 @@ export function DashboardCop({
             onClick={exportarBriefingPng}
             disabled={exportandoBriefing}
             data-no-briefing="true"
-            aria-label="Exportar briefing estático em PNG"
-            title="Exportar briefing estático em PNG"
+            aria-label="Exportar painel completo (situação + semanal) em PNG"
+            title="Exportar painel completo em PNG"
             className="group absolute right-[-16px] top-3 z-30 flex h-14 w-14 items-center justify-center rounded-full border-2 border-white bg-[#ca0202] text-white shadow-[0_10px_24px_rgba(202,2,2,0.38)] transition-all duration-300 hover:scale-110 hover:bg-[#a80000] hover:shadow-[0_14px_30px_rgba(202,2,2,0.48)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ca0202] disabled:cursor-wait disabled:opacity-80 lg:right-[-70px] lg:top-5"
           >
             {exportandoBriefing ? (
@@ -1136,6 +1144,7 @@ export function DashboardCop({
           </aside>
         </div>
       </section>
+      </div>
 
       {/* ---------------- Camada 2: Onde agir ---------------- */}
       <section aria-label="Onde agir" className="mb-6">
