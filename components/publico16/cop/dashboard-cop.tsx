@@ -393,14 +393,14 @@ export function DashboardCop({
             16º Batalhão de Polícia Militar Metropolitano
           </h1>
           <p className="font-serif text-base sm:text-xl font-bold uppercase tracking-widest text-slate-800 mt-1">
-            Diretriz PM3-001/02/25 · Sala de Controle Operacional
+            Auditoria e Governança das Câmeras Operacionais Corporais
           </p>
           <div className="mt-3 flex flex-wrap items-center justify-center md:justify-start gap-3">
             <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#ca0202] px-4 py-1.5 text-xs sm:text-sm font-black text-white uppercase tracking-wider shadow-md">
               COP 2026
             </span>
             <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-700 bg-slate-200/80 px-3.5 py-1.5 rounded-lg">
-              Auditoria & Governança de Câmeras Operacionais Portáteis
+              DIRETRIZ PM3-001/02/25 · AMBIENTE EXECUTIVO DE GESTÃO E CONTROLE
             </span>
           </div>
         </div>
@@ -873,7 +873,17 @@ export function DashboardCop({
             total={p.total}
             meta={p.meta}
             titulo={f.fracao === "todas" ? '16º BPM/M — "1º Ten PM Fernão"' : `Ritmo Operacional · ${ROTULO_SUBUNIDADE[f.fracao] ?? f.fracao}`}
-            subtitulo="DIRETRIZ PM3-001/02/25 · AMBIENTE EXECUTIVO DE GESTÃO E CONTROLE"
+            subtitulo={
+              f.fracao === "todas"
+                ? {
+                    linha1: "META GLOBAL — 960 EVIDÊNCIAS",
+                    linha2: "(Distribuição Proporcional por Matriz Operacional)",
+                  }
+                : {
+                    linha1: `META ${ROTULO_SUBUNIDADE[f.fracao] ?? f.fracao}: ${FMT.format(p.meta)} EVIDÊNCIAS`,
+                    linha2: "(Distribuição Proporcional por Matriz Operacional)",
+                  }
+            }
           />
         </div>
       </section>

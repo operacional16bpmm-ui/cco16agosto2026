@@ -623,12 +623,17 @@ export function veredito(p: Painel): { titulo: string; detalhe: string; nivel: N
 
   const titulo =
     p.nivelGeral === "conforme"
-      ? `Auditoria em ${PCT.format(p.pct)}% da meta — dentro do previsto.`
+      ? "CUMPRIDA a Métrica para Monitoramento e Controle de Vídeos (Evidências / Ocorrências)"
       : p.nivelGeral === "atencao"
-        ? `Auditoria em ${PCT.format(p.pct)}% da meta — abaixo do ritmo necessário.`
-        : `Auditoria em ${PCT.format(p.pct)}% da meta — bem abaixo do previsto.`;
+        ? "FAIXA DE ATENÇÃO da Métrica para Monitoramento e Controle de Vídeos (Evidências / Ocorrências)"
+        : "ABAIXO da Métrica para Monitoramento e Controle de Vídeos (Evidências / Ocorrências)";
 
-  return { titulo, detalhe: p.falta > 0 ? ritmo : "Meta do período já cumprida.", nivel: p.nivelGeral };
+  const detalhe =
+    p.falta > 0
+      ? `Auditoria em ${PCT.format(p.pct)}% da meta. ${ritmo}`
+      : `Auditoria em ${PCT.format(p.pct)}% da meta — meta do período já cumprida no 16º BPM/M.`;
+
+  return { titulo, detalhe, nivel: p.nivelGeral };
 }
 
 export function conclusaoRitmo(p: Painel): string {
