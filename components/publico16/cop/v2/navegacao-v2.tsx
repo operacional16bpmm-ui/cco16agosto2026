@@ -67,12 +67,6 @@ export function NavegacaoV2({
       icone: <FileSpreadsheet className="h-4 w-4" />,
       externo: true,
     },
-    {
-      href: "/16bpmm",
-      rotulo: "Portal 16º BPM/M",
-      icone: <Home className="h-4 w-4" />,
-      externo: false,
-    },
   ];
 
   return (
