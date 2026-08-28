@@ -78,18 +78,19 @@ export default async function Cop2026Page() {
             <span className="hidden sm:inline">Polícia Militar</span>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-6">
-            <div className="flex min-w-0 items-center gap-4 sm:gap-5">
-            <Image
-              src="/brand/logo-auditoria-cop2026-transparent.png"
-              alt="16º BPM/M · Auditoria COP 2026 · Controle e Fiscalização das Câmeras Operacionais Corporais"
-              width={1536}
-              height={1536}
-              className="h-32 w-auto drop-shadow-[0_10px_22px_rgba(7,24,45,0.3)] sm:h-40 md:h-48"
-              priority
-            />
-              <div className="hidden h-28 w-px bg-[#15304c]/20 sm:block" />
-              <div className="min-w-0">
+          <div className="grid items-center gap-x-4 gap-y-5 md:grid-cols-[minmax(130px,180px)_minmax(0,1fr)_minmax(130px,180px)] md:gap-x-5">
+            <div className="flex justify-center md:justify-end">
+              <Image
+                src="/16bpmm/geral/brasao.png"
+                alt="Brasão do 16º BPM/M"
+                width={300}
+                height={300}
+                className="h-32 w-auto drop-shadow-[0_12px_24px_rgba(7,24,45,0.32)] sm:h-40 md:h-44"
+                priority
+              />
+            </div>
+
+            <div className="min-w-0 text-center">
                 <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#ca0202] sm:text-xs">
                   16º Batalhão de Polícia Militar Metropolitano
                 </p>
@@ -102,12 +103,20 @@ export default async function Cop2026Page() {
                 <div className="mt-3 text-[9px] font-bold uppercase tracking-[0.16em] text-[#15304c]/70 sm:text-[10px]">
                   Diretriz PM3-001/02/25
                 </div>
-              </div>
             </div>
 
-            <div className="flex min-w-[220px] flex-col items-stretch gap-2 sm:items-end">
-          {/* Sem links de saída: esta página trata só da auditoria de COP. */}
-          <div className="flex w-full flex-wrap items-center justify-end gap-2.5 sm:w-auto">
+            <div className="flex justify-center md:justify-start">
+              <Image
+                src="/brand/logo-auditoria-cop2026-transparent.png"
+                alt="16º BPM/M · Auditoria COP 2026"
+                width={1536}
+                height={1536}
+                className="h-32 w-auto drop-shadow-[0_12px_24px_rgba(7,24,45,0.28)] sm:h-40 md:h-44"
+              />
+            </div>
+          </div>
+
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5 border-t border-[#15304c]/15 pt-4">
             {/* Botões de vitrine: mostram os destinos do Batalhão sem levar a
                 lugar nenhum — esta página trata só da auditoria de COP. */}
             <span
@@ -123,16 +132,14 @@ export default async function Cop2026Page() {
               Página do 16º BPM/M <ArrowRight size={16} />
             </span>
           </div>
-              <div className="w-full text-right">
+          <div className="mt-2 text-center">
             <p className="font-serif text-sm font-bold uppercase tracking-wide text-[#15304c]/80">
               Preenchimento diário obrigatório
             </p>
             <p className="text-[12px] font-semibold text-[#15304c]/55">
               Controle e fiscalização do uso das câmeras
             </p>
-              </div>
-            </div>
-        </div>
+          </div>
         </div>
       </header>
 
