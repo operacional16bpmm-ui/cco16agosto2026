@@ -271,6 +271,115 @@ body {
   box-shadow: 0 10px 25px -5px rgba(22, 41, 74, 0.15), 0 8px 10px -6px rgba(22, 41, 74, 0.1);
 }
 
+/* Dashboard COP configurável: movimento deliberado apenas no modo de edição. */
+.dashboard-configurable-grid {
+  position: relative;
+}
+
+.dashboard-widget {
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 1rem;
+}
+
+.dashboard-widget-content {
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
+  scrollbar-gutter: stable;
+}
+
+.dashboard-widget-editing {
+  border: 2px solid rgba(202, 2, 2, 0.75);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.2), 0 0 0 4px rgba(202, 2, 2, 0.08);
+}
+
+.dashboard-widget-editing .dashboard-widget-content {
+  height: calc(100% - 38px);
+}
+
+.dashboard-widget-handle {
+  display: flex;
+  height: 38px;
+  cursor: grab;
+  align-items: center;
+  gap: 0.45rem;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(202, 2, 2, 0.25);
+  background: linear-gradient(90deg, #8e0000, #ca0202 58%, #e11d48);
+  padding: 0 0.75rem;
+  color: white;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  user-select: none;
+}
+
+.dashboard-widget-handle:active {
+  cursor: grabbing;
+}
+
+.react-grid-item {
+  transition: transform 180ms ease, width 180ms ease, height 180ms ease;
+}
+
+.react-grid-item.react-draggable-dragging,
+.react-grid-item.resizing {
+  z-index: 60;
+  transition: none;
+}
+
+.react-grid-placeholder {
+  border: 2px dashed #ca0202;
+  border-radius: 1rem;
+  background: rgba(202, 2, 2, 0.12);
+  opacity: 1;
+}
+
+.react-resizable-handle {
+  position: absolute;
+  z-index: 70;
+  width: 22px;
+  height: 22px;
+}
+
+.react-resizable-handle::after {
+  content: "";
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border-color: #ca0202;
+  border-style: solid;
+}
+
+.react-resizable-handle-se { right: 3px; bottom: 3px; cursor: se-resize; }
+.react-resizable-handle-se::after { right: 3px; bottom: 3px; border-width: 0 3px 3px 0; }
+.react-resizable-handle-sw { left: 3px; bottom: 3px; cursor: sw-resize; }
+.react-resizable-handle-sw::after { left: 3px; bottom: 3px; border-width: 0 0 3px 3px; }
+.react-resizable-handle-ne { right: 3px; top: 3px; cursor: ne-resize; }
+.react-resizable-handle-ne::after { right: 3px; top: 3px; border-width: 3px 3px 0 0; }
+.react-resizable-handle-nw { left: 3px; top: 3px; cursor: nw-resize; }
+.react-resizable-handle-nw::after { left: 3px; top: 3px; border-width: 3px 0 0 3px; }
+
+@media print {
+  .dashboard-configurable-grid {
+    height: auto !important;
+  }
+  .dashboard-configurable-grid > .react-grid-item {
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    transform: none !important;
+    margin-bottom: 1.5rem;
+  }
+  .dashboard-widget,
+  .dashboard-widget-content {
+    height: auto !important;
+    overflow: visible !important;
+  }
+}
+
 /* Faixa institucional (azul → vermelho → ouro) usada em cabeçalhos e divisores */
 .faixa-institucional {
   background: linear-gradient(
