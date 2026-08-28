@@ -306,14 +306,15 @@ export function DashboardCop({
   const kpisPrincipais = [kpis[0], kpis[4]];
   const kpisApoio = [kpis[1], kpis[2], kpis[3]];
 
-  const renderKpi = (k: (typeof kpis)[number], principal: boolean) => (
+  const renderKpi = (k: (typeof kpis)[number], principal: boolean, className?: string) => (
     <div
       key={k.rotulo}
       className={cn(
         "group relative overflow-hidden rounded-2xl border-2 border-slate-300/85 bg-white shadow-[0_4px_16px_rgba(15,23,42,0.06)] transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_12px_28px_rgba(202,2,2,0.22)] hover:border-vermelho",
         principal
           ? "min-h-[220px] p-6 sm:min-h-[250px] sm:p-7"
-          : "min-h-[148px] p-4 sm:min-h-[164px] sm:p-5"
+          : "min-h-[148px] p-4 sm:min-h-[164px] sm:p-5",
+        className
       )}
     >
       <div className="absolute inset-0 z-0 overflow-hidden">
@@ -878,129 +879,168 @@ export function DashboardCop({
 
       {/* ---------------- Camada 1: Situação ---------------- */}
       <section aria-label="Situação" className="mb-8">
-        <div className="grid gap-5 lg:grid-cols-[1fr_340px]">
-          {/* Lado Esquerdo: Diagnóstico e KPIs */}
-          <div className="flex flex-col justify-between gap-4">
-            <div
-              className="relative overflow-hidden flex flex-wrap items-start gap-3.5 rounded-2xl border-l-4 border-2 border-slate-300/85 bg-gradient-to-r from-[#ffffff] via-[#f8fafc] to-[#edf3f8] p-5 sm:p-6 shadow-[0_4px_16px_rgba(15,23,42,0.06)]"
-              style={{ borderLeftColor: `var(--sinal-${v.nivel})` }}
-            >
-              {/* Foto operacional nítida — câmera corporal como âncora visual */}
-              <Image
-                src="/media/cop-camera.jpg"
-                alt=""
-                aria-hidden
-                fill
-                priority
-                sizes="(max-width: 1024px) 100vw, 720px"
-                className="pointer-events-none absolute inset-0 h-full w-full origin-left scale-125 object-cover object-left opacity-90 brightness-50 contrast-125"
-              />
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-slate-950/70 via-slate-900/35 to-white/95" />
+        <div className="grid gap-5 lg:grid-cols-12 lg:items-stretch">
+          {/* Faixa superior: diagnóstico executivo ocupando toda a largura */}
+          <div
+            className="relative flex min-h-[122px] flex-wrap items-center gap-3.5 overflow-hidden rounded-2xl border-2 border-l-4 border-slate-300/85 bg-gradient-to-r from-[#ffffff] via-[#f8fafc] to-[#edf3f8] p-5 shadow-[0_8px_22px_rgba(15,23,42,0.10)] sm:p-6 lg:col-span-12 lg:-mr-4"
+            style={{ borderLeftColor: `var(--sinal-${v.nivel})` }}
+          >
+            <Image
+              src="/media/cop-camera.jpg"
+              alt=""
+              aria-hidden
+              fill
+              priority
+              sizes="100vw"
+              className="pointer-events-none absolute inset-0 h-full w-full origin-left scale-110 object-cover object-left opacity-90 brightness-50 contrast-125"
+            />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-slate-950/75 via-slate-900/40 to-white/95" />
 
-              <div className="relative z-10 ml-[18%] flex w-[82%] flex-wrap items-start gap-3.5 md:ml-[24%] md:w-[76%]">
-                <Selo nivel={v.nivel} />
-                <div className="min-w-0 flex-1 rounded-xl border border-white/80 bg-white/90 px-3 py-2 shadow-lg">
-                  <p className="font-serif text-lg font-black leading-snug text-slate-950 drop-shadow-sm">{v.titulo}</p>
-                  <p className="mt-1 text-[13.5px] font-semibold leading-relaxed text-slate-800">{v.detalhe}</p>
-                </div>
+            <div className="relative z-10 ml-[18%] flex w-[82%] flex-wrap items-center gap-3.5 md:ml-[24%] md:w-[76%] lg:ml-[22%] lg:w-[76%]">
+              <Selo nivel={v.nivel} />
+              <div className="min-w-0 flex-1 rounded-xl border border-white/80 bg-white/[0.92] px-4 py-3 shadow-lg backdrop-blur-sm">
+                <p className="font-serif text-lg font-black leading-snug text-slate-950 drop-shadow-sm sm:text-xl">{v.titulo}</p>
+                <p className="mt-1 text-[13.5px] font-semibold leading-relaxed text-slate-800 sm:text-sm">{v.detalhe}</p>
               </div>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              {kpisPrincipais.map((k) => renderKpi(k, true))}
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-3">
-              {kpisApoio.map((k) => renderKpi(k, false))}
-            </div>
-
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border-2 border-slate-300/85 bg-gradient-to-r from-[#ffffff] via-[#f8fafc] to-[#edf3f8] px-4 py-3 text-[12.5px] text-texto-suave shadow-xs">
-              <span>
-                Mediana por lançamento: <strong className="dados text-branco font-bold">{FMT.format(p.mediana)}</strong> · p90{" "}
-                <strong className="dados text-branco font-bold">{FMT.format(p.p90)}</strong>
-              </span>
-              <span>
-                Turnos cumpridos: <strong className="dados text-branco font-bold">{FMT.format(p.turnosCumpridos)}</strong> de{" "}
-                {FMT.format(p.turnosPrevistos)}
-              </span>
-              <span>
-                Partes confeccionadas: <strong className="dados text-branco font-bold">{FMT.format(p.partes)}</strong>
-              </span>
             </div>
           </div>
 
-          {/* Lado Direito: Agulhão / Manômetro de Atingimento */}
-          <AgulhaoMetas
-            pct={p.pct}
-            total={p.total}
-            meta={p.meta}
-            titulo={f.fracao === "todas" ? '16º BPM/M — "1º Ten PM Fernão"' : `Ritmo Operacional · ${ROTULO_SUBUNIDADE[f.fracao] ?? f.fracao}`}
-            subtitulo={{
-              linha1: "META GLOBAL — 960 EVIDÊNCIAS",
-              linha2: "DIRETRIZ PM3-001/02/25 · AMBIENTE EXECUTIVO DE GESTÃO E CONTROLE",
-              linha3: "Distribuição Proporcional por Matriz Operacional",
-            }}
-          />
+          {/* Matriz de indicadores: sempre dois blocos por linha no desktop */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:col-span-7">
+            {kpisPrincipais.map((k) => renderKpi(k, true))}
+            {kpisApoio.map((k, indice) =>
+              renderKpi(k, false, indice === kpisApoio.length - 1 ? "sm:col-span-2" : undefined)
+            )}
+          </div>
+
+          {/* Termômetro ampliado, começando após a matriz de indicadores */}
+          <div className="min-w-0 lg:col-span-5">
+            <AgulhaoMetas
+              pct={p.pct}
+              total={p.total}
+              meta={p.meta}
+              titulo={f.fracao === "todas" ? '16º BPM/M — "1º Ten PM Fernão"' : `Ritmo Operacional · ${ROTULO_SUBUNIDADE[f.fracao] ?? f.fracao}`}
+              subtitulo={{
+                linha1: "META GLOBAL — 960 EVIDÊNCIAS",
+                linha2: "DIRETRIZ PM3-001/02/25 · AMBIENTE EXECUTIVO DE GESTÃO E CONTROLE",
+                linha3: "Distribuição Proporcional por Matriz Operacional",
+              }}
+            />
+          </div>
+
+          {/* Barra-resumo com destaque e movimento institucional sutil */}
+          <div className="relative flex flex-wrap items-center justify-between gap-3 overflow-hidden rounded-2xl border-2 border-[#ca0202]/45 bg-gradient-to-r from-white via-red-50/80 to-white px-5 py-4 text-[13px] font-semibold text-slate-700 shadow-[0_8px_20px_rgba(202,2,2,0.12)] lg:col-span-12">
+            <span className="animar-bala pointer-events-none absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-red-200/55 to-transparent" aria-hidden="true" />
+            <span className="relative flex items-center gap-2">
+              <span className="h-2.5 w-2.5 rounded-full bg-[#ca0202] animar-ao-vivo" aria-hidden="true" />
+              Mediana por lançamento: <strong className="dados font-black text-slate-950">{FMT.format(p.mediana)}</strong> · p90{" "}
+              <strong className="dados font-black text-slate-950">{FMT.format(p.p90)}</strong>
+            </span>
+            <span className="relative">
+              Turnos cumpridos: <strong className="dados font-black text-slate-950">{FMT.format(p.turnosCumpridos)}</strong> de{" "}
+              {FMT.format(p.turnosPrevistos)}
+            </span>
+            <span className="relative">
+              Partes confeccionadas: <strong className="dados font-black text-slate-950">{FMT.format(p.partes)}</strong>
+            </span>
+          </div>
         </div>
       </section>
 
       {/* ---------------- Camada Semanal: Metas por Semana ---------------- */}
       <section aria-label="Evolução Semanal" className="mb-6">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <h2 className="font-serif text-base font-bold text-branco">
-              Meta Semanal · {f.fracao === "todas" ? "240 Evidências / Semana (Btl)" : `${FMT.format(p.meta)} Evidências / Semana (${ROTULO_SUBUNIDADE[f.fracao] ?? f.fracao})`}
-            </h2>
-            <p className="text-[12.5px] text-texto-suave">
-              Divisão do ciclo de auditoria em 4 semanas operacionais · clique no card de uma semana para isolar o recorte
-            </p>
-          </div>
-          {f.semana !== "todas" && (
-            <button
-              type="button"
-              onClick={() => definir({ semana: "todas" })}
-              className="rounded-md border border-vermelho/30 bg-vermelho/5 px-2.5 py-1 text-[12px] font-semibold text-vermelho hover:bg-vermelho/10"
-            >
-              Exibindo Semana {f.semana} · Ver Todas as Semanas
-            </button>
-          )}
-        </div>
-
-        {/* Faixa de apoio: registro visual do ciclo semanal, em degrade */}
-        <div className="mb-3.5 grid grid-cols-2 gap-2.5 sm:gap-3.5 lg:grid-cols-4 nao-imprime">
-          {[
-            { src: "/media/reel-patrulha.jpg", etiqueta: "Ciclo", legenda: "Patrulhamento Diario" },
-            { src: "/media/controle-bg-poster.jpg", etiqueta: "Coleta", legenda: "Evidencias Gravadas" },
-            { src: "/media/reel-operacao.jpg", etiqueta: "Ritmo", legenda: "Empenho Operacional" },
-            { src: "/media/foto_cpchq.jpg", etiqueta: "Fechamento", legenda: "Auditoria da Semana" },
-          ].map((img) => (
-            <div
-              key={img.src}
-              className="relative h-20 overflow-hidden rounded-xl border border-slate-300/85 bg-slate-900 shadow-sm sm:h-24"
-            >
-              <Image
-                src={img.src}
-                alt=""
-                aria-hidden
-                width={400}
-                height={200}
-                className="h-full w-full object-cover opacity-80"
-              />
-              <div className="pointer-events-none absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/90 via-black/30 to-transparent p-2.5">
-                <span className="text-[9.5px] font-black uppercase tracking-wider text-vermelho">
-                  {img.etiqueta}
-                </span>
-                <p className="text-[11px] font-bold leading-snug text-white">{img.legenda}</p>
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-stretch">
+          <div className="min-w-0">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h2 className="font-serif text-base font-bold text-branco">
+                  Meta Semanal · {f.fracao === "todas" ? "240 Evidências / Semana (Btl)" : `${FMT.format(p.meta)} Evidências / Semana (${ROTULO_SUBUNIDADE[f.fracao] ?? f.fracao})`}
+                </h2>
+                <p className="text-[12.5px] text-texto-suave">
+                  Divisão do ciclo de auditoria em 4 semanas operacionais · clique no card de uma semana para isolar o recorte
+                </p>
               </div>
+              {f.semana !== "todas" && (
+                <button
+                  type="button"
+                  onClick={() => definir({ semana: "todas" })}
+                  className="rounded-md border border-vermelho/30 bg-vermelho/5 px-2.5 py-1 text-[12px] font-semibold text-vermelho hover:bg-vermelho/10"
+                >
+                  Exibindo Semana {f.semana} · Ver Todas as Semanas
+                </button>
+              )}
             </div>
-          ))}
-        </div>
 
-        <QuadroSemanalBatalhao
-          semanas={p.semanasBatalhao}
-          semanaAtiva={f.semana}
-          onSelecionarSemana={(sem) => definir({ semana: sem })}
-        />
+            {/* Faixa de apoio: registro visual do ciclo semanal, em degradê */}
+            <div className="mb-3.5 grid grid-cols-2 gap-2.5 sm:gap-3.5 xl:grid-cols-4 nao-imprime">
+              {[
+                { src: "/media/reel-patrulha.jpg", etiqueta: "Ciclo", legenda: "Patrulhamento Diário" },
+                { src: "/media/controle-bg-poster.jpg", etiqueta: "Coleta", legenda: "Evidências Gravadas" },
+                { src: "/media/reel-operacao.jpg", etiqueta: "Ritmo", legenda: "Empenho Operacional" },
+                { src: "/media/foto_cpchq.jpg", etiqueta: "Fechamento", legenda: "Auditoria da Semana" },
+              ].map((img) => (
+                <div
+                  key={img.src}
+                  className="relative h-20 overflow-hidden rounded-xl border border-slate-300/85 bg-slate-900 shadow-sm sm:h-24"
+                >
+                  <Image
+                    src={img.src}
+                    alt=""
+                    aria-hidden
+                    width={400}
+                    height={200}
+                    className="h-full w-full object-cover opacity-80"
+                  />
+                  <div className="pointer-events-none absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/90 via-black/30 to-transparent p-2.5">
+                    <span className="text-[9.5px] font-black uppercase tracking-wider text-vermelho">
+                      {img.etiqueta}
+                    </span>
+                    <p className="text-[11px] font-bold leading-snug text-white">{img.legenda}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <QuadroSemanalBatalhao
+              semanas={p.semanasBatalhao}
+              semanaAtiva={f.semana}
+              onSelecionarSemana={(sem) => definir({ semana: sem })}
+            />
+          </div>
+
+          {/* Visão lateral somente com as barras das Companhias e Força Tática */}
+          <aside className="rounded-2xl border-2 border-slate-300/85 bg-gradient-to-b from-white via-[#f8fafc] to-[#edf3f8] p-4 shadow-[0_8px_22px_rgba(15,23,42,0.09)] sm:p-5" aria-label="Barras de progresso das frações">
+            <div className="mb-4 border-b border-slate-300/80 pb-3">
+              <p className="font-serif text-sm font-black uppercase tracking-[0.1em] text-slate-950">
+                Companhias e Força Tática
+              </p>
+              <p className="mt-1 text-[11px] font-semibold text-slate-500">Progresso visual por fração</p>
+            </div>
+            <ul className="space-y-4">
+              {p.fracoes.map((fracao) => (
+                <li key={fracao.chave}>
+                  <div className="mb-1.5 flex items-center gap-2">
+                    <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: `var(--sinal-${fracao.nivel})` }} aria-hidden="true" />
+                    <span className="truncate text-[11px] font-black uppercase tracking-wide text-slate-700">{fracao.rotulo}</span>
+                  </div>
+                  <div
+                    className="h-4 overflow-hidden rounded-full border border-slate-300 bg-slate-200 shadow-inner"
+                    role="img"
+                    aria-label={`${fracao.rotulo}: ${PCT.format(fracao.pct)}% da meta`}
+                  >
+                    <div
+                      className="h-full rounded-full shadow-[0_0_12px_rgba(15,23,42,0.16)] transition-[width] duration-700"
+                      style={{
+                        width: `${Math.min(100, Math.max(0, fracao.pct))}%`,
+                        background: `var(--sinal-${fracao.nivel})`,
+                      }}
+                    />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </aside>
+        </div>
       </section>
 
       {/* ---------------- Camada 2: Onde agir ---------------- */}

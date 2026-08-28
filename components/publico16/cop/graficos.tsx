@@ -471,7 +471,7 @@ export function AgulhaoMetas({
   }, [exportando, pct, total, meta]);
 
   return (
-    <div ref={painelRef} className="relative w-full max-w-[440px] overflow-hidden card-interativo flex flex-col items-center justify-between rounded-2xl border-2 border-slate-300/85 bg-gradient-to-b from-[#ffffff] via-[#f8fafc] to-[#edf3f8] p-5 sm:p-6 shadow-[0_4px_16px_rgba(15,23,42,0.06)]">
+    <div ref={painelRef} className="relative flex h-full w-full max-w-none flex-col items-center justify-between overflow-hidden rounded-2xl border-2 border-slate-300/85 bg-gradient-to-b from-[#ffffff] via-[#f8fafc] to-[#edf3f8] p-5 shadow-[0_8px_24px_rgba(15,23,42,0.10)] sm:p-6 card-interativo">
       {/* Botão de Exportar / Compartilhar PNG no topo direito */}
       <div data-no-export="true" className="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 z-20">
         <button
