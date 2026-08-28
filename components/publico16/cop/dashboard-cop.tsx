@@ -742,33 +742,36 @@ export function DashboardCop({
       )}
 
       {/* ---------------- Brasão Monumental do 16º BPM/M (100% Solto, Sem Fundo Branco, Sem Moldura) ---------------- */}
-      <div className="mb-8 flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-6 sm:gap-8 pt-3 pb-2">
-        {/* Brasão Solto em Alta Definição (Alpha Puro, 4x Maior, Sem Fundo, Sem Moldura) */}
+      <div className="mb-10 flex flex-col md:flex-row items-center justify-center md:justify-start gap-6 sm:gap-10 pt-4 pb-2">
+        {/* Brasão Solto em Alta Definição (Alpha Puro, 2x Maior ainda, Sem Fundo, Sem Moldura) */}
         <div className="relative shrink-0 flex items-center justify-center">
           <Image
             src="/brand/16bpmm-hd.png"
             alt="Brasão Oficial do 16º Batalhão de Polícia Militar Metropolitano"
-            width={180}
-            height={180}
-            className="h-32 sm:h-44 w-auto object-contain drop-shadow-[0_12px_28px_rgba(0,0,0,0.18)] transition-transform duration-700 hover:scale-105"
+            width={360}
+            height={360}
+            className="h-52 sm:h-64 md:h-76 lg:h-84 w-auto object-contain drop-shadow-[0_16px_36px_rgba(0,0,0,0.22)] transition-transform duration-700 hover:scale-105"
             priority
           />
         </div>
 
         {/* Tipografia Oficial Monumental do Batalhão */}
-        <div className="text-center sm:text-left">
-          <p className="text-xs sm:text-sm font-black uppercase tracking-[0.25em] text-[#ca0202]">
+        <div className="text-center md:text-left">
+          <p className="text-xs sm:text-base font-black uppercase tracking-[0.25em] text-[#ca0202]">
             Polícia Militar do Estado de São Paulo
           </p>
-          <h1 className="font-serif text-2xl sm:text-4xl lg:text-5xl font-black uppercase tracking-wider text-[#1d1d1d] mt-1.5 leading-tight">
+          <h1 className="font-serif text-2xl sm:text-4xl lg:text-5xl font-black uppercase tracking-wider text-[#1d1d1d] mt-2 leading-tight">
             16º Batalhão de Polícia Militar Metropolitano
           </h1>
-          <div className="mt-2.5 flex flex-wrap items-center justify-center sm:justify-start gap-3">
-            <span className="inline-flex items-center gap-1.5 rounded-md bg-[#ca0202] px-3 py-1 text-xs font-black text-white uppercase tracking-wider shadow-md">
+          <p className="font-serif text-base sm:text-xl font-bold uppercase tracking-widest text-slate-800 mt-1">
+            Auditoria & Fiscalização de Câmeras Operacionais Portáteis
+          </p>
+          <div className="mt-3.5 flex flex-wrap items-center justify-center md:justify-start gap-3">
+            <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#ca0202] px-4 py-1.5 text-xs sm:text-sm font-black text-white uppercase tracking-wider shadow-md">
               COP 2026
             </span>
-            <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-700">
-              Diretriz PM3-001/02/25 · Sala de Operações & Fiscalização
+            <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-700 bg-slate-200/80 px-3 py-1.5 rounded-lg">
+              Diretriz PM3-001/02/25 · Sala de Controle Operacional
             </span>
           </div>
         </div>
