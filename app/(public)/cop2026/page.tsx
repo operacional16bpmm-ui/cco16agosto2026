@@ -131,14 +131,34 @@ export default async function Cop2026Page() {
           playsInline
           poster="/media/hero-poster.jpg"
           aria-hidden="true"
-          className="absolute inset-0 h-full w-full object-cover opacity-[0.22]"
+          className="absolute inset-0 h-full w-full object-cover opacity-[0.15]"
         >
           <source src="/media/cop-hero.mp4" type="video/mp4" />
         </video>
 
+        {/* Foto da câmera operacional corporal no colete da PMESP: peça
+            institucional (Sd PM Mancio, Força Patrulha) ao lado do título,
+            escondida no mobile para o texto respirar. */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 right-0 hidden w-[62%] lg:block xl:w-[58%]"
+        >
+          <Image
+            src="/media/cop-camera.jpg"
+            alt=""
+            fill
+            priority
+            sizes="(min-width: 1280px) 58vw, 62vw"
+            className="object-cover object-[35%_center]"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#070b14] via-[#070b14]/55 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-l from-[#070b14]/85 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#070b14] via-transparent to-[#070b14]/40" />
+        </div>
+
         {/* Duas camadas: uma escurece a base para o texto assentar, a outra
             puxa a imagem para a direita, longe da coluna de leitura. */}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#070b14] via-[#070b14]/85 to-[#070b14]/30" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#070b14] via-[#070b14]/85 to-[#070b14]/30 lg:to-transparent" />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#070b14] via-transparent to-[#070b14]/70" />
 
         <div className="relative mx-auto max-w-6xl px-4 py-14 sm:py-20">
