@@ -1152,52 +1152,49 @@ export function DashboardCop({
           )}
         </Cartao>
 
-        <Cartao
-          titulo="Exceções"
-          nota="clique para ver os nomes na tabela analítica"
-          ajuda={
-            <p>
-              Exceção não é punição: é a lista do que precisa de justificativa ou de correção antes do
-              fechamento do período.
-            </p>
-          }
-        >
-          <ul className="space-y-2.5">
-            {excecoes.map((e) => {
-              const ativo = f.excecao === e.chave;
-              return (
-                <li key={e.chave}>
-                  <button
-                    type="button"
-                    onClick={() => definir({ excecao: ativo ? "" : e.chave })}
-                    aria-pressed={ativo}
-                    className={cn(
-                      "flex w-full items-center gap-3 rounded-lg border px-3.5 py-3 text-left transition-colors",
-                      ativo
-                        ? "border-vermelho/50 bg-vermelho/5"
-                        : "border-borda hover:border-vermelho/30 hover:bg-branco/[0.03]"
-                    )}
-                  >
-                    <span className={cn(e.v ? "text-sinal-critico" : "text-sinal-conforme")}>{e.icone}</span>
-                    <span className="min-w-0 flex-1 text-[13px] text-branco/85">{e.rotulo}</span>
-                    <span
-                      className={cn(
-                        "dados-destaque text-xl",
-                        e.v ? "text-sinal-critico" : "text-sinal-conforme"
-                      )}
-                    >
-                      {FMT.format(e.v)}
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-          <p className="mt-4 border-l-2 border-vermelho/50 pl-3 text-[12.5px] leading-relaxed text-texto-suave">
-            {conclusaoFunil(p)}
-          </p>
-        </Cartao>
       </section>
+
+      {/* ---------------- Faixa horizontal: Exceções ---------------- */}
+      <Cartao
+        titulo="Exceções"
+        nota="clique para ver os nomes na tabela analítica"
+        className="mb-6"
+        ajuda={
+          <p>
+            Exceção não é punição: é a lista do que precisa de justificativa ou de correção antes do
+            fechamento do período.
+          </p>
+        }
+      >
+        <div className="grid gap-3 md:grid-cols-3">
+          {excecoes.map((e) => {
+            const ativo = f.excecao === e.chave;
+            return (
+              <button
+                key={e.chave}
+                type="button"
+                onClick={() => definir({ excecao: ativo ? "" : e.chave })}
+                aria-pressed={ativo}
+                className={cn(
+                  "flex min-h-[72px] items-center gap-3 rounded-xl border-2 px-4 py-3 text-left transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md",
+                  ativo
+                    ? "border-vermelho/50 bg-vermelho/5 shadow-sm"
+                    : "border-borda bg-branco/[0.02] hover:border-vermelho/30 hover:bg-branco/[0.04]"
+                )}
+              >
+                <span className={cn("shrink-0", e.v ? "text-sinal-critico" : "text-sinal-conforme")}>{e.icone}</span>
+                <span className="min-w-0 flex-1 text-[13px] font-semibold text-branco/85">{e.rotulo}</span>
+                <span className={cn("dados-destaque text-2xl", e.v ? "text-sinal-critico" : "text-sinal-conforme")}>
+                  {FMT.format(e.v)}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <p className="mt-4 border-l-2 border-vermelho/50 pl-3 text-[12.5px] leading-relaxed text-texto-suave">
+          {conclusaoFunil(p)}
+        </p>
+      </Cartao>
 
       {/* ---------------- Pontos de atenção ---------------- */}
       <Cartao
