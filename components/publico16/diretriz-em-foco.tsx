@@ -79,22 +79,22 @@ export function DiretrizEmFoco({
               <p className="mt-3 text-xs font-bold uppercase tracking-[0.16em] text-white/80">Diretriz em Foco</p>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-12">
+            <div className="grid gap-5 sm:grid-cols-2">
               {PONTOS_DIRETRIZ.map((ponto) => (
                 <div
                   key={ponto.numero}
-                  className="relative isolate min-h-64 overflow-hidden rounded-xl border border-white/20 bg-[#1d2c46] shadow-[0_8px_20px_rgba(0,0,0,0.16)] transition-transform duration-300 hover:-translate-y-1 lg:col-span-3 lg:[&:nth-child(5)]:col-start-2"
+                  className="relative isolate min-h-72 overflow-hidden rounded-xl border border-white/20 bg-[#1d2c46] shadow-[0_10px_24px_rgba(0,0,0,0.2)] transition-transform duration-300 hover:-translate-y-1 sm:[&:first-child]:col-span-2"
                 >
                   <Image
                     src={ponto.imagem}
                     alt={`Foto real da Polícia Militar para ${ponto.titulo.toLowerCase()}`}
                     fill
-                    sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+                    sizes="(min-width: 640px) 50vw, 100vw"
                     className="-z-20 object-cover"
                     priority={variante === "home" && ponto.numero === "01"}
                   />
                   <div className="absolute inset-0 -z-10 bg-gradient-to-t from-[#071225] via-[#071225]/55 to-[#071225]/10" />
-                  <div className="flex min-h-64 flex-col justify-end p-5 text-white sm:p-6">
+                  <div className="flex min-h-72 flex-col justify-end p-6 text-white sm:p-7">
                     <span className="text-4xl font-black leading-none text-[#e5d332]/90">{ponto.numero}</span>
                     <h4 className="mt-2 max-w-[18rem] text-sm font-black uppercase leading-tight">
                       {ponto.titulo}
