@@ -404,8 +404,22 @@ body {
 }
 .animar-bala { animation: bala 3.2s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
 
+/* Agulha do velocímetro: tremor sutil (aparelho analógico "querendo subir").
+   Pivot fixado no centro do velocímetro (CX=140, CY=125 do viewBox 280x168). */
+@keyframes tremer-agulha {
+  0%, 100% { transform: rotate(0deg); }
+  25%      { transform: rotate(-0.6deg); }
+  50%      { transform: rotate(0.35deg); }
+  75%      { transform: rotate(-0.25deg); }
+}
+.animar-tremer-agulha {
+  transform-box: view-box;
+  transform-origin: 140px 125px;
+  animation: tremer-agulha 1.9s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .animar-flutua, .animar-brilho, .animar-bala, .animar-brasao-destaque { animation: none; }
+  .animar-flutua, .animar-brilho, .animar-bala, .animar-brasao-destaque, .animar-tremer-agulha { animation: none; }
 }
 
 /* ============================================================================

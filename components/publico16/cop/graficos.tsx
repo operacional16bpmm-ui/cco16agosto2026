@@ -458,8 +458,8 @@ export function AgulhaoMetas({
             />
           ))}
 
-          {/* Agulha Indicadora */}
-          <g filter="url(#needleShadow)" className="transition-all duration-700 ease-out">
+          {/* Agulha Indicadora — tremor sutil, como aparelho analógico */}
+          <g filter="url(#needleShadow)" className="animar-tremer-agulha">
             <line
               x1={CX}
               y1={CY}
@@ -494,13 +494,21 @@ export function AgulhaoMetas({
         </svg>
       </div>
 
-      {/* Métrica Central de Alto Impacto */}
+      {/* Métrica Central — número empilhado, sem gap fantasma da vírgula */}
       <div className="relative z-10 mt-1 text-center flex flex-col items-center">
-        <div className="inline-flex items-baseline gap-1.5 rounded-2xl bg-white/95 border-2 border-slate-300 px-5 py-1.5 shadow-sm">
-          <span className="metric-hero text-4xl sm:text-5xl font-black text-[#1d1d1d] tracking-tight">
+        <div className="flex flex-col items-center rounded-3xl bg-white/95 border border-slate-300 px-7 py-3 shadow-[0_2px_10px_rgba(15,23,42,0.06),inset_0_1px_0_rgba(255,255,255,0.9)]">
+          <span
+            className="text-5xl sm:text-6xl font-black text-[#1d1d1d] leading-none"
+            style={{ letterSpacing: "-0.02em", fontFeatureSettings: '"tnum" 0' }}
+          >
             {PCT.format(pct)}%
           </span>
-          <span className="text-xs font-black uppercase tracking-wider text-slate-600">da meta</span>
+          <span
+            className="mt-1.5 text-[11px] font-black uppercase text-slate-600"
+            style={{ letterSpacing: "0.14em" }}
+          >
+            da meta
+          </span>
         </div>
         <p className="mt-2 text-xs sm:text-sm font-bold text-slate-800 bg-white/85 px-3 py-1 rounded-lg border border-slate-200 shadow-2xs">
           <strong className="dados text-[#ca0202] font-black text-sm sm:text-base">{FMT.format(total)}</strong> de{" "}
@@ -508,7 +516,7 @@ export function AgulhaoMetas({
         </p>
         <div className="mt-2.5">
           {nivel === "critico" ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#ca0202] border-2 border-red-700 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-white shadow-md animate-pulse">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#ca0202] border-2 border-red-700 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-white shadow-md">
               <AlertCircle size={13} className="text-white shrink-0" />
               <span>{SUBTITULO_NIVEL.critico}</span>
             </span>
@@ -518,16 +526,39 @@ export function AgulhaoMetas({
         </div>
       </div>
 
-      {/* Régua de Zonas de Atingimento Nítida */}
+      {/* Régua de Zonas — cada card leva barra superior colorida; a faixa
+          onde a leitura atual cai fica com anel vermelho de destaque. */}
       <div className="relative z-10 mt-4 grid w-full grid-cols-2 sm:grid-cols-4 gap-2 border-t-2 border-slate-200 pt-3 text-center">
-        {REGUA_FAIXAS.map((f) => (
-          <div key={f.nivel} className={cn("rounded-xl border-2 p-1.5", f.caixa)}>
-            <span className={cn("block text-xs font-black", f.valor)}>{f.intervalo}</span>
-            <span className={cn("text-[10px] uppercase tracking-tight leading-tight", f.rotulo)}>
-              {SUBTITULO_NIVEL[f.nivel]}
-            </span>
-          </div>
-        ))}
+        {REGUA_FAIXAS.map((f) => {
+          const ativo = f.nivel === nivel;
+          return (
+            <div
+              key={f.nivel}
+              className={cn(
+                "relative overflow-hidden rounded-xl border-2 pt-2.5 pb-2 px-1.5 shadow-xs",
+                f.caixa,
+                ativo && "ring-2 ring-offset-2 ring-offset-white ring-[#ca0202]"
+              )}
+            >
+              <span
+                aria-hidden
+                className="absolute inset-x-0 top-0 h-1.5"
+                style={{ background: COR_FAIXA[f.nivel] }}
+              />
+              <span className={cn("block text-xs font-black leading-tight", f.valor)}>
+                {f.intervalo}
+              </span>
+              <span
+                className={cn(
+                  "mt-0.5 block text-[10px] uppercase tracking-tight leading-tight",
+                  f.rotulo
+                )}
+              >
+                {SUBTITULO_NIVEL[f.nivel]}
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
