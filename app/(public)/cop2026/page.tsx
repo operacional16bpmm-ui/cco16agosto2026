@@ -85,7 +85,7 @@ export default async function Cop2026Page() {
                 Auditoria de COP 2026
               </p>
               <p className="mt-0.5 text-[13px] font-semibold text-[#ca0202] sm:text-sm">
-                16º BPM/M · Câmera operacional portátil
+                16º BPM/M · Câmeras Operacionais Corporais
               </p>
             </div>
           </div>
