@@ -335,19 +335,19 @@ export function AgulhaoMetas({
         </div>
       </div>
 
-      {/* Régua de Zonas de Atingimento */}
-      <div className="mt-4 grid w-full grid-cols-3 gap-1 border-t border-borda/60 pt-2.5 text-center">
-        <div className="rounded border border-sinal-critico/30 bg-sinal-critico-suave p-1">
-          <span className="block font-bold text-sinal-critico">&lt; 50%</span>
-          <span className="text-[9.5px] text-texto-suave">Abaixo da Meta</span>
+      {/* Régua de Zonas de Atingimento Nítida */}
+      <div className="relative z-10 mt-4 grid w-full grid-cols-3 gap-2 border-t-2 border-slate-200 pt-3 text-center">
+        <div className="rounded-xl border-2 border-red-200 bg-red-50 p-1.5 shadow-2xs">
+          <span className="block text-xs font-black text-[#ca0202]">&lt; 50%</span>
+          <span className="text-[10px] font-bold text-red-900 uppercase tracking-tight">Abaixo da Meta</span>
         </div>
-        <div className="rounded border border-sinal-atencao/30 bg-sinal-atencao-suave p-1">
-          <span className="block font-bold text-sinal-atencao">50% a 79%</span>
-          <span className="text-[9.5px] text-texto-suave">Em Andamento</span>
+        <div className="rounded-xl border-2 border-amber-200 bg-amber-50 p-1.5 shadow-2xs">
+          <span className="block text-xs font-black text-amber-700">50% a 79%</span>
+          <span className="text-[10px] font-bold text-amber-900 uppercase tracking-tight">Em Atingimento</span>
         </div>
-        <div className="rounded border border-sinal-conforme/30 bg-sinal-conforme-suave p-1">
-          <span className="block font-bold text-sinal-conforme">≥ 80%</span>
-          <span className="text-[9.5px] text-texto-suave">Meta Cumprida</span>
+        <div className="rounded-xl border-2 border-emerald-200 bg-emerald-50 p-1.5 shadow-2xs">
+          <span className="block text-xs font-black text-emerald-700">≥ 80%</span>
+          <span className="text-[10px] font-bold text-emerald-900 uppercase tracking-tight">Meta Cumprida</span>
         </div>
       </div>
     </div>
@@ -376,13 +376,14 @@ export function RankingFracoes({
               aria-label={`Filtrar por ${d.rotulo} — ${PCT.format(d.pct)}% da meta`}
             >
               <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-                <span className="flex items-center gap-2 text-sm sm:text-base font-bold text-branco">
+                <span className="flex items-center gap-2 text-sm sm:text-base font-black text-[#1d1d1d]">
                   {d.rotulo}
                   <Selo nivel={d.nivel} />
                   {d.pctBatalhao !== undefined && (
-                    <span className="inline-flex items-center gap-1 rounded-lg border border-[#1d1d1d] bg-[#1d1d1d] px-2.5 py-1 text-[11.5px] font-bold text-white shadow-xs">
-                      <span>Cota: {PCT.format(d.pctBatalhao)}%</span>
-                      <span className="dados font-extrabold text-vermelho">({FMT.format(d.meta)})</span>
+                    <span className="inline-flex items-center gap-1.5 rounded-lg border-2 border-slate-300 bg-white px-2.5 py-1 text-xs font-black text-slate-800 shadow-xs">
+                      <span className="text-slate-600 font-bold">Cota:</span>
+                      <span className="text-slate-900 font-black">{PCT.format(d.pctBatalhao)}%</span>
+                      <span className="dados font-black text-[#ca0202]">({FMT.format(d.meta)})</span>
                     </span>
                   )}
                 </span>
@@ -390,12 +391,12 @@ export function RankingFracoes({
                 {/* Caixa destacada com cores de semáforo (Verde >=80%, Amarelo 50-79%, Vermelho <50%) */}
                 <div
                   className={cn(
-                    "dados rounded-lg border px-3 py-1 text-[13px] font-bold shadow-xs transition-colors",
+                    "dados rounded-xl border-2 px-3 py-1 text-[13px] font-black shadow-xs transition-colors",
                     d.pct >= 80
-                      ? "border-sinal-conforme/40 bg-sinal-conforme-suave text-sinal-conforme"
+                      ? "border-emerald-300 bg-emerald-50 text-emerald-800"
                       : d.pct >= 50
-                      ? "border-sinal-atencao/40 bg-sinal-atencao-suave text-sinal-atencao"
-                      : "border-sinal-critico/40 bg-sinal-critico-suave text-sinal-critico"
+                      ? "border-amber-300 bg-amber-50 text-amber-800"
+                      : "border-red-300 bg-red-50 text-red-800"
                   )}
                 >
                   <span>
@@ -405,27 +406,27 @@ export function RankingFracoes({
                 </div>
               </div>
 
-              <div className="mt-2.5 h-2.5 overflow-hidden rounded-full bg-branco/10">
+              <div className="mt-2.5 h-3 overflow-hidden rounded-full bg-slate-200">
                 <div
                   className="h-full rounded-full transition-all duration-700"
                   style={{ width: `${Math.min(100, d.pct)}%`, background: COR_NIVEL[d.nivel] }}
                 />
               </div>
 
-              <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[12px] text-texto-suave">
+              <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[12px] text-slate-700">
                 <span>
-                  <strong className="dados font-semibold text-branco">{FMT.format(d.lancaram)}</strong> de{" "}
-                  <span className="dados">{FMT.format(d.efetivo)}</span> auditores lançaram
+                  <strong className="dados font-black text-slate-900">{FMT.format(d.lancaram)}</strong> de{" "}
+                  <span className="dados font-bold">{FMT.format(d.efetivo)}</span> auditores lançaram
                   {d.efetivoQuadro ? ` (quadro: ${FMT.format(d.efetivoQuadro)} PMs)` : ""}
                 </span>
                 <span>
                   {d.falta > 0 ? (
                     <>
-                      Faltam <strong className="dados font-bold text-branco">{FMT.format(d.falta)}</strong> (
+                      Faltam <strong className="dados font-black text-[#ca0202]">{FMT.format(d.falta)}</strong> (
                       {FMT.format(Math.ceil(d.ritmoNecessario))}/turno em {FMT.format(d.turnosRestantes)} rest.)
                     </>
                   ) : (
-                    <span className="font-bold text-sinal-conforme">Meta cumprida</span>
+                    <span className="font-black text-emerald-700">Meta cumprida</span>
                   )}
                 </span>
               </div>
@@ -433,22 +434,22 @@ export function RankingFracoes({
 
             {/* Evolução semana a semana da Cia */}
             {d.semanas && d.semanas.length > 0 && (
-              <div className="mt-3.5 grid grid-cols-2 sm:grid-cols-4 gap-2 border-t border-borda/60 pt-3">
+              <div className="mt-3.5 grid grid-cols-2 sm:grid-cols-4 gap-2 border-t-2 border-slate-200 pt-3">
                 {d.semanas.map((s) => (
                   <div
                     key={s.semana}
-                    className="rounded-lg border border-borda/70 bg-branco/[0.03] p-2 text-center transition-colors hover:border-vermelho/30"
+                    className="rounded-xl border-2 border-slate-200 bg-white p-2.5 text-center shadow-xs transition-colors hover:border-vermelho"
                     title={`${s.rotulo} (${s.diasRotulo}): ${FMT.format(s.feito)} de ${FMT.format(
                       s.meta
                     )} evidências (${PCT.format(s.pct)}%)`}
                   >
-                    <div className="flex items-center justify-between text-[11px] text-texto-suave">
-                      <span className="font-bold text-branco/90">S{s.semana}</span>
-                      <span className="dados text-[10px] font-semibold text-texto-suave">
+                    <div className="flex items-center justify-between text-xs font-black text-slate-800">
+                      <span className="font-serif">Sem {s.semana}</span>
+                      <span className="dados text-[11px] font-extrabold text-slate-900">
                         {PCT.format(s.pct)}%
                       </span>
                     </div>
-                    <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-branco/10">
+                    <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-200">
                       <div
                         className="h-full rounded-full transition-all duration-500"
                         style={{
@@ -457,8 +458,8 @@ export function RankingFracoes({
                         }}
                       />
                     </div>
-                    <div className="mt-1 dados text-[10.5px] text-texto-suave">
-                      <strong className="font-bold text-branco">{FMT.format(s.feito)}</strong>/{FMT.format(s.meta)}
+                    <div className="mt-1.5 dados text-[11px] font-bold text-slate-700">
+                      <strong className="font-black text-slate-950">{FMT.format(s.feito)}</strong> / {FMT.format(s.meta)}
                     </div>
                   </div>
                 ))}
@@ -492,34 +493,42 @@ export function QuadroSemanalBatalhao({
             className={cn(
               "card-interativo group rounded-2xl border-2 p-3.5 sm:p-4 text-left shadow-[0_2px_8px_rgba(15,23,42,0.04)]",
               ativa
-                ? "border-vermelho bg-gradient-to-b from-vermelho/15 via-[#f8fafc] to-[#edf3f8] shadow-md ring-2 ring-vermelho/80"
+                ? "border-vermelho bg-gradient-to-b from-red-50 via-white to-red-50/50 shadow-md ring-2 ring-vermelho"
                 : "border-slate-300/85 bg-gradient-to-b from-[#ffffff] via-[#f8fafc] to-[#edf3f8] hover:border-vermelho/60"
             )}
             aria-pressed={ativa}
             aria-label={`Filtrar por ${s.rotulo} — ${PCT.format(s.pct)}% da meta`}
           >
             <div className="flex items-center justify-between gap-1">
-              <span className="font-serif text-[13px] sm:text-[14px] font-bold text-branco group-hover:text-vermelho">
+              <span className="font-serif text-sm sm:text-base font-black text-[#1d1d1d] group-hover:text-vermelho">
                 {s.rotulo}
               </span>
               <Selo nivel={s.nivel} />
             </div>
-            <p className="mt-0.5 text-[11px] sm:text-[11.5px] text-texto-suave">Dias {s.diasRotulo}</p>
+            <p className="mt-0.5 text-xs font-bold text-slate-600">Dias {s.diasRotulo}</p>
 
-            <div className="mt-2.5 sm:mt-3.5 flex flex-wrap items-baseline justify-between gap-1">
-              <span className="metric-card text-xl sm:text-2xl xl:text-3xl text-branco">
+            <div className="mt-2.5 sm:mt-3 flex flex-wrap items-baseline justify-between gap-1">
+              <span className="metric-card text-2xl sm:text-3xl font-black text-[#1d1d1d]">
                 {FMT.format(s.feito)}
-                <span className="text-[12px] font-normal text-texto-suave opacity-80"> / {FMT.format(s.meta)}</span>
+                <span className="text-xs font-bold text-slate-500"> / {FMT.format(s.meta)}</span>
               </span>
-              <span className={cn(
-                "dados rounded-md px-1.5 sm:px-2 py-0.5 text-[11px] sm:text-xs font-bold",
-                s.pct >= 80 ? "bg-sinal-conforme-suave text-sinal-conforme" : s.pct >= 50 ? "bg-sinal-atencao-suave text-sinal-atencao" : s.pct > 0 ? "bg-sinal-critico-suave text-sinal-critico" : "bg-branco/5 text-texto-suave"
-              )}>
+              <span
+                className={cn(
+                  "dados rounded-lg border px-2 py-0.5 text-xs font-black",
+                  s.pct >= 80
+                    ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+                    : s.pct >= 50
+                    ? "border-amber-300 bg-amber-50 text-amber-800"
+                    : s.pct > 0
+                    ? "border-red-300 bg-red-50 text-red-800"
+                    : "border-slate-200 bg-slate-100 text-slate-600"
+                )}
+              >
                 {PCT.format(s.pct)}%
               </span>
             </div>
 
-            <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-branco/10">
+            <div className="mt-2.5 h-2.5 overflow-hidden rounded-full bg-slate-200">
               <div
                 className="h-full rounded-full transition-all duration-700"
                 style={{
@@ -529,13 +538,13 @@ export function QuadroSemanalBatalhao({
               />
             </div>
 
-            <p className="mt-2.5 text-[12px] text-texto-suave">
+            <p className="mt-2.5 text-xs font-bold text-slate-700">
               {s.falta > 0 ? (
                 <>
-                  Faltam <strong className="dados font-bold text-branco">{FMT.format(s.falta)}</strong> p/ meta
+                  Faltam <strong className="dados font-black text-[#ca0202]">{FMT.format(s.falta)}</strong> p/ meta
                 </>
               ) : (
-                <span className="font-bold text-sinal-conforme">Meta semanal atingida</span>
+                <span className="font-black text-emerald-700">Meta semanal atingida</span>
               )}
             </p>
           </button>
