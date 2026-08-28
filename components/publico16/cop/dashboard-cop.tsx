@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
@@ -746,13 +747,27 @@ export function DashboardCop({
           {/* Lado Esquerdo: Diagnóstico e KPIs */}
           <div className="flex flex-col justify-between gap-4">
             <div
-              className="flex flex-wrap items-start gap-3.5 rounded-2xl border-l-4 border-2 border-slate-300/85 bg-gradient-to-r from-[#ffffff] via-[#f8fafc] to-[#edf3f8] p-5 sm:p-6 shadow-[0_4px_16px_rgba(15,23,42,0.06)]"
+              className="relative overflow-hidden flex flex-wrap items-start gap-3.5 rounded-2xl border-l-4 border-2 border-slate-300/85 bg-gradient-to-r from-[#ffffff] via-[#f8fafc] to-[#edf3f8] p-5 sm:p-6 shadow-[0_4px_16px_rgba(15,23,42,0.06)]"
               style={{ borderLeftColor: `var(--sinal-${v.nivel})` }}
             >
-              <Selo nivel={v.nivel} />
-              <div className="min-w-0 flex-1">
-                <p className="font-serif text-lg font-bold leading-snug text-branco">{v.titulo}</p>
-                <p className="mt-1 text-[13.5px] text-texto-suave leading-relaxed">{v.detalhe}</p>
+              {/* Vídeo Operacional Sutil em Background */}
+              <video
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-15 mix-blend-luminosity scale-105"
+              >
+                <source src="/media/cop-hero.mp4" type="video/mp4" />
+              </video>
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-white via-white/80 to-transparent" />
+
+              <div className="relative z-10 flex flex-wrap items-start gap-3.5 w-full">
+                <Selo nivel={v.nivel} />
+                <div className="min-w-0 flex-1">
+                  <p className="font-serif text-lg font-bold leading-snug text-branco">{v.titulo}</p>
+                  <p className="mt-1 text-[13.5px] text-texto-suave leading-relaxed">{v.detalhe}</p>
+                </div>
               </div>
             </div>
 
@@ -1269,6 +1284,81 @@ export function DashboardCop({
           <SemDados texto="Nenhuma resposta no recorte." />
         )}
       </Cartao>
+
+      {/* ---------------- Galeria Tática & Operacional 16º BPM/M ---------------- */}
+      <section className="mt-8 mb-6 nao-imprime" aria-label="Galeria Tática Operacional">
+        <div className="mb-3.5 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 className="font-serif text-base font-bold uppercase tracking-wider text-branco">
+              Registro Operacional · Fiscalização de COP no 16º BPM/M
+            </h2>
+            <p className="text-xs text-texto-suave">
+              Atuação da tropa no patrulhamento motorizado e auditoria das evidências digitais gravadas
+            </p>
+          </div>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-vermelho/10 border border-vermelho/30 px-3 py-1 text-xs font-bold text-vermelho">
+            16º BPM/M em Ação
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="group relative overflow-hidden rounded-2xl border-2 border-slate-300/85 bg-slate-900 shadow-md">
+            <Image
+              src="/media/foto-viatura.jpg"
+              alt="Viatura em Patrulhamento 16º BPM/M"
+              width={400}
+              height={260}
+              className="h-36 sm:h-44 w-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-90 group-hover:opacity-100"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-transparent flex flex-col justify-end p-3 pointer-events-none">
+              <span className="text-[10px] font-black uppercase tracking-wider text-vermelho">Fiscalização</span>
+              <p className="text-xs font-bold text-white leading-snug">Patrulhamento Motorizado</p>
+            </div>
+          </div>
+
+          <div className="group relative overflow-hidden rounded-2xl border-2 border-slate-300/85 bg-slate-900 shadow-md">
+            <Image
+              src="/media/foto_operacao.jpg"
+              alt="Operação Policial 16º BPM/M"
+              width={400}
+              height={260}
+              className="h-36 sm:h-44 w-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-90 group-hover:opacity-100"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-transparent flex flex-col justify-end p-3 pointer-events-none">
+              <span className="text-[10px] font-black uppercase tracking-wider text-vermelho">Auditoria</span>
+              <p className="text-xs font-bold text-white leading-snug">Abordagem & Gravação</p>
+            </div>
+          </div>
+
+          <div className="group relative overflow-hidden rounded-2xl border-2 border-slate-300/85 bg-slate-900 shadow-md">
+            <Image
+              src="/media/foto-rua.jpg"
+              alt="Ponto de Estacionamento"
+              width={400}
+              height={260}
+              className="h-36 sm:h-44 w-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-90 group-hover:opacity-100"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-transparent flex flex-col justify-end p-3 pointer-events-none">
+              <span className="text-[10px] font-black uppercase tracking-wider text-vermelho">Presença</span>
+              <p className="text-xs font-bold text-white leading-snug">Ponto de Estacionamento</p>
+            </div>
+          </div>
+
+          <div className="group relative overflow-hidden rounded-2xl border-2 border-slate-300/85 bg-slate-900 shadow-md">
+            <Image
+              src="/media/foto-oficial.jpg"
+              alt="Comando e Gestão 16º BPM/M"
+              width={400}
+              height={260}
+              className="h-36 sm:h-44 w-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-90 group-hover:opacity-100"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-transparent flex flex-col justify-end p-3 pointer-events-none">
+              <span className="text-[10px] font-black uppercase tracking-wider text-vermelho">Gestão</span>
+              <p className="text-xs font-bold text-white leading-snug">Sala de Operações</p>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* ---------------- Glossário ---------------- */}
       <details className="mt-6 rounded-xl border border-borda bg-tatico-super p-5 shadow-inst">
