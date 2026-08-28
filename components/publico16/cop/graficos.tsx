@@ -401,7 +401,7 @@ export function AgulhaoMetas({
   const corAgulha = COR_FAIXA[nivel];
 
   return (
-    <div className="relative flex h-full w-full max-w-none flex-col items-center justify-between overflow-hidden rounded-2xl border-2 border-slate-800/75 bg-gradient-to-b from-[#ffffff] via-[#f8fafc] to-[#edf3f8] p-5 shadow-[0_18px_46px_rgba(7,18,37,0.28),0_5px_16px_rgba(7,18,37,0.18)] ring-2 ring-slate-900/15 sm:p-6 card-interativo">
+    <div className="relative flex h-full w-full max-w-none flex-col items-center justify-between overflow-hidden rounded-2xl border-2 border-slate-800/75 bg-gradient-to-b from-[#ffffff] via-[#f8fafc] to-[#edf3f8] p-4 shadow-[0_18px_46px_rgba(7,18,37,0.28),0_5px_16px_rgba(7,18,37,0.18)] ring-2 ring-slate-900/15 sm:p-5 card-interativo">
       {/* Vídeo de Viatura em Cores Vívidas e Giroflex Iluminado */}
       <video
         autoPlay
@@ -446,8 +446,8 @@ export function AgulhaoMetas({
         )}
       </div>
 
-      <div className="relative z-10 mt-2 flex items-center justify-center">
-        <svg viewBox="0 0 280 168" className="h-44 w-full max-w-[390px] overflow-visible">
+      <div className="relative z-10 mt-1 flex w-full items-center justify-center">
+        <svg viewBox="0 0 280 168" className="h-40 w-full max-w-[370px] overflow-visible sm:h-44">
           <defs>
             <filter id="needleShadow" x="-30%" y="-30%" width="160%" height="160%">
               <feDropShadow dx="0" dy="3" stdDeviation="3.5" floodOpacity="0.42" />
@@ -517,11 +517,11 @@ export function AgulhaoMetas({
       </div>
 
       {/* Métrica Central — número empilhado, sem gap fantasma da vírgula */}
-      <div className="relative z-10 mt-1 grid w-full items-center justify-items-center gap-3 text-center sm:grid-cols-2 sm:gap-4">
+      <div className="relative z-10 mt-1 grid w-full max-w-[390px] items-stretch justify-items-stretch gap-3 text-center sm:grid-cols-[1.08fr_0.92fr] sm:gap-3.5">
         <div className="flex min-w-0 flex-col items-center">
-          <div className="flex min-w-[170px] flex-col items-center rounded-3xl border-2 border-slate-300 bg-white/95 px-5 py-3.5 shadow-[0_6px_18px_rgba(15,23,42,0.14),inset_0_1px_0_rgba(255,255,255,0.9)] sm:min-w-[190px] sm:px-7">
+          <div className="flex min-h-[118px] w-full flex-col items-center justify-center rounded-3xl border-2 border-slate-300 bg-white/95 px-3 py-3.5 shadow-[0_6px_18px_rgba(15,23,42,0.14),inset_0_1px_0_rgba(255,255,255,0.9)] sm:min-h-[128px] sm:px-5">
             <span
-              className="whitespace-nowrap text-5xl font-black leading-none text-[#1d1d1d] drop-shadow-sm sm:text-7xl"
+              className="whitespace-nowrap text-5xl font-black leading-none text-[#1d1d1d] drop-shadow-sm sm:text-6xl"
               style={{ letterSpacing: "-0.035em", fontFeatureSettings: '"tnum" 0' }}
             >
               {PCT.format(pct)}%
@@ -530,7 +530,7 @@ export function AgulhaoMetas({
               da meta
             </span>
           </div>
-          <p className="mt-2 rounded-lg border border-slate-200 bg-white/85 px-3 py-1 text-xs font-bold text-slate-800 shadow-2xs sm:text-sm">
+          <p className="mt-2 rounded-lg border border-slate-200 bg-white/85 px-2.5 py-1 text-[11px] font-bold text-slate-800 shadow-2xs sm:px-3 sm:text-xs">
             <strong className="dados text-sm font-black text-[#ca0202] sm:text-base">{FMT.format(total)}</strong> de{" "}
             <span className="dados font-extrabold text-[#1d1d1d]">{FMT.format(meta)} evidências</span>
           </p>
@@ -547,7 +547,7 @@ export function AgulhaoMetas({
         </div>
 
         {ritmo !== undefined && (
-          <div className="flex min-h-[128px] w-full max-w-[170px] flex-col items-center justify-center rounded-2xl border-2 border-[#ca0202]/30 bg-white/90 px-3 py-4 shadow-[0_7px_18px_rgba(15,23,42,0.14)]">
+          <div className="flex min-h-[118px] w-full flex-col items-center justify-center rounded-2xl border-2 border-[#ca0202]/30 bg-white/90 px-2.5 py-4 shadow-[0_7px_18px_rgba(15,23,42,0.14)] sm:min-h-[128px] sm:px-3">
             <span className="text-[10px] font-black uppercase tracking-[0.12em] text-[#ca0202]">Ritmo necessário</span>
             <span className="mt-2 text-5xl font-black leading-none tracking-tight text-slate-950">{FMT.format(ritmo)}</span>
             <span className="mt-2 text-[10px] font-bold leading-tight text-slate-600">evidências/turno</span>
