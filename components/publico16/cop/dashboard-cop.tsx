@@ -1465,6 +1465,37 @@ export function DashboardCop({
             comParte
           />
         </div>
+
+        {/* Só aparece quando existe — em dia normal a planilha está limpa e um
+            cartão vazio a mais só tiraria atenção do que importa. */}
+        {p.quantidadeInvalidaLista.length > 0 && (
+          <div className="mt-5 rounded-xl border border-sinal-critico/40 bg-sinal-critico/[0.07] p-4">
+            <p className="rotulo-dado text-sinal-critico">
+              Quantidade inválida na planilha · {p.quantidadeInvalidaLista.length}
+            </p>
+            <p className="mt-1.5 text-[12.5px] leading-relaxed text-texto-suave">
+              O número informado no campo de quantidade exata não é uma quantidade possível —
+              quase sempre é o ID da mídia digitado no campo errado. Estes lançamentos entram
+              pela quantidade da lista, e não pelo número digitado; o painel não soma o valor
+              abaixo. Corrija na planilha para o registro ficar íntegro.
+            </p>
+            <ul className="mt-3 space-y-2">
+              {p.quantidadeInvalidaLista.map((i) => (
+                <li key={i.id} className="rounded-lg border border-borda px-3 py-2.5">
+                  <p className="text-[13px] font-semibold text-branco">{i.quem}</p>
+                  <p className="dados mt-0.5 text-[11.5px] text-texto-suave">
+                    {i.fracao} · {formatarData(i.data)}
+                    {i.turno ? ` · ${i.turno}` : ""}
+                  </p>
+                  <p className="dados mt-1.5 text-[12.5px] leading-relaxed text-texto-suave">
+                    digitado <span className="text-sinal-critico">{i.descartado}</span> ·
+                    contabilizado {FMT.format(i.videos)}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </Cartao>
 
       {/* ---------------- Camada 3: Análise técnica ---------------- */}

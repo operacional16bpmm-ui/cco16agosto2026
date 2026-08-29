@@ -468,11 +468,17 @@ export function calcularPainel(
     videos: l.videos,
     parte: l.numeroParte,
     justificativa: l.justificativa,
+    descartado: l.quantidadeDescartada,
   });
   const naoAuditouLista = dados.filter((l) => !l.auditou).map(detalhar);
   const abaixoLista = dados.filter((l) => l.auditou && l.videos < minimo).map(detalhar);
   const partesLista = dados.filter((l) => l.numeroParte).map(detalhar);
   const semIdsLista = dados.filter((l) => l.auditou && !l.idsMidia.trim()).map(detalhar);
+  /* Quantidade implausível: o campo "informe a quantidade exata" é texto livre
+     e já recebeu o ID da mídia no lugar do número. A contagem foi corrigida na
+     leitura (lib/cop2026.ts), mas a planilha continua errada — quem conserta é
+     o auditor, e só conserta se o painel disser o nome dele. */
+  const quantidadeInvalidaLista = dados.filter((l) => l.quantidadeDescartada > 0).map(detalhar);
 
   // ---- histograma ----------------------------------------------------------
   const histograma = [0, 1, 2, 3, 4, 5].map((n) => ({
@@ -612,6 +618,7 @@ export function calcularPainel(
     abaixoLista,
     partesLista,
     semIdsLista,
+    quantidadeInvalidaLista,
     histograma,
     dispersao,
     matriz,

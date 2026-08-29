@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { DashboardCop } from "@/components/publico16/cop/dashboard-cop";
 import { NavegacaoCop } from "@/components/publico16/cop/navegacao-cop";
 import { RodapeCop } from "@/components/publico16/cop/rodape-cop";
-import { lerAuditoriaCop2026 } from "@/lib/cop2026";
+import { lerAuditoriaCop2026 } from "@/lib/cop2026-leitura";
 import { lerFiltros } from "@/lib/cop2026-metricas";
 import { ehAdminCop } from "@/lib/cop2026-acesso";
 import { exigirAcessoCop } from "@/lib/db/cop2026-autorizados";
@@ -15,6 +15,11 @@ export const metadata: Metadata = {
 // A leitura da planilha estoura os 60s do prerender e derrubava o deploy; e o
 // recorte chega por query string. As duas razões pedem render por requisição.
 export const dynamic = "force-dynamic";
+
+// Teto explícito da função. O `lerCsv` já corta cada rota em 6s, mas sem
+// maxDuration a rota herda o default da plataforma e uma pane do Google podia
+// segurar a função até o limite dela — página que abre e nunca fecha.
+export const maxDuration = 20;
 
 export default async function DashboardPage({
   searchParams,

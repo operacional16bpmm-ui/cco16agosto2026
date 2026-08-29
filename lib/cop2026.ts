@@ -18,40 +18,9 @@
  * o dado corrente.
  */
 
-import { parseCsv } from "@/lib/inventario-2026";
-
 export const PLANILHA_ID = "11tdaTRSSf-K-y13rIg3hmHCGmyOeWFhkBfRbCqKF1Bg";
 export const URL_FORMULARIO = "https://forms.gle/kqiRxSbCHqYKRkf2A";
 export const URL_PLANILHA = `https://docs.google.com/spreadsheets/d/${PLANILHA_ID}/edit`;
-
-/** Documento publicado na web em 26/08/2026 (Arquivo > Compartilhar > Publicar
- *  na Web). É esta publicação que mantém as duas abas legíveis em CSV depois
- *  que o compartilhamento por link do documento foi restringido. */
-const PUB_ID =
-  "2PACX-1vTIsyLDSi4hSINQP3akwk3hZ575HuTSDo3F3Q9Ec0P8tYl5wgsKLpYexT76GB_2pnJA_HpZ37k4gAx-";
-/** gids da publicação — não são os mesmos gids da edição. */
-const GID_RESPOSTAS = "305359783";
-const GID_PARAMETROS = "1587286327";
-
-/**
- * Duas rotas de leitura, nesta ordem: a aba publicada na web (`/pub`) e o
- * `gviz`. O gviz só responde enquanto o documento estiver compartilhado por
- * link; quando o Batalhão restringe o acesso — como aconteceu em 26/08/2026 —
- * ele passa a devolver a tela de login e o painel fica sem dado. A publicação
- * na web continua servindo as duas abas em CSV sem abrir o documento.
- */
-function urlsDaAba(gid: string, nomeAba: string) {
-  return [
-    `https://docs.google.com/spreadsheets/d/e/${PUB_ID}/pub?gid=${gid}&single=true&output=csv`,
-    `https://docs.google.com/spreadsheets/d/${PLANILHA_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(nomeAba)}`,
-  ];
-}
-
-/** Aba de respostas do Forms. Sem `sheet=`, o gviz devolve a primeira aba. */
-const URL_RESPOSTAS = `https://docs.google.com/spreadsheets/d/${PLANILHA_ID}/gviz/tq?tqx=out:csv`;
-/** Aba de metas. Casada pelo NOME e não pelo gid: o gid muda se a aba for
- *  recriada, o nome é o que o usuário controla. */
-const URL_PARAMETROS = `https://docs.google.com/spreadsheets/d/${PLANILHA_ID}/gviz/tq?tqx=out:csv&sheet=Parametros`;
 
 // ---------------------------------------------------------------------------
 // Subunidades
@@ -226,6 +195,10 @@ export type LancamentoCop = {
   justificativa: string;
   /** Só existe no caminho "5 ou mais"; 0 quando não informado. */
   videosExatos: number;
+  /** Número implausível que veio no campo de quantidade e ficou de fora da
+   *  contagem; 0 quando não houve. Guardado para o painel COBRAR a correção na
+   *  planilha, em vez de descartar calado — ver `TETO_VIDEOS_POR_LANCAMENTO`. */
+  quantidadeDescartada: number;
 };
 
 export type MetaSubunidade = {
@@ -247,6 +220,11 @@ export type LeituraCop2026 = {
   metas: MetaSubunidade[];
   /** Mensagem de falha da leitura, quando a planilha não respondeu como CSV. */
   erro?: string;
+  /** Verdadeiro quando os números vieram do último retrato bom, e não da
+   *  planilha agora. Anda sempre junto de `erro`. */
+  stale?: boolean;
+  /** Momento da última leitura que deu certo — não o momento da tentativa.
+   *  É o que o painel anuncia como "última leitura confiável". */
   lidoEm: string;
 };
 
@@ -281,6 +259,42 @@ function inteiro(valor: string): number {
 
 function ehSim(valor: string): boolean {
   return normalizar(valor ?? "").startsWith("sim");
+}
+
+/**
+ * Teto de plausibilidade da quantidade auditada em UM lançamento.
+ *
+ * "Se auditou 5 ou mais, informe a quantidade exata" é campo de texto livre ao
+ * lado de uma lista fechada, e em 29/08/2026 um auditor colou ali o ID da
+ * mídia (202608298084). Como toda métrica soma o número cru, aquele lançamento
+ * sozinho virou 202 bilhões de evidências: total do Batalhão, ranking de
+ * frações, evolução semanal, carta de controle ±3σ e o briefing executivo
+ * saíram errados de uma vez — e o painel não deu sinal nenhum.
+ *
+ * Sessenta é generoso de propósito: é uma auditoria a cada 12 minutos num turno
+ * de 12 horas, mais do que o triplo do maior lançamento real já registrado
+ * (18). Não é regra de negócio nem limite de esforço — é a linha entre um
+ * número e um erro de digitação.
+ */
+const TETO_VIDEOS_POR_LANCAMENTO = 60;
+
+/**
+ * Quantidade auditada do lançamento, com o número implausível posto de lado.
+ *
+ * Vale o maior entre a lista e o campo exato, mas só entre os que passam no
+ * teto. Descartado o exato, sobra o que a pessoa marcou na lista — campo
+ * fechado, que não aceita ID: o lançamento de 29/08 voltou a valer 3 em vez de
+ * zerar. Zerar seria punir o auditor por um erro de digitação; somar seria
+ * mentir para o Comando.
+ */
+function quantidadeAuditada(lista: number, exata: number) {
+  const brutos = [lista, exata];
+  const plausiveis = brutos.filter((n) => n <= TETO_VIDEOS_POR_LANCAMENTO);
+  const descartados = brutos.filter((n) => n > TETO_VIDEOS_POR_LANCAMENTO);
+  return {
+    videos: plausiveis.length > 0 ? Math.max(...plausiveis) : 0,
+    descartado: descartados.length > 0 ? Math.max(...descartados) : 0,
+  };
 }
 
 /**
@@ -332,35 +346,7 @@ function mapearColunas(cabecalho: string[]): Map<number, keyof LancamentoCop> {
 // Leitura
 // ---------------------------------------------------------------------------
 
-async function lerCsv(url: string): Promise<string[][]> {
-  const resposta = await fetch(url, {
-    // Um minuto: a tropa preenche o formulário e confere na página logo em
-    // seguida, então a espera precisa ser curta.
-    next: { revalidate: 60 },
-  });
-  if (!resposta.ok) throw new Error(`A planilha respondeu ${resposta.status}.`);
-  const texto = await resposta.text();
-  // Sem permissão de leitura o Google devolve 200 com a tela de login em HTML.
-  if (texto.trimStart().startsWith("<")) {
-    throw new Error("A planilha exigiu autenticação em vez de devolver os dados.");
-  }
-  return parseCsv(texto);
-}
-
-/** Tenta as rotas em ordem e devolve a primeira que vier como CSV de verdade. */
-async function lerPrimeiroQueResponder(urls: string[]): Promise<string[][]> {
-  let ultimo: unknown;
-  for (const url of urls) {
-    try {
-      return await lerCsv(url);
-    } catch (erro) {
-      ultimo = erro;
-    }
-  }
-  throw ultimo instanceof Error ? ultimo : new Error("A planilha não respondeu.");
-}
-
-function extrairLancamentos(linhas: string[][]): LancamentoCop[] {
+export function extrairLancamentos(linhas: string[][]): LancamentoCop[] {
   if (linhas.length < 2) return [];
   const mapa = mapearColunas(linhas[0]);
   const idxIds = colunasDeId(linhas[0]);
@@ -373,6 +359,11 @@ function extrairLancamentos(linhas: string[][]): LancamentoCop[] {
       bruto[campo] = (linha[idx] ?? "").trim();
     });
     const data = dataIso(bruto.data ?? "");
+    const auditou = ehSim(bruto.auditou ?? "");
+    const quantidade = quantidadeAuditada(
+      inteiro(bruto.videos ?? ""),
+      inteiro(bruto.videosExatos ?? "")
+    );
     // Sem data de auditoria a linha não entra em nenhum recorte temporal;
     // ainda assim é preservada com data vazia para não sumir da tabela.
     lancamentos.push({
@@ -392,11 +383,12 @@ function extrairLancamentos(linhas: string[][]): LancamentoCop[] {
       posto: bruto.posto ?? "",
       funcao: bruto.funcao ?? "",
       subunidade: chaveSubunidade(bruto.subunidade),
-      auditou: ehSim(bruto.auditou ?? ""),
-      videos: ehSim(bruto.auditou ?? "")
-        ? Math.max(inteiro(bruto.videos ?? ""), inteiro(bruto.videosExatos ?? ""))
-        : 0,
+      auditou,
+      videos: auditou ? quantidade.videos : 0,
       videosExatos: inteiro(bruto.videosExatos ?? ""),
+      // Quem respondeu NÃO não tem quantidade a corrigir: o campo fica vazio e
+      // qualquer lixo nele é ruído, não achado de auditoria.
+      quantidadeDescartada: auditou ? quantidade.descartado : 0,
       numeroParte: bruto.numeroParte ?? "",
       justificativa: bruto.justificativa ?? "",
     });
@@ -426,7 +418,7 @@ function mapearParametros(cabecalho: string[]): Record<string, number> {
   return idx;
 }
 
-function extrairMetas(linhas: string[][]): MetaSubunidade[] {
+export function extrairMetas(linhas: string[][]): MetaSubunidade[] {
   if (linhas.length < 2) return [];
   const idx = mapearParametros(linhas[0]);
   const val = (l: string[], i: number | undefined) =>
@@ -461,31 +453,4 @@ function extrairMetas(linhas: string[][]): MetaSubunidade[] {
         ORDEM_SUBUNIDADES.indexOf(a.subunidade as (typeof ORDEM_SUBUNIDADES)[number]) -
         ORDEM_SUBUNIDADES.indexOf(b.subunidade as (typeof ORDEM_SUBUNIDADES)[number])
     );
-}
-
-export async function lerAuditoriaCop2026(): Promise<LeituraCop2026> {
-  const lidoEm = new Date().toLocaleString("pt-BR", {
-    timeZone: "America/Sao_Paulo",
-    dateStyle: "short",
-    timeStyle: "short",
-  });
-  try {
-    const [respostas, parametros] = await Promise.all([
-      lerPrimeiroQueResponder(urlsDaAba(GID_RESPOSTAS, "Respostas ao formulário 1")),
-      lerPrimeiroQueResponder(urlsDaAba(GID_PARAMETROS, "Parametros")),
-    ]);
-    const metasLidas = extrairMetas(parametros);
-    return {
-      lancamentos: extrairLancamentos(respostas),
-      metas: metasLidas.length > 0 ? metasLidas : METAS_PADRAO_2026,
-      lidoEm,
-    };
-  } catch (erro) {
-    return {
-      lancamentos: [],
-      metas: METAS_PADRAO_2026,
-      erro: erro instanceof Error ? erro.message : "Não foi possível alcançar a planilha.",
-      lidoEm,
-    };
-  }
 }

@@ -10,6 +10,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { AcessoRapido } from "@/components/publico16/acesso-rapido";
 import { FundamentacaoCop } from "@/components/publico16/cop/fundamentacao-cop";
 import { DiretrizCop } from "@/components/publico16/diretriz-cop";
@@ -17,11 +18,8 @@ import { DiretrizEmFoco } from "@/components/publico16/diretriz-em-foco";
 import { Instagram16 } from "@/components/publico16/instagram-16";
 import { RodapeCop } from "@/components/publico16/cop/rodape-cop";
 import { FaixaCreditos } from "@/components/publico16/creditos";
-import {
-  URL_FORMULARIO,
-  URL_PLANILHA,
-  lerAuditoriaCop2026,
-} from "@/lib/cop2026";
+import { URL_FORMULARIO, URL_PLANILHA } from "@/lib/cop2026";
+import { lerAuditoriaCop2026 } from "@/lib/cop2026-leitura";
 
 // Nenhuma fonte é carregada aqui: Cinzel (títulos), Inter (corpo) e IBM Plex
 // Mono (números) já vêm do layout raiz e valem para o portal inteiro. Esta
@@ -62,10 +60,63 @@ export const metadata: Metadata = {
 // build (o prerender estourava 60s e derrubava o deploy). O cache de dados do
 // fetch continua com revalidate de 60s dentro de lib/cop2026.
 export const dynamic = "force-dynamic";
+export const maxDuration = 20;
 
-export default async function Cop2026Page() {
+/** Classe do carimbo de leitura — repetida no fallback para que o esqueleto e o
+ *  conteúdo real ocupem exatamente o mesmo espaço, sem salto de layout. */
+const CLASSE_CARIMBO =
+  "inline-flex items-center gap-1 text-[10px] uppercase tracking-wide text-branco/40";
+
+function BlocoPlanilha({ lidoEm, erro }: { lidoEm?: string; erro?: string }) {
+  return (
+    <>
+      <div className="mb-6 flex flex-wrap items-center justify-end gap-4">
+        <div className="flex flex-col items-end gap-1.5">
+          <a
+            href={URL_PLANILHA}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-branco/15 px-3 py-1.5 text-sm font-semibold text-branco/60 transition-colors hover:border-vermelho/50 hover:text-vermelho"
+          >
+            <ExternalLink size={12} /> Abrir a planilha
+          </a>
+          <span className={CLASSE_CARIMBO}>
+            <RefreshCw size={10} /> {lidoEm ? `leitura de ${lidoEm}` : "lendo a planilha…"}
+          </span>
+        </div>
+      </div>
+
+      {erro && (
+        <div className="mb-6 flex items-start gap-3 rounded-xl border border-vermelho/35 bg-vermelho/[0.07] p-4">
+          <AlertTriangle size={16} className="mt-0.5 shrink-0 text-vermelho" />
+          <div>
+            <p className="text-sm font-bold text-branco">A planilha não respondeu</p>
+            <p className="mt-0.5 text-sm text-branco/60">
+              {erro} Se persistir, confira se ela continua publicada na web para quem tem o
+              endereço.
+            </p>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+/**
+ * A leitura ao vivo fica isolada aqui de propósito.
+ *
+ * Esta página não usa `lancamentos` nem `metas` — só o carimbo de horário e o
+ * aviso de falha. Enquanto o `await` estava no corpo da página, uma pane do
+ * Google segurava o HTML inteiro e a tropa, que só queria o link do formulário
+ * e a diretriz, ficava sem página nenhuma. Dentro do <Suspense> o casco chega
+ * na hora e só este pedaço espera.
+ */
+async function BlocoPlanilhaAoVivo() {
   const { erro, lidoEm } = await lerAuditoriaCop2026();
+  return <BlocoPlanilha lidoEm={lidoEm} erro={erro} />;
+}
 
+export default function Cop2026Page() {
   return (
     <div
       className={`tema-institucional min-h-screen bg-tatico-fundo text-[15px] text-branco`}
@@ -266,33 +317,9 @@ export default async function Cop2026Page() {
 
       <main className="mx-auto max-w-6xl px-4 py-8">
         <h1 className="sr-only">Auditoria de COP 2026 · 16º BPM/M</h1>
-        <div className="mb-6 flex flex-wrap items-center justify-end gap-4">
-          <div className="flex flex-col items-end gap-1.5">
-            <a
-              href={URL_PLANILHA}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-branco/15 px-3 py-1.5 text-sm font-semibold text-branco/60 transition-colors hover:border-vermelho/50 hover:text-vermelho"
-            >
-              <ExternalLink size={12} /> Abrir a planilha
-            </a>
-            <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wide text-branco/40">
-              <RefreshCw size={10} /> leitura de {lidoEm}
-            </span>
-          </div>
-        </div>
-
-        {erro && (
-          <div className="mb-6 flex items-start gap-3 rounded-xl border border-vermelho/35 bg-vermelho/[0.07] p-4">
-            <AlertTriangle size={16} className="mt-0.5 shrink-0 text-vermelho" />
-            <div>
-              <p className="text-sm font-bold text-branco">A planilha não respondeu</p>
-              <p className="mt-0.5 text-sm text-branco/60">
-                {erro} Verifique se ela continua compartilhada por link para quem tem o endereço.
-              </p>
-            </div>
-          </div>
-        )}
+        <Suspense fallback={<BlocoPlanilha />}>
+          <BlocoPlanilhaAoVivo />
+        </Suspense>
 
         <div id="diretriz-pdf" className="scroll-mt-8">
           <DiretrizCop />

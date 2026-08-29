@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { DashboardCopV2 } from "@/components/publico16/cop/v2/dashboard-cop-v2";
 import { NavegacaoV2 } from "@/components/publico16/cop/v2/navegacao-v2";
 import { RodapeCop } from "@/components/publico16/cop/rodape-cop";
-import { lerAuditoriaCop2026 } from "@/lib/cop2026";
+import { lerAuditoriaCop2026 } from "@/lib/cop2026-leitura";
 import { lerFiltros } from "@/lib/cop2026-metricas";
 import { ehAdminCop } from "@/lib/cop2026-acesso";
 import { exigirAcessoCop } from "@/lib/db/cop2026-autorizados";
@@ -13,6 +13,7 @@ export const metadata: Metadata = {
 };
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 20;
 
 export default async function DashboardV2Page({
   searchParams,
@@ -22,7 +23,9 @@ export default async function DashboardV2Page({
   const [{ lancamentos, metas, erro, lidoEm }, sp, acesso] = await Promise.all([
     lerAuditoriaCop2026(),
     searchParams,
-    exigirAcessoCop("/cop2026/dashboard"),
+    // O destino é esta tela, não a V1: quem chegava sem sessão logava e caía
+    // no dashboard antigo, sem entender por quê.
+    exigirAcessoCop("/cop2026/dashboard/v2"),
   ]);
 
   return (

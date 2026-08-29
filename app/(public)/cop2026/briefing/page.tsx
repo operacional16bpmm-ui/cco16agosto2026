@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { BriefingSlides } from "@/components/publico16/briefing-slides";
-import { lerAuditoriaCop2026 } from "@/lib/cop2026";
+import { lerAuditoriaCop2026 } from "@/lib/cop2026-leitura";
 import { ehAdminCop } from "@/lib/cop2026-acesso";
 import { exigirAcessoCop } from "@/lib/db/cop2026-autorizados";
 
@@ -12,6 +12,7 @@ export const metadata: Metadata = {
 // Mesma razão da página da auditoria: a leitura da planilha é ao vivo e não
 // pode acontecer no build.
 export const dynamic = "force-dynamic";
+export const maxDuration = 20;
 
 export default async function BriefingPage() {
   // Gate próprio, como no dashboard: exigirAcessoCop recheca a lista no banco
