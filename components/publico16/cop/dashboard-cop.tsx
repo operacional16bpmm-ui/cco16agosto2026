@@ -177,6 +177,223 @@ function Grupo({ ativo, children }: { ativo: boolean; children: React.ReactNode 
   );
 }
 
+/* ---------------- Exportação do briefing em PNG ----------------
+
+   O painel é rasterizado dentro de um <iframe> de largura fixa, e não num clone
+   solto no documento. O motivo é que as media queries do Tailwind (`md:`, `lg:`)
+   respondem ao VIEWPORT, não ao container: um clone esticado para 1240px dentro
+   de uma tela de celular continua com o layout empilhado do celular, só que mais
+   largo — o PNG sai numa tira vertical de vários milhares de pixels. O iframe dá
+   um viewport de verdade, então o celular exporta exatamente o painel que o
+   Comando lê no telão do CCO.
+
+   Duas armadilhas já custaram entregas erradas e estão resolvidas aqui:
+   - esconder o palco com `visibility: hidden` ou `opacity: 0` NO NÓ capturado: o
+     modern-screenshot copia o estilo computado para dentro do foreignObject, e o
+     PNG volta liso, sem erro nenhum. Quem fica escondido é o <iframe>, que é
+     outro documento; o conteúdo dentro dele permanece visível.
+   - fixar a altura e cortar com `overflow: hidden`: isso recorta o painel, não o
+     ajusta. A altura aqui é sempre a altura natural do conteúdo. */
+
+/* 1240px é o A4 retrato a 150 dpi e fica acima do breakpoint `lg` (1024px):
+   é a largura em que o painel foi desenhado para ser lido. */
+const BRIEFING_LARGURA = 1240;
+/* Altura provisória do palco só para o primeiro cálculo de layout; qualquer
+   coisa em `vh` precisa de um viewport plausível antes da medição real. */
+const BRIEFING_ALTURA_INICIAL = 1754;
+/* Canvas grande demais falha calado: o Safari/iOS descarta acima de ~16,7 Mpx e
+   GPUs móveis não alocam dimensão acima de 8192px. A escala é derivada disso,
+   nunca fixada num número mágico. */
+const CANVAS_DIMENSAO_MAX = 8192;
+const CANVAS_AREA_MAX = 16_000_000;
+/* Um PNG legítimo deste painel passa de centenas de KB em base64. Abaixo disso a
+   rasterização voltou em branco e é melhor falhar alto do que baixar um retângulo
+   cinza achando que deu certo. */
+const BRIEFING_BYTES_MIN = 20_000;
+
+function escalaSegura(largura: number, altura: number) {
+  const limite = Math.min(
+    CANVAS_DIMENSAO_MAX / largura,
+    CANVAS_DIMENSAO_MAX / altura,
+    Math.sqrt(CANVAS_AREA_MAX / (largura * altura)),
+  );
+  return Math.max(0.6, Math.min(2, limite));
+}
+
+/* Nenhuma espera do palco pode ser indefinida: uma folha de estilo que não
+   responde ou uma imagem que nunca dispara `load` travaria o botão em "gerando"
+   para sempre. Depois do limite a exportação segue com o que já carregou. */
+const ESPERA_MAX_MS = 10_000;
+
+function comLimite<T>(promessa: Promise<T>, ms = ESPERA_MAX_MS) {
+  return Promise.race([
+    promessa,
+    new Promise<void>((resolve) => window.setTimeout(resolve, ms)),
+  ]);
+}
+
+function esperarRecurso(alvo: HTMLElement, pronto: () => boolean) {
+  if (pronto()) return Promise.resolve();
+  return comLimite(
+    new Promise<void>((resolve) => {
+      const fim = () => resolve();
+      alvo.addEventListener("load", fim, { once: true });
+      alvo.addEventListener("error", fim, { once: true });
+    }),
+  );
+}
+
+/* Um quadro para o layout aplicar as folhas de estilo recém-inseridas e outro
+   para o navegador reconciliar; sem os dois, a medição sai do estado anterior. */
+function proximoQuadro() {
+  return new Promise<void>((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+  });
+}
+
+/* O painel herda do documento hospedeiro mais do que parece: as fontes chegam
+   por variável CSS na className do <html> (next/font) e o tema institucional
+   redefine tokens no ancestral `.tema-institucional` — `--branco`, por exemplo,
+   vira grafite. Recriar a cadeia de ancestrais é o que impede o bloco de nascer
+   com texto branco sobre fundo claro dentro do palco. */
+function replicarContexto(doc: Document, node: HTMLElement) {
+  doc.documentElement.className = document.documentElement.className;
+  doc.documentElement.setAttribute(
+    "style",
+    `${document.documentElement.getAttribute("style") ?? ""};overflow:hidden`,
+  );
+  doc.body.className = document.body.className;
+  doc.body.setAttribute("style", document.body.getAttribute("style") ?? "");
+  doc.body.style.margin = "0";
+
+  const ancestrais: HTMLElement[] = [];
+  for (let el = node.parentElement; el && el !== document.body; el = el.parentElement) {
+    ancestrais.unshift(el);
+  }
+
+  let destino: HTMLElement = doc.body;
+  for (const ancestral of ancestrais) {
+    const envoltorio = doc.createElement(ancestral.tagName);
+    envoltorio.className = ancestral.className;
+    const inline = ancestral.getAttribute("style");
+    if (inline) envoltorio.setAttribute("style", inline);
+    /* O palco não rola: qualquer recorte herdado de um ancestral cortaria o
+       painel exatamente como o bug que esta função existe para corrigir. */
+    envoltorio.style.overflow = "visible";
+    destino.appendChild(envoltorio);
+    destino = envoltorio;
+  }
+  return destino;
+}
+
+async function copiarEstilos(doc: Document) {
+  const base = doc.createElement("base");
+  base.href = window.location.href;
+  doc.head.appendChild(base);
+
+  /* Clonar os nós em vez de ler `cssRules`: em produção o Next serve as folhas
+     por <link> e em desenvolvimento por <style> inline, e ler regras de uma
+     folha externa esbarra em CORS. Clonar cobre os dois casos sem exceção. */
+  document.querySelectorAll<HTMLElement>('style, link[rel="stylesheet"]').forEach((folha) => {
+    doc.head.appendChild(doc.importNode(folha, true));
+  });
+
+  /* Tailwind v4 pode registrar camadas via adoptedStyleSheets, que não aparecem
+     como nó no <head>. */
+  const adotadas = document.adoptedStyleSheets ?? [];
+  if (adotadas.length) {
+    const extra = doc.createElement("style");
+    extra.textContent = adotadas
+      .flatMap((folha) => {
+        try {
+          return Array.from(folha.cssRules).map((regra) => regra.cssText);
+        } catch {
+          return [];
+        }
+      })
+      .join("\n");
+    if (extra.textContent) doc.head.appendChild(extra);
+  }
+
+  await Promise.all(
+    Array.from(doc.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]')).map((link) =>
+      esperarRecurso(link, () => Boolean(link.sheet)),
+    ),
+  );
+}
+
+type PalcoBriefing = {
+  alvo: HTMLElement;
+  altura: number;
+  desmontar: () => void;
+};
+
+/* Monta o palco, devolve o nó já posicionado e a altura natural que ele ocupa em
+   1240px de viewport. Quem chama é responsável por `desmontar()`. */
+async function montarPalcoBriefing(node: HTMLElement): Promise<PalcoBriefing> {
+  const palco = document.createElement("iframe");
+  palco.setAttribute("aria-hidden", "true");
+  palco.setAttribute("tabindex", "-1");
+  palco.setAttribute("scrolling", "no");
+  /* Esconder é atribuição do <iframe>, nunca do conteúdo: o palco sai da tela
+     por posição, e o documento de dentro continua plenamente visível. */
+  palco.style.cssText = [
+    "position:fixed",
+    "top:0",
+    `left:-${BRIEFING_LARGURA + 1000}px`,
+    `width:${BRIEFING_LARGURA}px`,
+    `height:${BRIEFING_ALTURA_INICIAL}px`,
+    "border:0",
+    "pointer-events:none",
+  ].join(";");
+  document.body.appendChild(palco);
+
+  const desmontar = () => palco.remove();
+
+  try {
+    const doc = palco.contentDocument;
+    if (!doc) throw new Error("o palco de exportacao nao abriu um documento");
+
+    const destino = replicarContexto(doc, node);
+    await copiarEstilos(doc);
+
+    const alvo = doc.importNode(node, true) as HTMLElement;
+    /* O que não vai para o arquivo sai do palco em vez de ser filtrado durante a
+       rasterização: o `filter` do modern-screenshot percorre nós de texto junto
+       e já apagou o conteúdo inteiro uma vez. Ambos são posicionados de forma
+       absoluta, então remover não desloca nada. */
+    alvo.querySelectorAll("video, [data-no-briefing='true']").forEach((no) => no.remove());
+    /* O palco fica fora da tela, então imagem com `loading="lazy"` — o padrão do
+       next/image — nunca entra no viewport e nunca carrega: a espera abaixo
+       ficaria pendurada e o PNG sairia sem os brasões. */
+    alvo.querySelectorAll("img").forEach((img) => {
+      img.loading = "eager";
+      img.decoding = "sync";
+    });
+    destino.appendChild(alvo);
+
+    await proximoQuadro();
+    if (doc.fonts) await comLimite(doc.fonts.ready);
+    await Promise.all(
+      Array.from(doc.images).map((img) => esperarRecurso(img, () => img.complete)),
+    );
+    await proximoQuadro();
+
+    /* Duas medições: a primeira acontece com o palco na altura provisória, e
+       ajustar a altura do iframe muda o valor de `100vh` — o que pode mexer no
+       layout. A segunda medição lê o estado já estabilizado. */
+    const primeira = Math.ceil(alvo.getBoundingClientRect().height);
+    palco.style.height = `${Math.max(primeira, 1)}px`;
+    await proximoQuadro();
+    const altura = Math.max(Math.ceil(alvo.getBoundingClientRect().height), primeira, 1);
+
+    return { alvo, altura, desmontar };
+  } catch (erro) {
+    desmontar();
+    throw erro;
+  }
+}
+
 export function DashboardCop({
   lancamentos,
   metas,
@@ -233,25 +450,32 @@ export function DashboardCop({
 
     setExportandoBriefing(true);
     const node = painelBriefingRef.current;
+
+    let palco: PalcoBriefing | null = null;
+
     try {
       await document.fonts?.ready;
-      const { width, height } = node.getBoundingClientRect();
-      // modern-screenshot no lugar de html-to-image: o Tailwind v4 gera cores
-      // em oklch() e o painel usa next/image; o html-to-image rasterizava isso
-      // em branco (fundo liso, sem erro). O modern-screenshot renderiza pelo
-      // mesmo foreignObject do navegador, entao o resultado sai identico a tela.
-      const dataUrl = await domToPng(node, {
-        scale: 2,
+      palco = await montarPalcoBriefing(node);
+      const { alvo, altura } = palco;
+
+      /* modern-screenshot no lugar de html-to-image: o Tailwind v4 gera cores
+         em oklch() e o painel usa next/image; o html-to-image rasterizava isso
+         em branco (fundo liso, sem erro). O modern-screenshot renderiza pelo
+         mesmo foreignObject do navegador, entao o resultado sai identico a tela. */
+      const dataUrl = await domToPng(alvo, {
+        width: BRIEFING_LARGURA,
+        height: altura,
+        scale: escalaSegura(BRIEFING_LARGURA, altura),
         backgroundColor: "#edf2f7",
-        // Fora do PNG: so o video de fundo e o proprio FAB (data-no-briefing).
-        // Nos de texto (nodeType !== 1) precisam passar, senao o conteudo some.
-        filter: (alvo) => {
-          if (!(alvo instanceof HTMLElement)) return true;
-          return alvo.tagName !== "VIDEO" && alvo.dataset.noBriefing !== "true";
-        },
+        maximumCanvasSize: CANVAS_DIMENSAO_MAX,
       });
-      // Se o PNG voltar minusculo, a rasterizacao falhou (imagem em branco).
-      console.info("[briefing] png gerado", { width, height, bytes: dataUrl.length });
+
+      /* Falhar alto em vez de baixar um retangulo cinza: quando a rasterizacao
+         morre ela volta um PNG valido e vazio, sem lancar erro nenhum. */
+      if (dataUrl.length < BRIEFING_BYTES_MIN) {
+        throw new Error(`rasterizacao voltou vazia (${dataUrl.length} bytes)`);
+      }
+
       const nomeArquivo = `painel-cop-2026-${new Date().toISOString().slice(0, 10)}.png`;
       const blob = await (await fetch(dataUrl)).blob();
       const urlDownload = URL.createObjectURL(blob);
@@ -271,6 +495,9 @@ export function DashboardCop({
       console.error("[briefing] falha ao gerar o PNG:", erro);
       toast.error("Nao foi possivel gerar o briefing em PNG. Tente novamente.");
     } finally {
+      /* O palco so pode cair depois do PNG estar em memoria: o modern-screenshot
+         le estilo computado do no durante toda a rasterizacao. */
+      palco?.desmontar();
       setExportandoBriefing(false);
     }
   }, [exportandoBriefing]);
@@ -560,7 +787,7 @@ export function DashboardCop({
       </header>
 
       {/* ---------------- BARRA DE FILTROS RESPONSIVA SÊNIOR ---------------- */}
-      <div className="nao-imprime sticky top-0 z-30 -mx-3.5 sm:-mx-5 mb-6 border-b-2 border-slate-300/80 bg-white/95 px-3.5 sm:px-5 py-2.5 backdrop-blur-md shadow-sm transition-all">
+      <div className="nao-imprime sticky top-[73px] sm:top-[89px] z-30 -mx-3.5 sm:-mx-5 mb-6 border-b-2 border-slate-300/80 bg-white/95 px-3.5 sm:px-5 py-2.5 backdrop-blur-md shadow-sm transition-all">
         
         {/* MOBILE (linha única 48px, carrossel de semanas e gaveta tática) */}
         <div className="flex items-center justify-between gap-2 lg:hidden">
