@@ -14,8 +14,11 @@ import { cn } from "@/lib/utils";
  * com acento no nome, outro sem. Toda tela que credita a equipe importa daqui.
  */
 export const EQUIPE = [
-  { papel: "Gerência do projeto", nome: "Maj PM Alvaro Zocchio Júnior" },
-  { papel: "Concepção e desenvolvimento", nome: "Sd PM 231.936-5 Fabrício Pires" },
+  {
+    papel: "Gerência do projeto e patrocinador",
+    nome: "Maj PM Alvaro Zocchio Júnior",
+  },
+  { papel: "Concepção e desenvolvimento", nome: "Sd PM Fabrício Pires" },
 ] as const;
 
 /**
