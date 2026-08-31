@@ -335,3 +335,57 @@ desktop é byte a byte o mesmo — conferido no ar: grade `220px 584px 220px` in
    `readlink /proc/<pid>/cwd`. Em 31/08 havia dois órfãos, um deles publicando código velho.
 
 ---
+
+## 31/08/2026, à noite — não era a rede, era a máquina sem fôlego
+
+### O que a medição mostrou
+
+O diagnóstico anterior culpou o relay DERP. A medição desta noite desmente: a rota
+com o pc1 estava **direta e a 13 ms** (`191.231.255.208:1055`), e o pc3 a 30 ms pelo
+mesmo IP público. O Wi-Fi da casa entregou **30 de 30 pacotes ao gateway, 1 ms, 0% de
+perda**. O que parecia link morrendo era o pc1 **sem fôlego**:
+
+    load average: 4,10   em 4 cores
+    Mem: 15Gi total | 8,9Gi usados | 587Mi livres
+    Swap: 3,0Gi JÁ EM USO
+
+    fclones       96,8% CPU  há 1h53
+    llama-server   149% CPU
+    mount.ntfs-3g  7,2% CPU  há 6h35
+
+Um build do Next pede de 2 a 4 GB. Com 587 MB livres e 3 GB já em swap, ele entra em
+thrash — e como o build roda dentro do SSH, a tela mostra "link caiu". O link não caiu.
+A máquina engasgou. Depois de matar o `fclones` e o `llama-server` sair de cena
+(era filho temporário do `ollama serve`, não um processo fixo), sobraram **9,9 GB
+disponíveis** e a carga caiu para **1,62**. O deploy seguinte fechou na **primeira
+tentativa**.
+
+### O que ficou consertado
+
+**`_scripts/deploy-cco16.sh`** — publica com `setsid`, teto de 200 s por tentativa,
+`ipv4first`, `flock` contra órfãos, `pkill -9` nos laços de sessões mortas, e no fim
+confere o estado **pela API** (`vercel ls` + `inspect`), nunca pelo exit code. Usa a
+CLI local em `node_modules/.bin/vercel`, **não** `npx vercel@latest`: o npx baixa a CLI
+pela rede a cada tentativa e acrescenta mais um ponto de falha. Chamada:
+
+    ssh pc1 'setsid nohup bash /home/pc1/_workspace/_scripts/deploy-cco16.sh \
+      </dev/null >/dev/null 2>&1 &'
+    # acompanhar: tail -f /tmp/deploy-cco16-atual.log
+
+**A esteira parou de competir com o build.** `memoria-archiver` e `memoria-worker`
+ganharam drop-ins com `Nice=19` e `IOSchedulingClass=idle` — eram os donos do `ffmpeg`
+que aparecia a 89% de CPU. O `memoria-receiver` ficou em prioridade normal de propósito:
+é HTTPS e precisa responder rápido.
+
+### Armadilha nova: `pkill -f` mata o próprio comando
+
+`ssh pc1 "pkill -f fclones"` derruba a própria sessão — a linha de comando do shell
+remoto contém a palavra `fclones` e casa com o padrão. A conexão morre e parece falha
+de rede. Use `pkill -x fclones` (nome exato do executável) ou `pkill -f 'fclo[n]es'`.
+
+### Conferido em produção
+
+Deployment `portal-cco16-ieh3m93js`, criado 19:39:56, `● Ready`, **aliased** para
+`portal-cco16.vercel.app`, que responde **HTTP 200 em 0,55 s**. Publica o commit
+`8d79c8c` — que estava commitado às 19:17 e **nunca tinha ido ao ar**: o deploy no
+alias era o `co4jtbn5s`, das 19:12, cinco minutos anterior ao commit.
