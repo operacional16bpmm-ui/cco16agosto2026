@@ -1,0 +1,144 @@
+/**
+ * Verificação do motor de tendência da COP 2026.
+ *
+ *   node --test scripts/verificar-tendencia-cop.mjs
+ *
+ * É .mjs, e não .ts, pelo mesmo motivo de verificar-vocabulario-cop.mjs: o
+ * tsconfig do app inclui `**\/*.ts` e um script de apoio que importa com
+ * extensão explícita derruba o type-check do build.
+ */
+import test from "node:test";
+import assert from "node:assert/strict";
+
+import {
+  calcularTendencia,
+  diasDoMes,
+  gini,
+  indiceEquilibrio,
+  progressoDoMes,
+  ratearMeta,
+  turnosDoMes,
+} from "../lib/cop2026-tendencia.ts";
+
+const perto = (a, b, tol = 0.01) =>
+  assert.ok(Math.abs(a - b) <= tol, `esperado ~${b}, veio ${a}`);
+
+/** Pesos oficiais da Matriz Proporcional 2026 (somam 99,93%). */
+const PESOS = { em: 5.0, "1cia": 20.32, "2cia": 18.74, "3cia": 21.9, "4cia": 18.74, ft: 15.23 };
+/** Metas publicadas à tropa — não mudam no meio do mês. */
+const METAS_PUBLICADAS = { em: 48, "1cia": 195, "2cia": 180, "3cia": 210, "4cia": 180, ft: 147 };
+
+test("calendário: setembro tem 30 dias e 60 turnos-fração", () => {
+  assert.equal(diasDoMes(2026, 9), 30);
+  assert.equal(turnosDoMes(2026, 9), 60);
+  assert.equal(turnosDoMes(2026, 10), 62); // outubro, 31 dias
+  assert.equal(diasDoMes(2028, 2), 29); // bissexto
+});
+
+test("progresso conta dias ENCERRADOS, não o dia corrente", () => {
+  const p = progressoDoMes(new Date("2026-09-15T09:00:00Z"), 2026, 9);
+  assert.equal(p.diasDecorridos, 14);
+  assert.equal(p.turnosDecorridos, 28);
+  assert.equal(p.turnosRestantes, 32);
+  assert.equal(p.encerrado, false);
+});
+
+test("progresso antes e depois do mês não estoura", () => {
+  const antes = progressoDoMes(new Date("2026-08-31T23:00:00Z"), 2026, 9);
+  assert.equal(antes.turnosDecorridos, 0);
+  assert.equal(antes.turnosRestantes, 60);
+
+  const depois = progressoDoMes(new Date("2026-10-05T00:00:00Z"), 2026, 9);
+  assert.equal(depois.turnosDecorridos, 60);
+  assert.equal(depois.turnosRestantes, 0);
+  assert.equal(depois.encerrado, true);
+});
+
+test("os três ritmos da 3ª Cia na metade do mês", () => {
+  // meta 210 em 60 turnos; 28 turnos decorridos; produziu 60 evidências
+  const t = calcularTendencia({ meta: 210, realizado: 60, turnosMes: 60, turnosDecorridos: 28 });
+  perto(t.ritmoAlvo, 3.5); // 210/60
+  perto(t.ritmoReal, 2.142); // 60/28
+  perto(t.metaAcumulada, 98); // 3.5*28
+  perto(t.saldoTrajetoria, -38); // déficit de trajetória
+  perto(t.aderencia, 61.22);
+  perto(t.ritmoRecuperacao, 4.6875); // 150/32
+  perto(t.pressaoRecuperacao, 1.339); // exige 34% acima do normal
+  assert.equal(t.situacao, "DEFICIT_SEVERO");
+  assert.equal(t.irrecuperavel, false);
+});
+
+test("ágio: quem está adiantado aparece com saldo positivo", () => {
+  const t = calcularTendencia({ meta: 147, realizado: 120, turnosMes: 60, turnosDecorridos: 28 });
+  perto(t.metaAcumulada, 68.6);
+  perto(t.saldoTrajetoria, 51.4);
+  assert.equal(t.situacao, "ADIANTADA");
+  assert.ok(t.aderencia > 170);
+});
+
+test("projeção de fechamento no ritmo atual", () => {
+  const t = calcularTendencia({ meta: 210, realizado: 60, turnosMes: 60, turnosDecorridos: 28 });
+  perto(t.projecaoFechamento, 128.57); // 2,142 × 60
+  perto(t.projecaoPct, 61.22);
+});
+
+test("BORDA: mês encerrado não inventa ritmo de recuperação", () => {
+  // a proposta original usava Math.max(1, restantes) e anunciaria "415/turno"
+  const t = calcularTendencia({ meta: 960, realizado: 545, turnosMes: 60, turnosDecorridos: 60 });
+  assert.equal(t.turnosRestantes, 0);
+  assert.equal(t.ritmoRecuperacao, 0);
+  assert.equal(t.deficit, 415);
+  assert.equal(t.irrecuperavel, true);
+});
+
+test("BORDA: primeiro dia do mês não gera déficit fantasma nem NaN", () => {
+  const t = calcularTendencia({ meta: 960, realizado: 0, turnosMes: 60, turnosDecorridos: 0 });
+  assert.equal(t.ritmoReal, null);
+  assert.equal(t.aderencia, null);
+  assert.equal(t.projecaoFechamento, null);
+  assert.equal(t.situacao, "NAO_AFERIVEL");
+  assert.equal(t.saldoTrajetoria, 0);
+  assert.ok(Number.isFinite(t.ritmoRecuperacao));
+});
+
+test("BORDA: status julga a TRAJETÓRIA, não o total do mês", () => {
+  // 31% da meta no 5º dia é adiantado; a régua antiga pintaria de CRÍTICA
+  const t = calcularTendencia({ meta: 195, realizado: 61, turnosMes: 60, turnosDecorridos: 8 });
+  perto(t.cumprimento, 31.28);
+  assert.equal(t.situacao, "ADIANTADA");
+});
+
+test("rateio pelo maior resto fecha o total exatamente", () => {
+  const cotas = ratearMeta(960, PESOS);
+  assert.equal(
+    Object.values(cotas).reduce((s, v) => s + v, 0),
+    960
+  );
+  // normaliza os 99,93%: nenhuma evidência se perde no arredondamento
+  const cotas1000 = ratearMeta(1000, PESOS);
+  assert.equal(
+    Object.values(cotas1000).reduce((s, v) => s + v, 0),
+    1000
+  );
+});
+
+test("a matriz publicada já fecha 960 — não há deriva a corrigir", () => {
+  assert.equal(
+    Object.values(METAS_PUBLICADAS).reduce((s, v) => s + v, 0),
+    960
+  );
+});
+
+test("índice de equilíbrio flagra a assimetria FT × Cias", () => {
+  const real = indiceEquilibrio([75, 31.3, 32.2, 28.6, 31.4, 186.4]);
+  assert.equal(real.classe, "ASSIMETRIA_CRITICA");
+
+  const parelho = indiceEquilibrio([98, 100, 102, 99, 101, 100]);
+  assert.equal(parelho.classe, "EQUILIBRADO");
+});
+
+test("gini separa produção regular de compliance de última hora", () => {
+  assert.equal(gini([25, 25, 25, 25]), 0);
+  perto(gini([0, 0, 0, 100]), 0.75);
+  assert.equal(gini([0, 0, 0, 0]), 0); // sem produção não é irregularidade
+});

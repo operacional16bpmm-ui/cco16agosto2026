@@ -1,0 +1,5 @@
+.next
+.git
+node_modules
+.vercel.bak-16bpmm
+*.log

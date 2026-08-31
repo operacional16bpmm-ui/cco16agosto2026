@@ -369,6 +369,7 @@ export function AgulhaoMetas({
   meta,
   ritmo,
   turnosRestantes,
+  cartaoRitmo,
   titulo = '16º BPM/M — "1º Ten PM Fernão"',
   subtitulo = {
     linha1: "META GLOBAL — 960 EVIDÊNCIAS",
@@ -381,6 +382,8 @@ export function AgulhaoMetas({
   meta: number;
   ritmo?: number;
   turnosRestantes?: number;
+  /** Substitui o cartao "Ritmo necessario". Sem ele, nada muda. */
+  cartaoRitmo?: React.ReactNode;
   titulo?: string;
   subtitulo?: string | { linha1: string; linha2?: string; linha3?: string };
 }) {
@@ -526,7 +529,7 @@ export function AgulhaoMetas({
       <div
         className={cn(
           "relative z-10 mt-1 grid w-full max-w-[390px] items-stretch gap-3 text-center sm:gap-3.5",
-          ritmo !== undefined ? "grid-cols-2" : "grid-cols-1"
+          ritmo !== undefined || cartaoRitmo ? "grid-cols-2" : "grid-cols-1"
         )}
       >
         <div
@@ -544,7 +547,8 @@ export function AgulhaoMetas({
           </span>
         </div>
 
-        {ritmo !== undefined && (
+        {cartaoRitmo}
+        {cartaoRitmo === undefined && ritmo !== undefined && (
           <div
             className="pulso-faixa-card flex min-h-[130px] flex-col items-center justify-center rounded-2xl border-2 bg-white/95 px-2.5 py-4 shadow-[0_7px_18px_rgba(15,23,42,0.14)] sm:min-h-[136px] sm:px-3"
             style={{ borderColor: "color-mix(in srgb, var(--faixa) 55%, white)" }}

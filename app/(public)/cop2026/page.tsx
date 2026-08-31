@@ -20,6 +20,8 @@ import { RodapeCop } from "@/components/publico16/cop/rodape-cop";
 import { FaixaCreditos } from "@/components/publico16/creditos";
 import { URL_FORMULARIO, URL_PLANILHA } from "@/lib/cop2026";
 import { lerAuditoriaCop2026 } from "@/lib/cop2026-leitura";
+import { calcularPainel, FILTROS_VAZIOS } from "@/lib/cop2026-metricas";
+import { RankingFracoesPublico } from "@/components/publico16/cop/ranking-fracoes-publico";
 
 // Nenhuma fonte é carregada aqui: Cinzel (títulos), Inter (corpo) e IBM Plex
 // Mono (números) já vêm do layout raiz e valem para o portal inteiro. Esta
@@ -114,6 +116,21 @@ function BlocoPlanilha({ lidoEm, erro }: { lidoEm?: string; erro?: string }) {
 async function BlocoPlanilhaAoVivo() {
   const { erro, lidoEm } = await lerAuditoriaCop2026();
   return <BlocoPlanilha lidoEm={lidoEm} erro={erro} />;
+}
+
+/**
+ * Espelho público do progresso por fração, pedido pelo Comando para a tropa ver
+ * a posição da própria companhia na hora de lançar. Componente async próprio,
+ * dentro de <Suspense> pelo mesmo motivo do bloco da planilha: a leitura do
+ * Google não pode segurar o hero.
+ *
+ * Quadro completo do mês, sem recorte — com filtro de datas `calcularPainel`
+ * ratearia a meta de 960 proporcionalmente.
+ */
+async function RankingAoVivo() {
+  const { lancamentos, metas } = await lerAuditoriaCop2026();
+  const painel = calcularPainel(lancamentos, metas, FILTROS_VAZIOS);
+  return <RankingFracoesPublico fracoes={painel.fracoes} />;
 }
 
 export default function Cop2026Page() {
@@ -306,6 +323,10 @@ export default function Cop2026Page() {
               </div>
             ))}
           </dl>
+
+          <Suspense fallback={null}>
+            <RankingAoVivo />
+          </Suspense>
         </div>
       </section>
 

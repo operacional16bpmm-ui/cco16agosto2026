@@ -20,6 +20,9 @@ import {
   X,
 } from "lucide-react";
 import { domToPng } from "modern-screenshot";
+import { CaixaRitmos } from "@/components/publico16/cop/v3/caixa-ritmos";
+import { CaixaTendencia } from "@/components/publico16/cop/v3/caixa-tendencia";
+import { progressoDoMes } from "@/lib/cop2026-tendencia";
 import {
   ROTULO_SUBUNIDADE,
   RITMO_GLOBAL_RESTANTE,
@@ -400,13 +403,36 @@ export function DashboardCop({
   lidoEm,
   erro,
   filtrosIniciais,
+  tendencia,
+  auditoresPorQuinzena,
 }: {
   lancamentos: LancamentoCop[];
   metas: MetaSubunidade[];
   lidoEm: string;
   erro?: string;
   filtrosIniciais: Filtros;
+  /** Liga a caixa TENDENCIA (rota /cop2026/dashboard/v3). Ausente = painel atual. */
+  tendencia?: boolean;
+  /** Auditores distintos na 1a e na 2a quinzena, por fracao. So a v3 envia. */
+  auditoresPorQuinzena?: Record<string, [number, number]>;
 }) {
+  // Ritmo de recuperacao em dias, para o KPI da v3. Calculado, nunca fixo.
+  const agoraSP = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  })
+    .format(new Date())
+    .split("-")
+    .map(Number);
+  const progMes = progressoDoMes(
+    new Date(Date.UTC(agoraSP[0], agoraSP[1] - 1, agoraSP[2], 12)),
+    agoraSP[0],
+    agoraSP[1]
+  );
+  const diasRestantes = progMes.diasMes - progMes.diasDecorridos;
+
   const router = useRouter();
   const [f, setF] = useState<Filtros>(filtrosIniciais);
   const [aba, setAba] = useState<Aba>("ritmo");
@@ -574,9 +600,13 @@ export function DashboardCop({
       icone: <CheckCircle2 size={18} aria-hidden />,
     },
     {
-      rotulo: "Ritmo necessário",
-      valor: FMT.format(RITMO_GLOBAL_RESTANTE),
-      nota: `evidências/turno · ${FMT.format(TURNOS_RESTANTES_GLOBAL)} turnos restantes`,
+      rotulo: tendencia ? "Ritmo de recuperação" : "Ritmo necessário",
+      valor: tendencia
+        ? FMT.format(Math.ceil(Math.max(0, p.meta - p.total) / Math.max(1, diasRestantes)))
+        : FMT.format(RITMO_GLOBAL_RESTANTE),
+      nota: tendencia
+        ? `evidências/dia · ${FMT.format(diasRestantes)} dia${diasRestantes === 1 ? "" : "s"} restante${diasRestantes === 1 ? "" : "s"}`
+        : `evidências/turno · ${FMT.format(TURNOS_RESTANTES_GLOBAL)} turnos restantes`,
       foto: "/media/reel-operacao.jpg",
       icone: <TrendingUp size={22} strokeWidth={2.4} aria-hidden />,
     },
@@ -1210,8 +1240,9 @@ export function DashboardCop({
               pct={p.pct}
               total={p.total}
               meta={p.meta}
-              ritmo={RITMO_GLOBAL_RESTANTE}
-              turnosRestantes={TURNOS_RESTANTES_GLOBAL}
+              ritmo={tendencia ? undefined : RITMO_GLOBAL_RESTANTE}
+              turnosRestantes={tendencia ? undefined : TURNOS_RESTANTES_GLOBAL}
+              cartaoRitmo={tendencia ? <CaixaRitmos meta={p.meta} total={p.total} /> : undefined}
               titulo={f.fracao === "todas" ? '16º BPM/M — "1º Ten PM Fernão"' : `Ritmo Operacional · ${ROTULO_SUBUNIDADE[f.fracao] ?? f.fracao}`}
               subtitulo={{
                 linha1: "META GLOBAL — 960 EVIDÊNCIAS",
@@ -1230,13 +1261,52 @@ export function DashboardCop({
               <strong className="dados font-black text-slate-950">{FMT.format(p.p90)}</strong>
             </span>
             <span className="relative">
-              Turnos cumpridos: <strong className="dados font-black text-slate-950">{FMT.format(p.turnosCumpridos)}</strong> de{" "}
-              {FMT.format(p.turnosPrevistos)}
+              {tendencia ? (
+                <>
+                  Dias decorridos:{" "}
+                  <strong className="dados font-black text-slate-950">
+                    {FMT.format(progMes.diasDecorridos)}
+                  </strong>{" "}
+                  de {FMT.format(progMes.diasMes)} · turnos-fração{" "}
+                  <strong className="dados font-black text-slate-950">
+                    {FMT.format(progMes.turnosDecorridos)}
+                  </strong>{" "}
+                  de {FMT.format(progMes.turnosMes)}
+                </>
+              ) : (
+                <>
+                  Turnos cumpridos:{" "}
+                  <strong className="dados font-black text-slate-950">
+                    {FMT.format(p.turnosCumpridos)}
+                  </strong>{" "}
+                  de {FMT.format(p.turnosPrevistos)}
+                </>
+              )}
             </span>
+            {tendencia && (
+              <span className="relative">
+                Dias com lançamento:{" "}
+                <strong className="dados font-black text-slate-950">
+                  {FMT.format(p.turnosCumpridos)}
+                </strong>{" "}
+                de {FMT.format(progMes.diasDecorridos)}
+              </span>
+            )}
             <span className="relative">
               Partes confeccionadas: <strong className="dados font-black text-slate-950">{FMT.format(p.partes)}</strong>
             </span>
           </div>
+
+          {/* Detalhamento da TENDENCIA por fracao — posicao definida pelo
+              Comando: abaixo da barra-resumo e acima da camada semanal. */}
+          {tendencia && (
+            <div className="lg:col-span-12">
+              <CaixaTendencia
+                fracoes={p.fracoes}
+                auditoresPorQuinzena={auditoresPorQuinzena}
+              />
+            </div>
+          )}
 
           <button
             type="button"
