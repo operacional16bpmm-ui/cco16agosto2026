@@ -1,5 +1,27 @@
 "use client";
 
+/**
+ * Contrato de largura desta tela — 31/08/2026.
+ *
+ * O painel só não estoura no celular enquanto as três regras abaixo valerem ao
+ * mesmo tempo. Quebrar qualquer uma devolve a rolagem horizontal na PÁGINA
+ * INTEIRA, e não no elemento culpado — foi assim que a v3 abriu com 1400px de
+ * largura numa tela de 390px sem que nenhum cartão parecesse errado.
+ *
+ * 1. A página hospedeira não envolve o painel num container `flex-column`.
+ *    Ali as margens automáticas do `mx-auto` no container de `max-w-[1400px]`
+ *    CANCELAM o `align-self: stretch` (CSS Flexbox §9.4.11): o bloco deixa de
+ *    valer a largura do pai e passa a `fit-content`, que cresce até o
+ *    min-content das tabelas. Na prática o `max-w` vira `width`.
+ * 2. Todo item de grid que receba tabela larga carrega `min-w-0` — sem isso o
+ *    `min-width: auto` do item vale o min-content da tabela e estica a trilha.
+ * 3. Toda tabela com `min-w-[...]` vive dentro de um envoltório que rola
+ *    sozinho (`overflow-x-auto` / `overflow-auto`).
+ *
+ * Medir sempre por `document.documentElement.scrollWidth` contra o
+ * `clientWidth`, nunca por `window.innerWidth`, que mente sob emulação.
+ */
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
