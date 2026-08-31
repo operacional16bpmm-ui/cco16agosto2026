@@ -147,9 +147,13 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    // robots.txt/sitemap.xml precisam sair do proxy: sao arquivos de metadata
+    // gerados por app/robots.ts, e sem esta excecao o middleware devolvia 307
+    // para o /login — o buscador nunca lia o Disallow e o portal ficava sem a
+    // unica protecao contra indexacao depois que a meta noindex saiu da /cop2026.
     // media/ (vídeos e fotos da vitrine pública) faltava aqui — arquivos
     // .mp4 não batem nenhuma extensão da lista, então caíam no proxy() e,
     // com o fail-closed do B1, passaram a redirecionar para /login.
-    "/((?!_next/static|_next/image|favicon.ico|brand/|media/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|mp4)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|brand/|media/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|mp4)$).*)",
   ],
 };
