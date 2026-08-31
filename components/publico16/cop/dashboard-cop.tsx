@@ -804,21 +804,21 @@ export function DashboardCop({
           <span className="h-px flex-1 bg-slate-300/80" aria-hidden />
         </div>
 
-        <div className="mx-auto flex max-w-5xl flex-col items-center gap-6 md:grid md:grid-cols-[220px_minmax(0,1fr)_220px] md:items-stretch md:gap-x-0">
+        <div className="mx-auto grid max-w-5xl grid-cols-2 items-center gap-x-4 gap-y-5 md:grid-cols-[220px_minmax(0,1fr)_220px] md:items-stretch md:gap-x-0">
           {/* Brasão oficial do 16º BPM/M */}
-          <div className="relative shrink-0 flex items-center justify-center md:pr-2 md:border-r md:border-slate-300/70">
+          <div className="relative order-1 shrink-0 flex items-center justify-center md:order-none md:pr-2 md:border-r md:border-slate-300/70">
             <Image
               src="/brand/brasao-16bpmm-hd.png"
               alt="Brasão do 16º BPM/M"
               width={2481}
               height={3508}
-              className="h-auto w-40 object-contain drop-shadow-[0_18px_34px_rgba(7,24,45,0.4)] sm:w-48 md:w-64"
+              className="h-auto w-28 object-contain drop-shadow-[0_18px_34px_rgba(7,24,45,0.4)] sm:w-48 md:w-64"
               priority
             />
           </div>
 
           {/* Bloco tipográfico */}
-          <div className="min-w-0 flex-1 text-center md:text-left flex flex-col justify-center">
+          <div className="order-3 col-span-2 min-w-0 flex-1 text-center md:order-none md:col-span-1 md:text-left flex flex-col justify-center">
             <p className="text-[11px] sm:text-xs font-black uppercase tracking-[0.28em] text-[#ca0202]">
               16º Batalhão de Polícia Militar Metropolitano
             </p>
@@ -847,13 +847,13 @@ export function DashboardCop({
           </div>
 
           {/* Logomarca da Auditoria COP 2026 */}
-          <div className="order-3 flex shrink-0 items-center justify-center md:order-none md:pl-2">
+          <div className="order-2 flex shrink-0 items-center justify-center md:order-none md:pl-2">
             <Image
               src="/brand/logo-auditoria-cop2026-transparent.png"
               alt="16º BPM/M — Auditoria COP 2026"
               width={1536}
               height={1536}
-              className="h-auto w-48 object-contain drop-shadow-[0_16px_30px_rgba(7,24,45,0.34)] sm:w-64 md:w-80"
+              className="h-auto w-32 object-contain drop-shadow-[0_16px_30px_rgba(7,24,45,0.34)] sm:w-64 md:w-80"
             />
           </div>
         </div>
