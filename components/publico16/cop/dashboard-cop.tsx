@@ -20,7 +20,8 @@ import {
   X,
 } from "lucide-react";
 import { domToPng } from "modern-screenshot";
-import { CaixaRitmos } from "@/components/publico16/cop/v3/caixa-ritmos";
+import { CartaoTrajetoria } from "@/components/publico16/cop/v3/cartao-trajetoria";
+import { FaixaRitmos } from "@/components/publico16/cop/v3/faixa-ritmos";
 import { CaixaTendencia } from "@/components/publico16/cop/v3/caixa-tendencia";
 import { progressoDoMes } from "@/lib/cop2026-tendencia";
 import {
@@ -469,7 +470,30 @@ export function DashboardCop({
   }, [atualizar]);
 
   const p = useMemo(() => calcularPainel(lancamentos, metas, f), [lancamentos, metas, f]);
-  const v = veredito(p);
+  const vBase = veredito(p);
+
+  /* Na V3 o prazo vem do CALENDARIO. O `veredito` de producao mede o que resta
+     pelo numero de turnos com lancamento, e por isso anunciava "os 15 turnos
+     previstos ja foram cumpridos" faltando um dia de mes — o mesmo defeito que
+     a caixa TENDENCIA corrigiu no motor. Sem a prop, producao segue igual. */
+  const v =
+    tendencia && p.dados.length && p.pct <= 100 && p.falta > 0
+      ? {
+          ...vBase,
+          detalhe:
+            diasRestantes > 0
+              ? `Auditoria em ${PCT.format(p.pct)}% da meta. Faltam ${FMT.format(
+                  p.falta
+                )} evidências em ${FMT.format(diasRestantes)} dia${
+                  diasRestantes === 1 ? "" : "s"
+                } — ${FMT.format(
+                  Math.ceil(p.falta / diasRestantes)
+                )} por dia para fechar a meta.`
+              : `Auditoria em ${PCT.format(p.pct)}% da meta. Faltam ${FMT.format(
+                  p.falta
+                )} evidências e o mês se encerrou — não há mais dia para recuperar.`,
+        }
+      : vBase;
 
   const exportarBriefingPng = useCallback(async () => {
     if (!painelBriefingRef.current || exportandoBriefing) return;
@@ -1242,7 +1266,9 @@ export function DashboardCop({
               meta={p.meta}
               ritmo={tendencia ? undefined : RITMO_GLOBAL_RESTANTE}
               turnosRestantes={tendencia ? undefined : TURNOS_RESTANTES_GLOBAL}
-              cartaoRitmo={tendencia ? <CaixaRitmos meta={p.meta} total={p.total} /> : undefined}
+              cartaoRitmo={tendencia ? <CartaoTrajetoria meta={p.meta} total={p.total} /> : undefined}
+              faixaRitmos={tendencia ? <FaixaRitmos meta={p.meta} total={p.total} /> : undefined}
+              marcaPosicao={tendencia ? `leitura atual ${PCT.format(p.pct)}%` : undefined}
               titulo={f.fracao === "todas" ? '16º BPM/M — "1º Ten PM Fernão"' : `Ritmo Operacional · ${ROTULO_SUBUNIDADE[f.fracao] ?? f.fracao}`}
               subtitulo={{
                 linha1: "META GLOBAL — 960 EVIDÊNCIAS",

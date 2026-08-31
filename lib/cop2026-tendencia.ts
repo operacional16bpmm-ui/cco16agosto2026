@@ -56,6 +56,21 @@ export const SUBTITULO_TRAJETORIA: Record<SituacaoTrajetoria, string> = {
   NAO_AFERIVEL: "Sem base de cálculo no período",
 };
 
+/**
+ * Cor da régua de TRAJETÓRIA. Fonte única, como o rótulo e o subtítulo — sem
+ * mapa de cor reinventado dentro de componente. Espelha a paleta institucional
+ * da régua de cumprimento (docs/cop2026-padroes-comando.md §2) porque a leitura
+ * do telão é a mesma: azul adiantado, verde no plano, âmbar atrasado, vermelho
+ * vivo em déficit severo.
+ */
+export const COR_TRAJETORIA: Record<SituacaoTrajetoria, string> = {
+  ADIANTADA: "#2563eb",
+  EM_TRAJETORIA: "#16a34a",
+  ATRASADA: "#d97706",
+  DEFICIT_SEVERO: "#ca0202",
+  NAO_AFERIVEL: "#64748b",
+};
+
 export type ClasseEquilibrio =
   | "EQUILIBRADO"
   | "ASSIMETRIA_MODERADA"

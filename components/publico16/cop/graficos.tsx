@@ -370,6 +370,8 @@ export function AgulhaoMetas({
   ritmo,
   turnosRestantes,
   cartaoRitmo,
+  faixaRitmos,
+  marcaPosicao,
   titulo = '16º BPM/M — "1º Ten PM Fernão"',
   subtitulo = {
     linha1: "META GLOBAL — 960 EVIDÊNCIAS",
@@ -384,6 +386,11 @@ export function AgulhaoMetas({
   turnosRestantes?: number;
   /** Substitui o cartao "Ritmo necessario". Sem ele, nada muda. */
   cartaoRitmo?: React.ReactNode;
+  /** Faixa em largura inteira sob as duas caixas — a comparacao de ritmos da
+   *  V3, que nao cabia dentro de um cartao de 130px. Sem ela, nada muda. */
+  faixaRitmos?: React.ReactNode;
+  /** Marca a leitura atual dentro do cartao ativo da regua de faixas. */
+  marcaPosicao?: string;
   titulo?: string;
   subtitulo?: string | { linha1: string; linha2?: string; linha3?: string };
 }) {
@@ -565,6 +572,8 @@ export function AgulhaoMetas({
         )}
       </div>
 
+      {faixaRitmos}
+
       {/* Linha horizontal de status — evidências + selo do estado atual, logo
           abaixo das duas caixas, pulsando na cor da faixa. */}
       <div className="relative z-10 mt-3 flex w-full max-w-[390px] flex-wrap items-center justify-center gap-2.5 border-t-2 border-slate-300 pt-3">
@@ -621,6 +630,11 @@ export function AgulhaoMetas({
               <span className="mt-1 block font-sans text-[10px] font-extrabold uppercase leading-tight tracking-[0.04em] sm:text-[10.5px]">
                 {SUBTITULO_NIVEL[f.nivel]}
               </span>
+              {ativo && marcaPosicao && (
+                <span className="dados mt-1 block font-sans text-[10px] font-black leading-tight tabular-nums">
+                  ▲ {marcaPosicao}
+                </span>
+              )}
             </div>
           );
         })}

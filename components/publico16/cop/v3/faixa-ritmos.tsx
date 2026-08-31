@@ -1,0 +1,203 @@
+"use client";
+
+import { calcularTendencia, progressoDoMes } from "@/lib/cop2026-tendencia";
+
+/**
+ * FAIXA DOS TRÊS RITMOS — a leitura comparativa que o cartão de 130px não
+ * comportava.
+ *
+ * O cartão TENDÊNCIA anterior imprimia ALVO 30,97 · REAL 20,33 · RECUPERAÇÃO
+ * 350,00 um sob o outro, no mesmo tamanho e sem escala comum: cabia ao leitor
+ * fazer a divisão de cabeça para saber que o ritmo praticado é dois terços do
+ * necessário, e nada dizia por que a recuperação é dez vezes maior que o alvo.
+ *
+ * Aqui ALVO e REAL dividem a MESMA régua — o alvo é a largura inteira, e o
+ * vazio ao fim da barra do real é exatamente o que falta por dia. A recuperação
+ * sai da régua de propósito: ela não é um terceiro ritmo comparável, é o preço
+ * do atraso, e aparece com a PRESSÃO (quantas vezes o ritmo normal) que a lib
+ * já calcula.
+ *
+ * Unidade: Batalhão POR DIA (docs/cop2026-padroes-comando.md §4 e a decisão do
+ * Maj PM em 31/08/2026). Nada aqui é fixo no código.
+ */
+
+const N2 = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const N0 = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 0 });
+const N1 = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 });
+
+const COR_ALVO = "#2563eb";
+const COR_REAL = "#d97706";
+const COR_RECUP = "#ca0202";
+
+function hojeSP() {
+  const p = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+  const [ano, mes, dia] = p.split("-").map(Number);
+  return { ano, mes, referencia: new Date(Date.UTC(ano, mes - 1, dia, 12)) };
+}
+
+/** Uma linha da régua: rótulo, glosa, barra na escala do alvo e o valor. */
+function Barra({
+  rotulo,
+  glosa,
+  valor,
+  pct,
+  cor,
+  tracejado,
+}: {
+  rotulo: string;
+  glosa: string;
+  valor: string;
+  pct: number;
+  cor: string;
+  /** Marca o trecho vazio como "o que falta", em vez de deixá-lo neutro. */
+  tracejado?: string;
+}) {
+  return (
+    <div className="flex w-full flex-col gap-1">
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="flex items-baseline gap-1.5">
+          <span
+            className="text-[9.5px] font-black uppercase tracking-[0.1em]"
+            style={{ color: cor }}
+          >
+            {rotulo}
+          </span>
+          <span className="text-[9.5px] font-semibold leading-none text-slate-500">{glosa}</span>
+        </span>
+        <span className="flex items-baseline gap-1">
+          <span
+            className="dados text-[17px] font-black leading-none tabular-nums"
+            style={{ color: cor }}
+          >
+            {valor}
+          </span>
+          <span className="text-[8.5px] font-bold text-slate-500">/dia</span>
+        </span>
+      </div>
+
+      <div className="relative h-[13px] w-full overflow-hidden rounded-[3px] border border-slate-300 bg-slate-100">
+        <div
+          className="absolute inset-y-0 left-0 rounded-r-[2px]"
+          style={{ width: `${Math.max(0, Math.min(100, pct))}%`, background: cor }}
+        />
+        {tracejado && (
+          <span className="absolute inset-y-0 right-1 flex items-center text-[8.5px] font-black uppercase tracking-wide text-slate-500">
+            {tracejado}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export function FaixaRitmos({ meta, total }: { meta: number; total: number }) {
+  const { ano, mes, referencia } = hojeSP();
+  const p = progressoDoMes(referencia, ano, mes);
+
+  const t = calcularTendencia({
+    meta,
+    realizado: total,
+    turnosMes: p.diasMes,
+    turnosDecorridos: p.diasDecorridos,
+  });
+
+  const alvo = t.ritmoAlvo;
+  const real = t.ritmoReal;
+  const pctReal = real === null || alvo <= 0 ? 0 : (real / alvo) * 100;
+  const faltaPorDia = real === null ? null : Math.max(0, alvo - real);
+  const diasRestantes = t.turnosRestantes;
+
+  return (
+    <div className="relative z-10 mt-3 w-full max-w-[390px] rounded-2xl border-2 border-slate-300 bg-white/95 px-3 py-2.5 shadow-[0_5px_14px_rgba(15,23,42,0.10)]">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5 border-b-2 border-slate-200 pb-1.5">
+        <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-800">
+          Tendência · ritmo diário
+        </span>
+        <span className="dados text-[9.5px] font-semibold text-slate-500">
+          dia {N0.format(p.diasDecorridos)} de {N0.format(p.diasMes)} ·{" "}
+          {diasRestantes === 0
+            ? "mês encerrado"
+            : `${N0.format(diasRestantes)} dia${diasRestantes === 1 ? "" : "s"} restante${diasRestantes === 1 ? "" : "s"}`}
+        </span>
+      </div>
+
+      <div className="mt-2 flex flex-col gap-2">
+        <Barra
+          rotulo="Alvo"
+          glosa="passo normal do mês"
+          valor={N2.format(alvo)}
+          pct={100}
+          cor={COR_ALVO}
+        />
+        <Barra
+          rotulo="Real"
+          glosa="praticado até aqui"
+          valor={real === null ? "—" : N2.format(real)}
+          pct={pctReal}
+          cor={COR_REAL}
+          tracejado={
+            faltaPorDia === null || faltaPorDia <= 0
+              ? undefined
+              : `falta ${N2.format(faltaPorDia)}`
+          }
+        />
+      </div>
+
+      <p className="mt-1.5 text-[10px] font-semibold leading-tight text-slate-600">
+        O ritmo praticado é{" "}
+        <span className="dados font-black" style={{ color: COR_REAL }}>
+          {t.aderencia === null ? "—" : `${N1.format(Math.min(pctReal, 999))}%`}
+        </span>{" "}
+        do alvo — mesma régua, mesma unidade.
+      </p>
+
+      {t.deficit > 0 && (
+        <div
+          className="mt-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 rounded-lg border-2 px-2.5 py-1.5"
+          style={{ borderColor: `color-mix(in srgb, ${COR_RECUP} 45%, white)`, background: "#fdf0f0" }}
+        >
+          <span
+            className="text-[9.5px] font-black uppercase tracking-[0.1em]"
+            style={{ color: COR_RECUP }}
+          >
+            Recuperação
+          </span>
+          {t.irrecuperavel ? (
+            <span className="text-[10px] font-bold text-slate-700">
+              sem dia restante · déficit final de{" "}
+              <span className="dados font-black" style={{ color: COR_RECUP }}>
+                {N0.format(t.deficit)}
+              </span>
+            </span>
+          ) : (
+            <span className="flex flex-wrap items-baseline justify-end gap-x-1.5 gap-y-0.5">
+              <span className="flex items-baseline gap-1">
+                <span
+                  className="dados text-[17px] font-black leading-none tabular-nums"
+                  style={{ color: COR_RECUP }}
+                >
+                  {N2.format(t.ritmoRecuperacao)}
+                </span>
+                <span className="text-[8.5px] font-bold text-slate-500">/dia</span>
+              </span>
+              {t.pressaoRecuperacao !== null && (
+                <span
+                  className="rounded-full border px-1.5 py-0.5 text-[9px] font-black tabular-nums"
+                  style={{ color: COR_RECUP, borderColor: COR_RECUP }}
+                  title="Quantas vezes a recuperação exige acima do ritmo normal"
+                >
+                  {N1.format(t.pressaoRecuperacao)}× o normal
+                </span>
+              )}
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

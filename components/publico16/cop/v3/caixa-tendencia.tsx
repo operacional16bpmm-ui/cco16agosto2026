@@ -123,6 +123,44 @@ const CORES_DISPERSAO: Record<string, string> = {
   SEM_BASE: "#64748b",
 };
 
+/**
+ * A torre de controle tem dezesseis colunas. Sem agrupamento elas viram uma
+ * parede de números: o leitor não sabe onde termina "quanto foi feito" e onde
+ * começa "isso está no prazo". Os quatro grupos abaixo respondem, na ordem,
+ * quatro perguntas — e a coluna SITUAÇÃO passou a viver dentro de TRAJETÓRIA,
+ * ao lado dos números que ela classifica, em vez de ficar no fim da linha.
+ *
+ * O cabeçalho de grupo é deliberadamente CINZA. Cor no painel é classificação
+ * (docs/cop2026-padroes-comando.md §2): pintar um grupo de verde sugeriria
+ * conformidade onde há apenas um rótulo de seção.
+ */
+const GRUPOS = [
+  { rotulo: "Produção", pergunta: "quanto foi feito", colunas: 3 },
+  { rotulo: "Ritmo por turno", pergunta: "em que passo", colunas: 4 },
+  { rotulo: "Trajetória", pergunta: "está no prazo?", colunas: 4 },
+  { rotulo: "Governança", pergunta: "quem auditou", colunas: 3 },
+] as const;
+
+const COLUNAS: { rotulo: string; inicio?: boolean; ajuda?: string }[] = [
+  { rotulo: "Peso", inicio: true, ajuda: "Cota da fração na Matriz Proporcional" },
+  { rotulo: "Meta", ajuda: "Evidências do mês inteiro" },
+  { rotulo: "Realizado", ajuda: "Evidências auditadas até aqui" },
+  { rotulo: "Alvo", inicio: true, ajuda: "Passo normal para fechar a meta do mês" },
+  { rotulo: "Real", ajuda: "Passo efetivamente praticado até aqui" },
+  { rotulo: "Recuperação", ajuda: "Passo necessário daqui em diante para zerar o déficit" },
+  { rotulo: "Pressão", ajuda: "Quantas vezes a recuperação exige acima do ritmo normal" },
+  { rotulo: "Saldo", inicio: true, ajuda: "Evidências acima (+) ou abaixo (−) do previsto até aqui" },
+  { rotulo: "Aderência", ajuda: "Realizado sobre o previsto até aqui" },
+  { rotulo: "Projeção", ajuda: "Onde a fração fecha o mês mantido o ritmo real" },
+  { rotulo: "Situação", ajuda: "Régua de trajetória — ortogonal à régua de cumprimento" },
+  { rotulo: "Regularidade", inicio: true, ajuda: "Produção distribuída ou lançada em lote" },
+  { rotulo: "Dispersão", ajuda: "Quanto do efetivo de fato auditou" },
+  { rotulo: "Quinzena", ajuda: "Participação do efetivo na 1ª e na 2ª quinzena" },
+];
+
+/** Fronteira visual entre grupos de coluna. */
+const SEP = "border-l-2 border-slate-300";
+
 const CORES_PRIORIDADE: Record<Prioridade, string> = {
   MAXIMA: "#ca0202",
   MUITO_ALTA: "#dc2626",
@@ -212,32 +250,42 @@ export function CaixaTendencia({
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1080px] border-collapse">
             <thead>
-              <tr className="bg-slate-50">
-                {[
-                  "Fração",
-                  "Peso",
-                  "Meta",
-                  "Realizado",
-                  "Alvo /turno",
-                  "Real /turno",
-                  "Recuperação",
-                  "Pressão",
-                  "Saldo traj.",
-                  "Aderência traj.",
-                  "Projeção",
-                  "Regularidade",
-                  "Dispersão",
-                  "Quinzena",
-                  "Situação",
-                  "Prioridade",
-                ].map((h, i) => (
+              <tr className="bg-slate-100">
+                <th
+                  rowSpan={2}
+                  className="dados border-y-2 border-slate-300 px-2.5 py-2 text-left text-[10px] font-black uppercase tracking-[0.08em] text-slate-600"
+                >
+                  Fração
+                </th>
+                {GRUPOS.map((g) => (
                   <th
-                    key={h}
-                    className={`dados border-y-2 border-slate-200 px-2.5 py-2.5 text-[10px] font-black uppercase tracking-[0.08em] text-slate-500 ${
-                      i === 0 ? "text-left" : "text-right"
+                    key={g.rotulo}
+                    colSpan={g.colunas}
+                    className={`dados border-y-2 border-slate-300 px-2.5 py-2 text-center text-[10px] font-black uppercase tracking-[0.14em] text-slate-600 ${SEP}`}
+                  >
+                    {g.rotulo}
+                    <span className="ml-1.5 font-bold normal-case tracking-normal text-slate-400">
+                      {g.pergunta}
+                    </span>
+                  </th>
+                ))}
+                <th
+                  rowSpan={2}
+                  className={`dados border-y-2 border-slate-300 px-2.5 py-2 text-right text-[10px] font-black uppercase tracking-[0.08em] text-slate-600 ${SEP}`}
+                >
+                  Ação
+                </th>
+              </tr>
+              <tr className="bg-slate-50">
+                {COLUNAS.map((c) => (
+                  <th
+                    key={c.rotulo}
+                    title={c.ajuda}
+                    className={`dados border-b-2 border-slate-200 px-2.5 py-2 text-right text-[10px] font-black uppercase tracking-[0.08em] text-slate-500 ${
+                      c.inicio ? SEP : ""
                     }`}
                   >
-                    {h}
+                    {c.rotulo}
                   </th>
                 ))}
               </tr>
@@ -256,18 +304,22 @@ export function CaixaTendencia({
                       </span>
                     )}
                   </td>
-                  <td className={`${celula} dados text-slate-600`}>
+
+                  {/* produção */}
+                  <td className={`${celula} ${SEP} dados text-slate-600`}>
                     {peso === undefined ? "—" : `${P1.format(peso)}%`}
                   </td>
                   <td className={`${celula} dados text-slate-700`}>{N0.format(f.meta)}</td>
                   <td className={`${celula} dados text-slate-700`}>{N0.format(f.feito)}</td>
-                  <td className={`${celula} dados font-bold text-slate-900`}>
+
+                  {/* ritmo por turno */}
+                  <td className={`${celula} ${SEP} dados font-bold`} style={{ color: COR.alvo }}>
                     {N2.format(t.ritmoAlvo)}
                   </td>
-                  <td className={`${celula} dados font-bold text-slate-900`}>
+                  <td className={`${celula} dados font-bold`} style={{ color: COR.real }}>
                     {t.ritmoReal === null ? "—" : N2.format(t.ritmoReal)}
                   </td>
-                  <td className={`${celula} dados font-bold text-slate-900`}>
+                  <td className={`${celula} dados font-bold`} style={{ color: COR.recuperacao }}>
                     {t.deficit === 0 || t.irrecuperavel ? "—" : N2.format(t.ritmoRecuperacao)}
                   </td>
                   <td
@@ -286,8 +338,10 @@ export function CaixaTendencia({
                       ? "—"
                       : `${N2.format(t.pressaoRecuperacao)}×`}
                   </td>
+
+                  {/* trajetória */}
                   <td
-                    className={`${celula} dados font-black`}
+                    className={`${celula} ${SEP} dados font-black`}
                     style={{ color: semBase ? "#64748b" : corSaldo(t.saldoTrajetoria) }}
                   >
                     {semBase ? "—" : sinal(t.saldoTrajetoria)}
@@ -295,10 +349,22 @@ export function CaixaTendencia({
                   <td className={`${celula} dados font-bold text-slate-900`}>
                     {t.aderencia === null ? "—" : `${P1.format(t.aderencia)}%`}
                   </td>
-                  <td className={`${celula} dados text-slate-600`}>
+                  <td
+                    className={`${celula} dados text-slate-600`}
+                    title={
+                      t.projecaoPct === null
+                        ? undefined
+                        : `${P1.format(t.projecaoPct)}% da meta, mantido o ritmo real`
+                    }
+                  >
                     {t.projecaoFechamento === null ? "—" : N0.format(t.projecaoFechamento)}
                   </td>
                   <td className="px-2.5 py-2.5 text-right">
+                    <Selo s={t.situacao} />
+                  </td>
+
+                  {/* governança */}
+                  <td className={`px-2.5 py-2.5 text-right ${SEP}`}>
                     <Marca
                       texto={ROTULO_REGULARIDADE[regularidade.classe]}
                       cor={CORES_REGULARIDADE[regularidade.classe]}
@@ -331,10 +397,9 @@ export function CaixaTendencia({
                       titulo="Participação do efetivo na 1ª e na 2ª quinzena"
                     />
                   </td>
-                  <td className="px-2.5 py-2.5 text-right">
-                    <Selo s={t.situacao} />
-                  </td>
-                  <td className="px-2.5 py-2.5 text-right">
+
+                  {/* ação */}
+                  <td className={`px-2.5 py-2.5 text-right ${SEP}`}>
                     <Marca
                       texto={ROTULO_PRIORIDADE[prioridade]}
                       cor={CORES_PRIORIDADE[prioridade]}
@@ -351,33 +416,36 @@ export function CaixaTendencia({
               <tr className="border-t-2 border-slate-400 bg-slate-50">
                 <td className="px-2.5 py-3 text-left text-[14px] font-black text-slate-900">
                   Batalhão
+                  <span className="ml-1 text-[9.5px] font-bold uppercase tracking-wide text-slate-500">
+                    /dia
+                  </span>
                 </td>
-                <td className={`${celula} dados font-black text-slate-700`}>100%</td>
+
+                <td className={`${celula} ${SEP} dados font-black text-slate-700`}>100%</td>
                 <td className={`${celula} dados font-black text-slate-900`}>
                   {N0.format(metaGlobal)}
                 </td>
                 <td className={`${celula} dados font-black text-slate-900`}>
                   {N0.format(feitoGlobal)}
                 </td>
-                <td className={`${celula} dados font-black text-slate-900`}>
+
+                <td className={`${celula} ${SEP} dados font-black`} style={{ color: COR.alvo }}>
                   {N2.format(btl.ritmoAlvo)}
-                  <span className="ml-0.5 text-[9px] font-bold text-slate-500">/dia</span>
                 </td>
-                <td className={`${celula} dados font-black text-slate-900`}>
+                <td className={`${celula} dados font-black`} style={{ color: COR.real }}>
                   {btl.ritmoReal === null ? "—" : N2.format(btl.ritmoReal)}
-                  <span className="ml-0.5 text-[9px] font-bold text-slate-500">/dia</span>
                 </td>
-                <td className={`${celula} dados font-black text-slate-900`}>
+                <td className={`${celula} dados font-black`} style={{ color: COR.recuperacao }}>
                   {btl.irrecuperavel ? "—" : N2.format(btl.ritmoRecuperacao)}
-                  <span className="ml-0.5 text-[9px] font-bold text-slate-500">/dia</span>
                 </td>
                 <td className={`${celula} dados font-black text-slate-700`}>
                   {btl.pressaoRecuperacao === null || btl.deficit === 0
                     ? "—"
                     : `${N2.format(btl.pressaoRecuperacao)}×`}
                 </td>
+
                 <td
-                  className={`${celula} dados font-black`}
+                  className={`${celula} ${SEP} dados font-black`}
                   style={{ color: semBase ? "#64748b" : corSaldo(btl.saldoTrajetoria) }}
                 >
                   {semBase ? "—" : sinal(btl.saldoTrajetoria)}
@@ -388,7 +456,11 @@ export function CaixaTendencia({
                 <td className={`${celula} dados font-black text-slate-700`}>
                   {btl.projecaoFechamento === null ? "—" : N0.format(btl.projecaoFechamento)}
                 </td>
-                <td colSpan={3} className="px-2.5 py-3 text-right">
+                <td className="px-2.5 py-3 text-right">
+                  <Selo s={btl.situacao} />
+                </td>
+
+                <td colSpan={3} className={`px-2.5 py-3 text-right ${SEP}`}>
                   {equilibrio.cv !== null && (
                     <Marca
                       texto={`Equilíbrio ${P1.format(equilibrio.cv * 100)}%`}
@@ -403,10 +475,8 @@ export function CaixaTendencia({
                     />
                   )}
                 </td>
-                <td className="px-2.5 py-3 text-right">
-                  <Selo s={btl.situacao} />
-                </td>
-                <td className="px-2.5 py-3 text-right">
+
+                <td className={`px-2.5 py-3 text-right ${SEP}`}>
                   <Marca
                     texto={ROTULO_PRIORIDADE[prioridadeAcao(btl)]}
                     cor={CORES_PRIORIDADE[prioridadeAcao(btl)]}
@@ -672,14 +742,37 @@ export function CaixaTendencia({
           </div>
         </div>
 
-        <p className="border-t border-slate-200 px-5 py-3 text-[12px] leading-relaxed text-slate-500 sm:px-6">
-          Ritmo da fração por turno de serviço — 2 por dia, inclusive o Estado-Maior, que cobre dia
-          e tarde por DEJEM; ritmo do Batalhão por dia. <strong>Pressão</strong> mostra quantas
-          vezes a recuperação exige acima do ritmo normal. <strong>Regularidade</strong> distingue
-          produção distribuída de lançamento em lote; <strong>dispersão</strong> mede quanto do
-          efetivo de fato auditou. Todos os valores são calculados a cada leitura — nenhum é fixo
-          no código.
-        </p>
+        <div className="grid grid-cols-1 gap-x-7 gap-y-2 border-t border-slate-200 px-5 py-3.5 text-[12px] leading-snug text-slate-500 sm:grid-cols-2 sm:px-6">
+          <p>
+            <strong className="font-black uppercase tracking-wide text-slate-700">Produção</strong>{" "}
+            — cota da fração na Matriz Proporcional, meta do mês e o que já foi auditado.
+          </p>
+          <p>
+            <strong className="font-black uppercase tracking-wide text-slate-700">
+              Ritmo por turno
+            </strong>{" "}
+            — <span style={{ color: COR.alvo }}>alvo</span> é o passo normal;{" "}
+            <span style={{ color: COR.real }}>real</span> é o praticado;{" "}
+            <span style={{ color: COR.recuperacao }}>recuperação</span> é o que resta fazer no tempo
+            que sobra, e <strong>pressão</strong> mostra quantas vezes isso está acima do normal. A
+            fração mede por turno de serviço — 2 por dia, inclusive o Estado-Maior, que cobre dia e
+            tarde por DEJEM; o Batalhão mede por dia.
+          </p>
+          <p>
+            <strong className="font-black uppercase tracking-wide text-slate-700">Trajetória</strong>{" "}
+            — responde se, a esta altura do mês, o resultado está no prazo. Régua própria
+            (ADIANTADA → EM TRAJETÓRIA → ATRASADA → DÉFICIT SEVERO), que não se confunde com a de
+            cumprimento da meta.
+          </p>
+          <p>
+            <strong className="font-black uppercase tracking-wide text-slate-700">Governança</strong>{" "}
+            — regularidade distingue produção distribuída de lançamento em lote; dispersão e
+            quinzena medem quanto do efetivo de fato auditou.
+          </p>
+          <p className="sm:col-span-2">
+            Todos os valores são calculados a cada leitura — nenhum é fixo no código.
+          </p>
+        </div>
       </div>
     </section>
   );

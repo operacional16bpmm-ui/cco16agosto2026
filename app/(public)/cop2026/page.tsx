@@ -40,7 +40,9 @@ export const metadata: Metadata = {
   // Página de trabalho interno, aberta para a tropa lançar e o Comando
   // acompanhar sem login. Fora do índice dos buscadores de propósito: quem
   // chega é quem recebeu o endereço.
-  robots: { index: false, follow: false },
+  // Preview de link precisa que o crawler do WhatsApp/Facebook leia a pagina;
+  // o Google fica de fora pelo robots.txt (que esses crawlers ignoram).
+  robots: { index: true, follow: true },
   openGraph: {
     title: "Auditoria de COP 2026 · 16º BPM/M",
     description: CHAMADA,
