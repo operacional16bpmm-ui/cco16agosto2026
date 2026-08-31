@@ -123,3 +123,68 @@ válido. O MCP da Vercel só enxerga o team `16bpmm/OCC`, que é o projeto errad
 
     node --test scripts/verificar-tendencia-cop.mjs scripts/verificar-indices-cop.mjs
     npx tsc --noEmit -p tsconfig.json
+
+---
+
+## 31/08/2026, à tarde — a V3 ficou legível (e o `robots.txt` voltou a existir)
+
+Pedido do Fabricio: *"preciso desses dados mais organizados visualmente, algo mais
+didático e comparativo, obedecendo rigorosamente os princípios já existentes"* —
+apontando o bloco `63,5% / Alvo / Real / Recuperação / Trajetória / faixas`.
+
+### O diagnóstico
+
+O cartão TENDÊNCIA empilhava **cinco grandezas heterogêneas em 130 px**: três
+ritmos, um saldo e um percentual, sem hierarquia e sem escala comum.
+
+- `Alvo 30,97/dia` e `Real 20,33/dia` eram dois números soltos — a razão entre
+  eles, que é a leitura que importa, ficava por conta da cabeça do leitor.
+- `Recuperação 350,00/dia` na mesma escala visual dos outros dois **parecia erro
+  de conta**. Não é: é o déficit inteiro espremido no único dia que resta.
+- `Trajetória −319 65,7%` no rodapé, sem dizer o que cada número era.
+
+### O que mudou (só na V3 — `/cop2026/dashboard` segue intocado)
+
+| Peça | Antes | Agora |
+|---|---|---|
+| `v3/cartao-trajetoria.tsx` | *(não existia)* | A aderência (**65,7%**) vira o par do cumprimento (**63,5%**) — as duas réguas ortogonais do §2 lado a lado, com selo, base de cálculo e saldo visíveis |
+| `v3/faixa-ritmos.tsx` | *(não existia)* | Alvo e Real na **mesma régua**: o alvo ocupa a barra inteira, o real ocupa a fração correspondente e o vazio ao fim é o que falta por dia. A recuperação sai da comparação e ganha a **pressão** (11,3× o normal) |
+| `v3/caixa-ritmos.tsx` | 3 ritmos + saldo + % num cartão | **Removido** — o conteúdo foi para as duas peças acima |
+| Régua de faixas | 4 cartões, o ativo pintado | O ativo passa a marcar `▲ leitura atual 63,5%` |
+| Faixa preta do topo | *"os 15 turnos previstos já foram cumpridos"* — com um dia de mês por correr | Conta o **calendário**: *"faltam 350 evidências em 1 dia"* |
+| Torre de controle (16 colunas) | parede de números | Agrupada por pergunta: **Produção** (quanto foi feito) · **Ritmo por turno** (em que passo) · **Trajetória** (está no prazo?) · **Governança** (quem auditou) · **Ação**. `SITUAÇÃO` mudou para o lado dos números que ela classifica |
+| `COR_TRAJETORIA` | mapa de cor dentro do componente | Passou para `lib/cop2026-tendencia.ts`, junto do rótulo e do subtítulo |
+
+Cabeçalho de grupo é **cinza de propósito**: no painel, cor é classificação
+(§2) — pintar um grupo de verde sugeriria conformidade onde há só um rótulo de
+seção.
+
+Motor de cálculo **intocado**, nenhuma faixa reclassificada, e toda a diferença
+continua vivendo em props opcionais (`tendencia`, `faixaRitmos`, `marcaPosicao`).
+
+### O achado do dia: o `/robots.txt` nunca existiu de fato
+
+O fix do preview de link do WhatsApp (feito de manhã) tirou a meta `noindex` da
+`/cop2026`, porque **o crawler do WhatsApp respeita `noindex` e recusa gerar o
+cartão**. A proteção contra buscador passou a depender do `robots.txt`.
+
+Só que o `matcher` do `proxy.ts` não excluía `robots.txt`: o arquivo caía no
+fail-closed do middleware e respondia **307 para o `/login`**. Medido nos três
+deployments no ar. Ou seja: `app/robots.ts` era **código morto** e a landing
+ficou indexável sem nada segurando o Google. Corrigido em `65a6efc`.
+
+### Armadilhas confirmadas nesta rodada
+
+- **`Error: fetch failed` do CLI nem sempre é o build morrendo.** Duas vezes o
+  CLI perdeu o *streaming* de log e imprimiu o erro enquanto o build seguia e
+  terminava **Ready** no servidor. O estado real vem da API (`vercel ls` /
+  `vercel inspect`), nunca do exit code do CLI.
+- **`--prod` não garante o alias.** Deployments ficaram `Ready` em *Production*
+  enquanto `portal-cco16.vercel.app` continuava servindo um deploy velho — sem o
+  ranking público e sem a V3 nova. Depois de todo deploy, **conferir o alias** e
+  promover (`vercel promote <url> --scope avertice`).
+- **`pkill -f 'PORT=3999'` mata a própria sessão SSH**, porque o padrão casa com
+  a linha de comando do shell remoto. Usar `fuser -k 3999/tcp`.
+- **A fonte da V3 é o `pc1`**, não o pc3: `~/deploy-cco16` do pc3 tem a V3 antiga
+  (323 linhas) e o `app/robots.ts`; o pc1 tem a V3 nova, o ranking público e
+  agora também o `robots.ts`. As duas linhas foram reunidas aqui.
