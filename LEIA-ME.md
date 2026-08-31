@@ -282,3 +282,56 @@ ficou indexável sem nada segurando o Google. Corrigido em `65a6efc`.
 - **A fonte da V3 é o `pc1`**, não o pc3: `~/deploy-cco16` do pc3 tem a V3 antiga
   (323 linhas) e o `app/robots.ts`; o pc1 tem a V3 nova, o ranking público e
   agora também o `robots.ts`. As duas linhas foram reunidas aqui.
+
+## Responsividade da V3 e as armadilhas de publicação — 31/08/2026 (tarde)
+
+### O painel abria com 1400px numa tela de 390px
+
+Medido antes: `documentElement.clientWidth` **390** contra `scrollWidth` **1402** —
+**1012px de rolagem horizontal**. Depois: **390 de 390**, zero elementos culpados. No
+desktop, de 4px para **1425 de 1425**.
+
+A causa não estava no CSS de nenhum cartão. A página da V3 embrulhava o painel num
+`<main className="flex flex-col gap-6">`; num container **flex-column** as margens
+automáticas do filho no eixo cruzado — o `mx-auto` do `div.max-w-[1400px]` — **cancelam o
+`align-self: stretch`** (CSS Flexbox §9.4.11). O bloco vira `fit-content`, que cresce até o
+min-content das tabelas, e o `max-w` passa a valer como `width`. O contrato completo das
+três regras está no cabeçalho de `components/publico16/cop/dashboard-cop.tsx`.
+
+Esse conserto já existia no commit `b0abbc6`, mas numa **linha de git divergente** que
+nunca foi publicada — veio para cá por `git cherry-pick -x`.
+
+### O cabeçalho ocupava a tela inteira do celular
+
+Segundo defeito, de organização e não de estouro: o `<header>` media **822px numa tela de
+844px**. Brasão (226px), bloco tipográfico (241px) e selo COP (192px) empilhavam em coluna
+com tamanho quase de desktop — a primeira tela do Comando era papel timbrado, sem um único
+indicador.
+
+Agora o container é `grid grid-cols-2` no breakpoint base: os dois emblemas dividem a
+primeira linha (`order-1` e `order-2`, reduzidos a `w-28`/`w-32`) e o título desce inteiro
+(`order-3 col-span-2`). **Cabeçalho: 822px → 534px.** Todo o `md:` foi preservado
+(`md:grid-cols-[220px_minmax(0,1fr)_220px]`, `md:order-none`, `md:col-span-1`), então o
+desktop é byte a byte o mesmo — conferido no ar: grade `220px 584px 220px` intacta.
+
+> O `<header>` é **compartilhado** com `/cop2026/dashboard`. A melhora vale para as duas
+> rotas, no mesmo critério do `b0abbc6`, que também corrigiu layout de produção de propósito.
+
+### Publicar: o que trava e como destravar
+
+1. **`git remote` para caminho de disco quebra o deploy.** O CLI lê os remotes para montar
+   o metadado de Git e `/mnt/hd1/...` não é URL de provedor. Remover antes de publicar.
+2. **`missing_files` prende UM arquivo para sempre.** Upload cortado deixa o SHA-1 daquele
+   arquivo envenenado no blob store: o CLI anuncia, a API nega, reenvia, nega de novo.
+   Retry nunca resolve. Ache o culpado com
+   `find . -type f -not -path './node_modules/*' -print0 | xargs -0 sha1sum | grep '^<sha>'`
+   e **mude os bytes** do arquivo — SHA novo, entrada podre fora do caminho.
+3. **O CLI mente:** `exit 0` com falha, `Internal Server Error` e `fetch failed` genéricos.
+   Só `--debug` mostra a resposta crua da API. E `fetch failed` **não** é o IPv6 até prova
+   em contrário: testar com `node -e "fetch('https://api.vercel.com/v2/user')"`.
+4. **Destacar o deploy do SSH com `setsid`.** O Tailscale perde a rota direta com o pc1 e
+   cai para relay DERP; cada `Connection reset by peer` matava o build junto.
+5. **Conferir se outra sessão está publicando:** `ps -eo pid,etime,cmd | grep vercel` e
+   `readlink /proc/<pid>/cwd`. Em 31/08 havia dois órfãos, um deles publicando código velho.
+
+---
