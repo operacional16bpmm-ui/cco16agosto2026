@@ -58,7 +58,7 @@ export default async function DashboardV3Page({
         tituloPagina="Dashboard V3 — Caixa Tendência"
       />
 
-      <main className="flex flex-col gap-6 pt-4 sm:pt-6">
+      <main className="pt-4 sm:pt-6">
         <DashboardCop
           lancamentos={lancamentos}
           metas={metas}

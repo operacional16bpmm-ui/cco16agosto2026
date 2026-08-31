@@ -10,11 +10,14 @@ export function PaletaComando({
   onSelecionarFracao,
   onSelecionarSemana,
   onExportarCsv,
+  className,
 }: {
   lancamentos: LancamentoCop[];
   onSelecionarFracao: (fracao: string) => void;
   onSelecionarSemana: (semana: string) => void;
   onExportarCsv: () => void;
+  /** Ajuste do gatilho no contexto de quem chama (ex.: `w-full` no celular). */
+  className?: string;
 }) {
   const [aberto, setAberto] = useState(false);
 
@@ -53,12 +56,12 @@ export function PaletaComando({
       <button
         type="button"
         onClick={() => setAberto(true)}
-        className="card-interativo flex items-center gap-2 rounded-lg border border-borda bg-tatico-super px-3 py-1.5 text-xs text-texto-suave shadow-xs transition-colors hover:border-vermelho/50 hover:text-branco"
+        className={`card-interativo flex min-w-0 max-w-full items-center gap-2 rounded-lg border border-borda bg-tatico-super px-3 py-1.5 text-xs text-texto-suave shadow-xs transition-colors hover:border-vermelho/50 hover:text-branco ${className ?? ""}`}
         title="Busca rápida (Ctrl + K)"
       >
-        <Search className="h-3.5 w-3.5 text-vermelho" />
-        <span className="font-medium">Buscar RE, Auditor ou Fração...</span>
-        <kbd className="dados rounded bg-branco/10 px-1.5 py-0.5 text-[10px] font-bold text-branco/70">
+        <Search className="h-3.5 w-3.5 shrink-0 text-vermelho" />
+        <span className="truncate font-medium">Buscar RE, Auditor ou Fração...</span>
+        <kbd className="dados shrink-0 rounded bg-branco/10 px-1.5 py-0.5 text-[10px] font-bold text-branco/70">
           Ctrl K
         </kbd>
       </button>

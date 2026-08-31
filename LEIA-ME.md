@@ -96,6 +96,45 @@ maior resto) existe para o dia em que os pesos mudarem.
 
 ---
 
+## Layout responsivo — 31/08/2026
+
+O painel da v3 abria com **1400px de largura numa tela de 375px**. A causa não
+estava no CSS de nenhum cartão:
+
+`app/(public)/cop2026/dashboard/v3/page.tsx` embrulhava o painel num
+`<main className="flex flex-col gap-6">`. Num container **flex-column**, as
+margens automáticas do filho no eixo cruzado — o `mx-auto` do
+`div.mx-auto.max-w-[1400px]` — **cancelam o `align-self: stretch`** (CSS Flexbox
+§9.4.11). O bloco deixa de valer a largura do pai e passa a `fit-content`, que
+cresce até o **min-content**; o `max-w-[1400px]` virou, na prática, `width`.
+A produção sempre usou `<main className="pt-4 sm:pt-6">`; a v3 voltou a ser
+igual.
+
+Com isso resolvido, apareceu o segundo estouro: `<CaixaTendencia>` entra como
+**item de grid** com `overflow: visible`, então seu `min-width: auto` vale o
+min-content dela — as tabelas de `min-w-[1080px]`. A trilha do grid ia a 1261px.
+O irmão do lado já carregava `min-w-0` pelo mesmo motivo; o envoltório da caixa
+passou a carregar também.
+
+### O que mais estava quebrado (valia para a produção junto)
+
+| Onde | Sintoma medido | Correção |
+|---|---|---|
+| Barra de filtros, celular | gatilho da busca (281px, `shrink-0`) esmagava o carrossel de semanas a **0px** e empurrava "Filtros" **19px para fora da tela** | duas linhas: busca + gaveta em cima, semanas embaixo com sangria até a borda |
+| Barra de filtros, desktop | em 1440px o único item flexível era a busca, e o rótulo quebrava em **quatro linhas** | `flex-wrap` na linha; quem não cabe desce inteiro em vez de ser comprimido |
+| Faixa de situação, celular | `ml-[18%] w-[82%]` deixava ~150px de coluna e o título saía em **nove linhas** | empilha e usa a largura toda até `sm`; o recuo percentual volta a partir daí |
+| Botão de exportar PNG | `lg:right-[-70px]` só cabe acima de ~1535px de viewport; abaixo disso criava **rolagem horizontal (38px em 1440)** | deslocamento igual ao padding do container (14/20px) e os −70px só a partir de 1560px |
+| Botão de exportar PNG | `z-30` empatava com a barra grudada e, por vir depois no DOM, **cobria o botão "Filtros"** ao rolar | `z-20` |
+
+Medição final, com `document.documentElement.scrollWidth`: **375 de 375** no
+celular e **1425 de 1425** no desktop — zero rolagem horizontal nos dois.
+
+`PaletaComando` ganhou uma prop `className` opcional. O `w-full` do gatilho é
+decisão de quem chama: na v2 ela é filha direta de uma linha flex, e ali
+`w-full` valeria 100% do **container**, comendo a linha inteira.
+
+---
+
 ## Armadilhas de operação
 
 **IPv6 quebrado no provedor.** Falha em 0,015 s; o `curl` funcionava porque caía

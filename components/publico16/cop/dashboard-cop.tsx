@@ -843,26 +843,53 @@ export function DashboardCop({
       {/* ---------------- BARRA DE FILTROS RESPONSIVA SÊNIOR ---------------- */}
       <div className="nao-imprime sticky top-[73px] sm:top-[89px] z-30 -mx-3.5 sm:-mx-5 mb-6 border-b-2 border-slate-300/80 bg-white/95 px-3.5 sm:px-5 py-2.5 backdrop-blur-md shadow-sm transition-all">
         
-        {/* MOBILE (linha única 48px, carrossel de semanas e gaveta tática) */}
-        <div className="flex items-center justify-between gap-2 lg:hidden">
-          {/* Busca Rápida */}
-          <div className="shrink-0">
-            <PaletaComando
-              lancamentos={lancamentos}
-              onSelecionarFracao={(fracao) => {
-                definir({ fracao });
-                toast.info(`Filtro aplicado: ${ROTULO_SUBUNIDADE[fracao] ?? fracao}`);
-              }}
-              onSelecionarSemana={(semana) => {
-                definir({ semana });
-                toast.info(`Filtro aplicado: Semana ${semana}`);
-              }}
-              onExportarCsv={baixarLancamentosCsv}
-            />
+        {/* MOBILE — duas linhas. Em linha única o gatilho da busca (281px,
+            indivisível) esmagava o carrossel de semanas a 0px e empurrava o
+            botão "Filtros" para fora da tela em telas de 375px. */}
+        <div className="flex flex-col gap-2 lg:hidden">
+          <div className="flex items-center gap-2">
+            {/* Busca Rápida */}
+            <div className="min-w-0 flex-1">
+              <PaletaComando
+                className="w-full"
+                lancamentos={lancamentos}
+                onSelecionarFracao={(fracao) => {
+                  definir({ fracao });
+                  toast.info(`Filtro aplicado: ${ROTULO_SUBUNIDADE[fracao] ?? fracao}`);
+                }}
+                onSelecionarSemana={(semana) => {
+                  definir({ semana });
+                  toast.info(`Filtro aplicado: Semana ${semana}`);
+                }}
+                onExportarCsv={baixarLancamentosCsv}
+              />
+            </div>
+
+            {/* Botão Gaveta de Filtros */}
+            <button
+              type="button"
+              onClick={() => setGavetaFiltrosAberta(true)}
+              className={cn(
+                "relative shrink-0 inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all",
+                totalFiltrosAtivos > 0
+                  ? "border-vermelho bg-vermelho/10 text-vermelho shadow-xs"
+                  : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
+              )}
+              aria-label="Abrir filtros avançados"
+            >
+              <SlidersHorizontal size={14} />
+              <span>Filtros</span>
+              {totalFiltrosAtivos > 0 && (
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-vermelho text-[10px] font-black text-white">
+                  {totalFiltrosAtivos}
+                </span>
+              )}
+            </button>
           </div>
 
-          {/* Pílulas Rápidas de Semanas (Scroll Horizontal Suave) */}
-          <div className="flex flex-1 items-center gap-1.5 overflow-x-auto py-0.5 scrollbar-none">
+          {/* Pílulas Rápidas de Semanas (Scroll Horizontal Suave) — sangram até
+              a borda da barra para o carrossel ter para onde correr. */}
+          <div className="-mx-3.5 flex items-center gap-1.5 overflow-x-auto px-3.5 py-0.5 scrollbar-none">
             {[
               { id: "todas", label: "Mês" },
               { id: "1", label: "Sem 1" },
@@ -888,48 +915,29 @@ export function DashboardCop({
               );
             })}
           </div>
-
-          {/* Botão Gaveta de Filtros */}
-          <button
-            type="button"
-            onClick={() => setGavetaFiltrosAberta(true)}
-            className={cn(
-              "relative shrink-0 inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all",
-              totalFiltrosAtivos > 0
-                ? "border-vermelho bg-vermelho/10 text-vermelho shadow-xs"
-                : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
-            )}
-            aria-label="Abrir filtros avançados"
-          >
-            <SlidersHorizontal size={14} />
-            <span>Filtros</span>
-            {totalFiltrosAtivos > 0 && (
-              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-vermelho text-[10px] font-black text-white">
-                {totalFiltrosAtivos}
-              </span>
-            )}
-          </button>
         </div>
 
         {/* DESKTOP (Linha completa e espaçosa) */}
-        <div className="hidden lg:flex items-center justify-between gap-3 text-xs sm:text-sm">
-          <div className="flex items-center gap-2">
+        <div className="hidden lg:flex flex-wrap items-center justify-between gap-3 text-xs sm:text-sm">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1.5 font-bold uppercase tracking-wider text-slate-600 text-xs">
               <Filter size={14} aria-hidden /> Recorte:
             </span>
 
-            <PaletaComando
-              lancamentos={lancamentos}
-              onSelecionarFracao={(fracao) => {
-                definir({ fracao });
-                toast.info(`Filtro aplicado: ${ROTULO_SUBUNIDADE[fracao] ?? fracao}`);
-              }}
-              onSelecionarSemana={(semana) => {
-                definir({ semana });
-                toast.info(`Filtro aplicado: Semana ${semana}`);
-              }}
-              onExportarCsv={baixarLancamentosCsv}
-            />
+            <div className="shrink-0">
+              <PaletaComando
+                lancamentos={lancamentos}
+                onSelecionarFracao={(fracao) => {
+                  definir({ fracao });
+                  toast.info(`Filtro aplicado: ${ROTULO_SUBUNIDADE[fracao] ?? fracao}`);
+                }}
+                onSelecionarSemana={(semana) => {
+                  definir({ semana });
+                  toast.info(`Filtro aplicado: Semana ${semana}`);
+                }}
+                onExportarCsv={baixarLancamentosCsv}
+              />
+            </div>
 
             <select
               value={f.fracao}
@@ -1001,7 +1009,7 @@ export function DashboardCop({
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <button
               type="button"
               onClick={atualizar}
@@ -1241,7 +1249,7 @@ export function DashboardCop({
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#050c1a]/92 via-[#071225]/80 to-[#071225]/88" />
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-[#ca0202]/20" />
 
-            <div className="relative z-10 ml-[18%] flex w-[82%] flex-wrap items-center gap-3.5 pr-4 md:ml-[24%] md:w-[76%] lg:ml-[22%] lg:w-[76%]">
+            <div className="relative z-10 flex w-full flex-col items-start gap-2.5 pr-14 sm:ml-[18%] sm:w-[82%] sm:flex-row sm:flex-wrap sm:items-center sm:gap-3.5 sm:pr-4 md:ml-[24%] md:w-[76%] lg:ml-[22%] lg:w-[76%]">
               <Selo nivel={v.nivel} />
               <div className="min-w-0 flex-1 px-1 py-1 text-white">
                 <p className="font-serif text-lg font-black leading-snug text-white drop-shadow-[0_2px_5px_rgba(0,0,0,0.65)] sm:text-xl">{v.titulo}</p>
@@ -1326,7 +1334,7 @@ export function DashboardCop({
           {/* Detalhamento da TENDENCIA por fracao — posicao definida pelo
               Comando: abaixo da barra-resumo e acima da camada semanal. */}
           {tendencia && (
-            <div className="lg:col-span-12">
+            <div className="min-w-0 lg:col-span-12">
               <CaixaTendencia
                 fracoes={p.fracoes}
                 auditoresPorQuinzena={auditoresPorQuinzena}
@@ -1341,7 +1349,7 @@ export function DashboardCop({
             data-no-briefing="true"
             aria-label="Exportar painel completo (situação + semanal) em PNG"
             title="Exportar painel completo em PNG"
-            className="group absolute right-[-16px] top-3 z-30 flex h-14 w-14 items-center justify-center rounded-full border-2 border-white bg-[#ca0202] text-white shadow-[0_10px_24px_rgba(202,2,2,0.38)] transition-all duration-300 hover:scale-110 hover:bg-[#a80000] hover:shadow-[0_14px_30px_rgba(202,2,2,0.48)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ca0202] disabled:cursor-wait disabled:opacity-80 lg:right-[-70px] lg:top-5"
+            className="group absolute right-[-14px] top-3 z-20 flex h-14 w-14 sm:right-[-20px] items-center justify-center rounded-full border-2 border-white bg-[#ca0202] text-white shadow-[0_10px_24px_rgba(202,2,2,0.38)] transition-all duration-300 hover:scale-110 hover:bg-[#a80000] hover:shadow-[0_14px_30px_rgba(202,2,2,0.48)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ca0202] disabled:cursor-wait disabled:opacity-80 lg:top-5 min-[1560px]:right-[-70px]"
           >
             {exportandoBriefing ? (
               <Loader2 size={20} className="animate-spin" aria-hidden="true" />
