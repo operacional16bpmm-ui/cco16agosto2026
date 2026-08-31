@@ -21,7 +21,6 @@ import { FaixaCreditos } from "@/components/publico16/creditos";
 import { URL_FORMULARIO, URL_PLANILHA } from "@/lib/cop2026";
 import { lerAuditoriaCop2026 } from "@/lib/cop2026-leitura";
 import { calcularPainel, FILTROS_VAZIOS } from "@/lib/cop2026-metricas";
-import { RankingFracoesPublico } from "@/components/publico16/cop/ranking-fracoes-publico";
 import { QuadroRankingCias } from "@/components/publico16/cop/quadro-ranking-cias";
 
 // Nenhuma fonte é carregada aqui: Cinzel (títulos), Inter (corpo) e IBM Plex
@@ -122,30 +121,20 @@ async function BlocoPlanilhaAoVivo() {
 }
 
 /**
- * Espelho público do progresso por fração, pedido pelo Comando para a tropa ver
- * a posição da própria companhia na hora de lançar. Componente async próprio,
- * dentro de <Suspense> pelo mesmo motivo do bloco da planilha: a leitura do
- * Google não pode segurar o hero.
- *
- * Quadro completo do mês, sem recorte — com filtro de datas `calcularPainel`
- * ratearia a meta de 960 proporcionalmente.
- */
-async function RankingAoVivo() {
-  const { lancamentos, metas } = await lerAuditoriaCop2026();
-  const painel = calcularPainel(lancamentos, metas, FILTROS_VAZIOS);
-  return <RankingFracoesPublico fracoes={painel.fracoes} />;
-}
-
-/**
- * O mesmo quadro de frações, agora como ponto 08 da Diretriz em Foco — pedido
+ * Posição das frações, ponto 08 da Diretriz em Foco — pedido
  * do Comando para que quem lê o bloco normativo veja, no mesmo fôlego, onde a
  * própria fração está. Os sete primeiros pontos são texto da Diretriz; este é
  * o único que fala do agora.
  *
- * Suspense próprio, como o espelho do hero e o bloco da planilha: os sete
- * quadros normativos chegam na hora e só este espera o Google. E a leitura não
- * custa uma segunda ida ao Google — `lerAuditoriaCop2026` serve do retrato em
- * memória, compartilhado com os outros dois blocos ao vivo.
+ * Este é o único lugar da página onde a posição das frações aparece. Houve um
+ * espelho branco do mesmo ranking dentro do hero (`ranking-fracoes-publico`);
+ * saiu quando o quadro 08 entrou, porque o mesmo dado duas vezes na mesma tela
+ * só divide a atenção de quem lê.
+ *
+ * Suspense próprio, como o bloco da planilha: os sete quadros normativos chegam
+ * na hora e só este espera o Google. E a leitura não custa uma segunda ida ao
+ * Google — `lerAuditoriaCop2026` serve do retrato em memória, compartilhado com
+ * o bloco da planilha.
  */
 async function QuadroRankingCiasAoVivo() {
   const { lancamentos, metas } = await lerAuditoriaCop2026();
@@ -346,10 +335,6 @@ export default function Cop2026Page() {
               </div>
             ))}
           </dl>
-
-          <Suspense fallback={null}>
-            <RankingAoVivo />
-          </Suspense>
         </div>
       </section>
 

@@ -54,9 +54,10 @@ export function QuadroRankingCias({
   // desempenho, então reordena aqui em vez de pedir outra derivação à lib.
   const ordenadas = [...linhas].sort((a, b) => b.pct - a.pct);
   const lider = ordenadas[0];
-  // A última colocada, e não a de maior déficit: é a regra do espelho público
-  // do hero (`ranking-fracoes-publico`). Dois blocos da mesma página cobrando
-  // frações diferentes na mesma frase seria contradição na cara do Comando.
+  // A última colocada, e não a de maior déficit — é quem o Comando cobra. Regra
+  // herdada do espelho branco que ficava no hero até 31/08/2026: enquanto os
+  // dois blocos conviveram, cada um apontando uma fração diferente na mesma
+  // frase, era contradição na cara de quem lia.
   const ultima = ordenadas.length > 1 ? ordenadas[ordenadas.length - 1] : undefined;
   const nivelBatalhao: Nivel =
     pctBatalhao === undefined
