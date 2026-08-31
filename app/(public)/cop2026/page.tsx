@@ -22,6 +22,7 @@ import { URL_FORMULARIO, URL_PLANILHA } from "@/lib/cop2026";
 import { lerAuditoriaCop2026 } from "@/lib/cop2026-leitura";
 import { calcularPainel, FILTROS_VAZIOS } from "@/lib/cop2026-metricas";
 import { RankingFracoesPublico } from "@/components/publico16/cop/ranking-fracoes-publico";
+import { QuadroRankingCias } from "@/components/publico16/cop/quadro-ranking-cias";
 
 // Nenhuma fonte é carregada aqui: Cinzel (títulos), Inter (corpo) e IBM Plex
 // Mono (números) já vêm do layout raiz e valem para o portal inteiro. Esta
@@ -133,6 +134,26 @@ async function RankingAoVivo() {
   const { lancamentos, metas } = await lerAuditoriaCop2026();
   const painel = calcularPainel(lancamentos, metas, FILTROS_VAZIOS);
   return <RankingFracoesPublico fracoes={painel.fracoes} />;
+}
+
+/**
+ * O mesmo quadro de frações, agora como ponto 08 da Diretriz em Foco — pedido
+ * do Comando para que quem lê o bloco normativo veja, no mesmo fôlego, onde a
+ * própria fração está. Os sete primeiros pontos são texto da Diretriz; este é
+ * o único que fala do agora.
+ *
+ * Suspense próprio, como o espelho do hero e o bloco da planilha: os sete
+ * quadros normativos chegam na hora e só este espera o Google. E a leitura não
+ * custa uma segunda ida ao Google — `lerAuditoriaCop2026` serve do retrato em
+ * memória, compartilhado com os outros dois blocos ao vivo.
+ */
+async function QuadroRankingCiasAoVivo() {
+  const { lancamentos, metas } = await lerAuditoriaCop2026();
+  const painel = calcularPainel(lancamentos, metas, FILTROS_VAZIOS);
+  // Sem nenhum lançamento lido, o quadro fica no próprio esqueleto em vez de
+  // anunciar 0% para as seis frações.
+  if (painel.totalNaPlanilha === 0) return <QuadroRankingCias />;
+  return <QuadroRankingCias linhas={painel.fracoes} pctBatalhao={painel.pct} />;
 }
 
 export default function Cop2026Page() {
@@ -332,7 +353,13 @@ export default function Cop2026Page() {
         </div>
       </section>
 
-      <DiretrizEmFoco />
+      <DiretrizEmFoco
+        quadro8={
+          <Suspense fallback={<QuadroRankingCias />}>
+            <QuadroRankingCiasAoVivo />
+          </Suspense>
+        }
+      />
 
       <AcessoRapido urlFormulario={URL_FORMULARIO} urlPlanilha={URL_PLANILHA} />
 

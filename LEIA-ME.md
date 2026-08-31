@@ -6,6 +6,61 @@ QR Code da tropa; o resto fica atrás de login Google + lista de autorizados.
 
 ---
 
+## O que foi feito em 31/08/2026 — Quadro 08 da Diretriz em Foco
+
+### O pedido
+
+O bloco **Registro Operacional · Governança da Auditoria de COP** terminava no
+ponto 07. O Comando pediu a posição das frações **dentro do próprio bloco**, como
+oitavo quadro — quem lê os pontos normativos vê, no mesmo fôlego, onde a sua
+companhia está.
+
+### O que entrou
+
+`components/publico16/cop/quadro-ranking-cias.tsx` — o quadro 08, com a casca dos
+sete anteriores: mesma moldura `#1d2c46`, número em `#e5d332`, Cinzel no título,
+IBM Plex Mono nos números, foto sob gradiente. O que muda é só o miolo: no lugar
+da frase normativa, as seis frações ordenadas por cumprimento, a barra de cada
+uma, o `feito/meta`, o que falta e o percentual do Batalhão no canto.
+
+As cores das barras **não** são as `--sinal-*` de `globals.css`: aquelas foram
+calibradas para o branco do dashboard (`#1c7a4a`, `#b3261e`) e somem sobre o azul
+do bloco. A régua é a mesma (azul >100%, verde 80–100%, âmbar 50–80%, vermelho
+<50%), com a luminosidade corrigida para fundo escuro.
+
+### Duas decisões que valem a leitura
+
+**Entra por slot, não por prop de dados.** `DiretrizEmFoco` recebe `quadro8?:
+ReactNode`. O motivo é o briefing: ele é `"use client"` e também renderiza o
+bloco, então um import de `lib/cop2026-leitura` (que usa `after` do next/server)
+lá dentro derrubaria o build inteiro. Quem tem servidor passa o quadro pronto;
+quem não tem, mostra os sete quadros normativos e nada mais.
+
+**A frase de fecho aponta a última colocada, não a de maior déficit** — é a regra
+do espelho público do hero (`ranking-fracoes-publico`). Dois blocos da mesma
+página cobrando frações diferentes na mesma frase seria contradição na cara do
+Comando.
+
+Os números saem de `calcularPainel` com `FILTROS_VAZIOS`, o mesmo do Dashboard,
+dentro de `<Suspense>` próprio: os sete quadros normativos chegam na hora e só
+este espera o Google. A leitura não custa uma segunda ida à planilha —
+`lerAuditoriaCop2026` serve do retrato em memória, compartilhado com o espelho do
+hero e o bloco da planilha.
+
+### Conferido em produção
+
+Deployment `portal-cco16-dnk7mfku7`, alias `portal-cco16.vercel.app`. Quadros 01
+a 08 na página, o espelho branco do hero intacto, e o quadro 08 batendo com o
+painel: 64,2% do Batalhão, FT 289/147 (meta batida), EM 36/48, 1ª 84/195, 4ª
+74/180, 3ª 72/210, 2ª 61/180.
+
+> **Nota de fonte.** A cópia viva do portal é **esta**, em
+> `pc1:/home/pc1/_workspace/pmesp/portal-cco16`. A pasta `pc3:~/deploy-cco16`
+> ficou para trás: não tem o `ranking-fracoes-publico` que está no ar desde hoje,
+> e publicar de lá apaga o espelho do hero.
+
+---
+
 ## O que foi feito em 31/08/2026 — Caixa TENDÊNCIA (v3)
 
 ### O problema

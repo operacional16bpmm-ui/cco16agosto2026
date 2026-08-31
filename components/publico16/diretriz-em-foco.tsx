@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 const PONTOS_DIRETRIZ = [
   {
@@ -51,9 +52,19 @@ const PONTOS_DIRETRIZ = [
 export function DiretrizEmFoco({
   hrefBase = "#diretriz-pdf",
   variante = "home",
+  quadro8,
 }: {
   hrefBase?: string;
   variante?: "home" | "briefing";
+  /**
+   * Quadro 08 — o único que traz número da planilha em vez de texto da
+   * Diretriz. Entra por slot, e não por prop de dados, porque este componente
+   * também é renderizado de dentro do briefing, que é "use client": um import
+   * de lib/cop2026-leitura aqui (que usa `after` do next/server) derrubaria o
+   * build inteiro. Quem tem servidor passa o quadro pronto; quem não tem,
+   * mostra os sete quadros normativos e nada mais.
+   */
+  quadro8?: ReactNode;
 }) {
   const espac = variante === "briefing" ? "my-0" : "my-10";
   return (
@@ -120,6 +131,7 @@ export function DiretrizEmFoco({
                   </div>
                 </div>
               ))}
+              {quadro8}
             </div>
           </div>
         </Link>
