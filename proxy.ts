@@ -111,6 +111,13 @@ export async function proxy(request: NextRequest) {
        lib/db/cop2026-autorizados.ts. */
     const acesso = await verificarAssinaturaAcesso(request.cookies.get(COOKIE_ACESSO_COP)?.value);
     if (acesso) return NextResponse.next();
+    /* Rota de API não pode levar redirect para tela de login: o fetch seguiria
+       o 307 e o cliente receberia HTML no lugar do arquivo, com status 200 —
+       falha que se parece com sucesso. 401 seco deixa o botão saber que a
+       sessão caiu. */
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json({ erro: "Sessão da COP expirada." }, { status: 401 });
+    }
     const url = request.nextUrl.clone();
     url.pathname = ROTA_ACESSO_COP;
     url.search = "";

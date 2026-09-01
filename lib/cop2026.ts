@@ -262,6 +262,114 @@ function ehSim(valor: string): boolean {
 }
 
 /**
+ * Tira CPF do texto que o auditor colou no campo de ID.
+ *
+ * A tela "Visão geral" da plataforma Motorola identifica o dono da câmera como
+ * `13934852785 (SOLDADO PM 231936 FABRICIO -16BPMM)`: os 11 dígitos da frente
+ * são CPF. Quem copia esse bloco cola o CPF de um TERCEIRO — o operador da
+ * câmera, que quase nunca é o próprio auditor. Medido na planilha em
+ * 31/08/2026: 31 células com CPF, de 16 pessoas distintas, todas nas seis
+ * colunas de ID e em nenhuma outra.
+ *
+ * Daqui o dado seguia para a tabela do painel, para o relatório impresso e para
+ * o CSV que `lancamentosParaCsv` descreve como "anexo de processo" — dado
+ * pessoal de terceiro em peça disciplinar.
+ *
+ * Por que exatamente 11 dígitos, e não `\d{11,}`: o identificador de página da
+ * plataforma (`/app/videos/4710984476/info`) tem 10 dígitos, e os números
+ * soltos que a tropa cola no lugar do ID têm de 12 a 15. Um intervalo aberto
+ * apagaria justamente o lixo que o Comando precisa enxergar para cobrar a
+ * correção na planilha.
+ *
+ * O que sobra na tela é `260823 - [CPF removido]`: o Comando continua vendo que
+ * aquela célula está errada e mandando corrigir, sem que o CPF trafegue junto.
+ */
+export function redigirCpf(texto: string): string {
+  return String(texto ?? "").replace(/(?<!\d)\d{11}(?!\d)/g, "[CPF removido]");
+}
+
+// ---------------------------------------------------------------------------
+// Identificadores da plataforma Motorola
+// ---------------------------------------------------------------------------
+
+/**
+ * A tela "Visão geral" da plataforma expõe TRÊS identificadores da mesma
+ * gravação, e a pergunta do formulário ("ID da midia/gravacao") aceita
+ * qualquer um dos três — mais o que não é nenhum deles:
+ *
+ *   ID da mídia    044f5fd643c7401b06503db90c67a3dc      32 hex, sem hífen
+ *   ID da gravação 2df795bc-e91e-41ce-819e-95e0f88f0ab6  UUID, com hífen
+ *   ID de página   /app/videos/3946270937/info           numérico, na URL
+ *
+ * Levantamento do que a tropa realmente colou em agosto/2026 (471 células):
+ * 42,0% ID da mídia · 6,6% ID da gravação · 2,5% URL inteira · 43,1% número
+ * solto que não é identificador de nada · 5,7% outros. Só 48,6% do que está
+ * gravado como "evidência" resolve para um objeto da plataforma.
+ *
+ * ATENÇÃO — nunca remover o hífen ao normalizar: um UUID sem hífen também tem
+ * 32 caracteres hexadecimais, e o hífen é o ÚNICO discriminador entre os dois
+ * identificadores. Conferido nos dados: dos 198 valores de 32 hex, só 3 (1,5%)
+ * casam com o padrão de UUID v4 — exatamente a taxa do acaso, ou seja, são ID
+ * de mídia de verdade e não UUID com o hífen removido.
+ */
+export type TipoIdentificador = "midia" | "gravacao" | "pagina" | "desconhecido";
+
+const RE_MIDIA = /^[0-9a-f]{32}$/i;
+const RE_GRAVACAO = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const RE_URL_COP = /cop\.pmesp\.br\.evm\.online\/app\/videos\/(\d+)/i;
+
+/** Tira espaço, zero-width e NBSP — que vêm junto na colagem do navegador — e
+ *  baixa a caixa. O hífen FICA: ver o aviso acima. Os invisíveis vão por
+ *  escape de propósito — literal aqui é caractere que ninguém enxerga na
+ *  revisão do código. */
+export function normalizarIdentificador(bruto: string): string {
+  return String(bruto ?? "")
+    .replace(/[\s\u200B-\u200D\uFEFF\u00A0]/g, "")
+    .toLowerCase();
+}
+
+/**
+ * Classifica UM valor colado. A URL é reconhecida antes dos demais porque
+ * carrega o ID de página dentro dela — e, em 11 das 12 URLs coladas em agosto,
+ * o fragmento `#:~:text=` ainda trazia o ID da mídia de brinde.
+ */
+export function classificarIdentificador(bruto: string): {
+  tipo: TipoIdentificador;
+  valor: string;
+} {
+  const v = normalizarIdentificador(bruto);
+  if (!v) return { tipo: "desconhecido", valor: "" };
+
+  const url = v.match(RE_URL_COP);
+  if (url) {
+    // Dentro da URL pode vir o ID da mídia no fragmento de texto destacado;
+    // quando vem, ele vale mais que o número da página, que é volátil.
+    const embutido = v.match(/[0-9a-f]{32}/i);
+    if (embutido) return { tipo: "midia", valor: embutido[0] };
+    return { tipo: "pagina", valor: url[1] };
+  }
+  if (RE_GRAVACAO.test(v)) return { tipo: "gravacao", valor: v };
+  if (RE_MIDIA.test(v)) return { tipo: "midia", valor: v };
+  return { tipo: "desconhecido", valor: v };
+}
+
+/** Identificador que resolve para um objeto da plataforma. O ID de página fica
+ *  de fora de propósito: é sequencial da interface, não do acervo. */
+export function ehIdentificadorValido(bruto: string): boolean {
+  const { tipo } = classificarIdentificador(bruto);
+  return tipo === "midia" || tipo === "gravacao";
+}
+
+/** Quebra o texto de um campo em identificadores. O auditor cola vários de uma
+ *  vez — separar é sempre melhor que recusar, que é o que o Forms fazia. */
+export function separarIdentificadores(bruto: string): string[] {
+  return String(bruto ?? "")
+    .split(/[\s,;]+/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+}
+
+/**
  * Teto de plausibilidade da quantidade auditada em UM lançamento.
  *
  * "Se auditou 5 ou mais, informe a quantidade exata" é campo de texto livre ao
@@ -372,10 +480,17 @@ export function extrairLancamentos(linhas: string[][]): LancamentoCop[] {
       // O Forms passou a mandar "dd/mm/aaaa hh:mm" desde que o campo de data
       // ganhou horário; a hora da auditoria não é a do envio (essa é o carimbo).
       hora: (bruto.data ?? "").match(/(\d{1,2}):(\d{2})/)?.[0] ?? "",
-      idsMidia: idxIds
-        .map((i) => (linha[i] ?? "").trim())
-        .filter(Boolean)
-        .join("\n"),
+      // A redação de CPF acontece aqui, na porta de entrada, e não em cada
+      // saída: `idsMidia` é o ÚNICO campo que carrega texto copiado da
+      // plataforma, e alimenta ao mesmo tempo a tabela do painel, o relatório
+      // impresso e o CSV de anexo. Sanear num lugar só é o que garante que uma
+      // superfície nova não nasça vazando.
+      idsMidia: redigirCpf(
+        idxIds
+          .map((i) => (linha[i] ?? "").trim())
+          .filter(Boolean)
+          .join("\n")
+      ),
       turno: bruto.turno ?? "",
       enviadoEm: carimbo(bruto.enviadoEm ?? ""),
       re: bruto.re ?? "",

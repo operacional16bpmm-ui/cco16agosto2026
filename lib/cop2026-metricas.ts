@@ -15,9 +15,13 @@ import {
   EFETIVO_TOTAL_BATALHAO,
   RITMO_GLOBAL_RESTANTE,
   TURNOS_RESTANTES_GLOBAL,
+  redigirCpf,
+  ehIdentificadorValido,
+  separarIdentificadores,
   type LancamentoCop,
   type MetaSubunidade,
 } from "@/lib/cop2026";
+import { mesCorrente } from "@/lib/cop2026-relatorios";
 
 export {
   MATRIZ_PROPORCIONAL_2026,
@@ -86,8 +90,10 @@ export type Filtros = {
   ate: string;
   busca: string;
   /** Recorte de exceção: só quem não auditou, só quem ficou abaixo do mínimo,
-   *  só quem não informou os IDs das mídias. */
-  excecao: "" | "naoauditou" | "abaixo" | "semids";
+   *  só quem não informou os IDs das mídias, só quem informou algo que não é
+   *  identificador da plataforma. Os dois últimos são casos DIFERENTES: um
+   *  precisa ser cobrado a informar, o outro a corrigir. */
+  excecao: "" | "naoauditou" | "abaixo" | "semids" | "idinvalido";
 };
 
 export const FILTROS_VAZIOS: Filtros = {
@@ -107,12 +113,29 @@ export function lerFiltros(sp: Record<string, string | string[] | undefined>): F
   };
   const excecao = um("excecao");
   const semana = um("semana");
+
+  /* Sem data na URL, o painel abre no MÊS CORRENTE — não em "tudo o que já
+   * entrou". A meta de 960 é mensal, então somar agosto com setembro contra ela
+   * faria o percentual passar de 100% sem ninguém ter superado nada.
+   *
+   * Fica visível: com `de`/`ate` preenchidos, a barra de filtros mostra a
+   * tarja do período, e um clique em limpar volta a ver o ciclo inteiro. É o
+   * contrário de um recorte escondido — o link que o Comando compartilha passa
+   * a dizer de que mês ele fala.
+   *
+   * Fora do ciclo de 2026 `mesCorrente()` não acha nada e o painel volta a
+   * mostrar tudo, que é a degradação certa: melhor o ciclo inteiro do que uma
+   * tela vazia. */
+  const de = um("de");
+  const ate = um("ate");
+  const mes = !de && !ate ? mesCorrente() : undefined;
+
   return {
     fracao: um("fracao") || "todas",
     turno: um("turno") || "todos",
     semana: ["1", "2", "3", "4"].includes(semana) ? semana : "todas",
-    de: um("de"),
-    ate: um("ate"),
+    de: de || mes?.periodo.de || "",
+    ate: ate || mes?.periodo.ate || "",
     busca: um("busca"),
     excecao: (["naoauditou", "abaixo", "semids"] as const).includes(excecao as never)
       ? (excecao as Filtros["excecao"])
@@ -151,6 +174,16 @@ export function aplicarFiltros(
     if (f.excecao === "naoauditou" && l.auditou) return false;
     if (f.excecao === "abaixo" && !(l.auditou && l.videos < minimo)) return false;
     if (f.excecao === "semids" && (!l.auditou || l.idsMidia.trim())) return false;
+    if (
+      f.excecao === "idinvalido" &&
+      !(
+        l.auditou &&
+        l.idsMidia.trim() &&
+        !separarIdentificadores(l.idsMidia).some(ehIdentificadorValido)
+      )
+    ) {
+      return false;
+    }
     return true;
   });
 }
@@ -300,6 +333,45 @@ export function calcularPainel(
   const naoAuditou = dados.filter((l) => !l.auditou).length;
   const abaixo = dados.filter((l) => l.auditou && l.videos < minimo).length;
   const semIds = dados.filter((l) => l.auditou && !l.idsMidia.trim()).length;
+
+  /* ---- qualidade da evidência --------------------------------------------
+   *
+   * O número OFICIAL do Batalhão continua sendo `total`, que soma a quantidade
+   * DECLARADA — é o que mantém setembro comparável com agosto e a meta de 960
+   * de pé. O que entra aqui ao lado é o quanto dessa declaração está
+   * acompanhada de um identificador que resolve para um objeto da plataforma.
+   *
+   * Medido na planilha em 31/08/2026, sobre 471 identificadores lançados em
+   * agosto: 44,6% ID da mídia, 6,6% ID da gravação, 0,2% ID de página e 48,6%
+   * que não é identificador de coisa nenhuma — número solto do tipo
+   * `20260824916201`, URL, ou texto livre. Índice de rastreabilidade: 51,2%.
+   *
+   * Por que isto é indicador e não régua: trocar a contagem de "declarado"
+   * para "rastreável" derrubaria agosto de 604 para 241 evidências — de 62,9%
+   * para 25,1% da meta, atravessando duas faixas de classificação sem que
+   * ninguém tenha auditado menos. A régua é decisão do Comando; o painel
+   * mostra o tamanho do problema e espera a decisão.
+   */
+  const evidenciasRastreaveis = dados
+    .filter((l) => l.auditou)
+    .reduce(
+      (s, l) => s + separarIdentificadores(l.idsMidia).filter(ehIdentificadorValido).length,
+      0
+    );
+  const comIdRastreavel = dados.filter(
+    (l) => l.auditou && separarIdentificadores(l.idsMidia).some(ehIdentificadorValido)
+  ).length;
+  /* Informou alguma coisa no campo de ID, e nada daquilo é identificador.
+   * Separado de `semIds` de propósito: quem não informou nada precisa ser
+   * cobrado a informar; quem informou lixo precisa ser cobrado a CORRIGIR, e
+   * hoje o painel trata os dois como se fossem o mesmo caso. */
+  const comIdInvalido = dados.filter(
+    (l) =>
+      l.auditou &&
+      l.idsMidia.trim() &&
+      !separarIdentificadores(l.idsMidia).some(ehIdentificadorValido)
+  ).length;
+  const indiceRastreabilidade = total > 0 ? (evidenciasRastreaveis / total) * 100 : 0;
   const partes = dados.filter((l) => l.numeroParte).length;
   const mediana = quantil(videosPorLanc, 0.5);
   const p90 = quantil(videosPorLanc, 0.9);
@@ -474,6 +546,18 @@ export function calcularPainel(
   const abaixoLista = dados.filter((l) => l.auditou && l.videos < minimo).map(detalhar);
   const partesLista = dados.filter((l) => l.numeroParte).map(detalhar);
   const semIdsLista = dados.filter((l) => l.auditou && !l.idsMidia.trim()).map(detalhar);
+  /* Informou alguma coisa e nada daquilo resolve para a plataforma. É a lista
+   * do que se cobra CORRIGIR — distinta de `semIdsLista`, que é o que se cobra
+   * INFORMAR. Sem essa separação o Comando manda a mesma cobrança para quem
+   * esqueceu e para quem colou o número errado. */
+  const idInvalidoLista = dados
+    .filter(
+      (l) =>
+        l.auditou &&
+        l.idsMidia.trim() &&
+        !separarIdentificadores(l.idsMidia).some(ehIdentificadorValido)
+    )
+    .map(detalhar);
   /* Quantidade implausível: o campo "informe a quantidade exata" é texto livre
      e já recebeu o ID da mídia no lugar do número. A contagem foi corrigida na
      leitura (lib/cop2026.ts), mas a planilha continua errada — quem conserta é
@@ -530,11 +614,18 @@ export function calcularPainel(
   })();
 
   // ---- funil ---------------------------------------------------------------
+  /* A etapa dos IDs dizia "Com IDs de mídia informados" e contava qualquer
+   * coisa digitada no campo — em agosto, 48,6% daquilo não era identificador de
+   * nada. O funil anunciava cobertura que não existia. Agora a etapa mede o que
+   * o nome dela promete, e a última fecha o funil com a verdade: nada foi
+   * conferido contra a plataforma, porque não há integração com ela. Mostrar
+   * zero é honesto — e é o argumento mais forte para conseguir o acesso. */
   const funil = [
     { etapa: "Lançamentos recebidos", v: dados.length },
     { etapa: "Auditaram no turno", v: dados.filter((l) => l.auditou).length },
     { etapa: `Cumpriram o mínimo de ${minimo}`, v: conformes },
-    { etapa: "Com IDs de mídia informados", v: dados.filter((l) => l.idsMidia.trim()).length },
+    { etapa: "Com identificador em formato válido", v: comIdRastreavel },
+    { etapa: "Conferidos na plataforma", v: 0 },
   ];
 
   // ---- tabela analítica ----------------------------------------------------
@@ -595,6 +686,12 @@ export function calcularPainel(
     naoAuditou,
     abaixo,
     semIds,
+    // Qualidade da evidência — indicador, não régua. O total oficial acima
+    // continua sendo a quantidade declarada (ver comentário em `calcularPainel`).
+    evidenciasRastreaveis,
+    indiceRastreabilidade,
+    comIdRastreavel,
+    comIdInvalido,
     partes,
     mediana,
     p90,
@@ -616,6 +713,7 @@ export function calcularPainel(
     porPosto,
     naoAuditouLista,
     abaixoLista,
+    idInvalidoLista,
     partesLista,
     semIdsLista,
     quantidadeInvalidaLista,
@@ -792,9 +890,12 @@ export function lancamentosParaCsv(dados: LancamentoCop[]): string {
       ROTULO_SUBUNIDADE[l.subunidade] ?? l.subunidade,
       l.auditou ? "Sim" : "Não",
       l.videos,
-      l.idsMidia.replace(/\s+/g, " "),
-      l.numeroParte,
-      l.justificativa,
+      // Os três campos de texto livre passam pela redação de CPF: são os únicos
+      // em que o auditor cola conteúdo copiado da plataforma. Os demais são
+      // fechados (data, turno, fração) ou já institucionais (RE, posto).
+      redigirCpf(l.idsMidia.replace(/\s+/g, " ")),
+      redigirCpf(l.numeroParte),
+      redigirCpf(l.justificativa),
     ]
       .map(escapar)
       .join(";")

@@ -20,7 +20,9 @@ import { DiretrizEmFoco } from "@/components/publico16/diretriz-em-foco";
 import { Instagram16 } from "@/components/publico16/instagram-16";
 import { RodapeCop } from "@/components/publico16/cop/rodape-cop";
 import { FaixaCreditos } from "@/components/publico16/creditos";
+import { MarcoCiclo } from "@/components/publico16/cop/marco-ciclo";
 import { URL_FORMULARIO, URL_PLANILHA } from "@/lib/cop2026";
+import { ehDataIso } from "@/lib/cop2026-ciclo";
 import { lerAuditoriaCop2026 } from "@/lib/cop2026-leitura";
 import { calcularPainel, FILTROS_VAZIOS } from "@/lib/cop2026-metricas";
 import { QuadroRankingCias } from "@/components/publico16/cop/quadro-ranking-cias";
@@ -147,7 +149,21 @@ async function QuadroRankingCiasAoVivo() {
   return <QuadroRankingCias linhas={painel.fracoes} pctBatalhao={painel.pct} />;
 }
 
-export default function Cop2026Page() {
+/**
+ * `?dia=AAAA-MM-DD` finge a data só para a faixa de virada de ciclo, para que o
+ * Comando confira a peça do mês seguinte antes de ele abrir. Nada mais na
+ * página olha esse parâmetro — os números continuam vindo da planilha, do dia
+ * de hoje. O formato é checado antes de passar adiante: lixo na query devolve a
+ * data real, não uma tela quebrada.
+ */
+export default async function Cop2026Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ dia?: string }>;
+}) {
+  const { dia } = await searchParams;
+  const diaSimulado = ehDataIso(dia) ? dia : undefined;
+
   return (
     <div
       className={`tema-institucional min-h-screen bg-tatico-fundo text-[15px] text-branco`}
@@ -239,6 +255,13 @@ export default function Cop2026Page() {
           </div>
         </div>
       </header>
+
+      {/* Virada de ciclo: primeira coisa depois do cabeçalho de propósito. No
+          dia 1º o contador de todo mundo volta a zero e nada no painel diz
+          isso — o hero abaixo fala da regra permanente, esta faixa fala do
+          agora. Leva junto a medalha e o botão do mês que fechou, que é o que
+          o Comando procura assim que o período encerra. */}
+      <MarcoCiclo urlFormulario={URL_FORMULARIO} hoje={diaSimulado} />
 
       {/* Hero institucional: o cabeçalho acima já nomeia a página, o Batalhão
           e a Diretriz — aqui não se repete nenhum dos três. O bloco é alinhado

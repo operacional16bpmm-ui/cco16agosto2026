@@ -27,6 +27,11 @@ export const ROTAS_RESTRITAS_COP = [
   "/cop2026/briefing",
   "/cop2026/admin",
   "/cop2026/relatorios",
+  /* O PNG do painel entra aqui, e não na lista de públicas, porque ele carrega
+     o mesmo dado nominal do Dashboard. Sem esta linha a rota cairia no
+     fail-closed geral do proxy e exigiria a credencial única da Sala de
+     Comando, que quem usa a COP não tem — o gate correto é a conta Google. */
+  "/api/cop2026/briefing-png",
 ];
 
 export const ROTA_ACESSO_COP = "/cop2026/acesso";

@@ -1,6 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  /* O Chromium do briefing não pode ser empacotado: o @sparticuz/chromium lê os
+     próprios arquivos .br do disco, por caminho relativo ao pacote, e o
+     puppeteer-core carrega binário nativo. Empacotados, os dois quebram em
+     runtime — a rota /api/cop2026/briefing-png sobe e falha ao lançar o
+     navegador. Fora do bundle, a função os resolve de node_modules. */
+  serverExternalPackages: ["puppeteer-core", "@sparticuz/chromium"],
+
   async redirects() {
     return [
       // /efetivo foi absorvida pela página de seção /p1 (dado real QSE

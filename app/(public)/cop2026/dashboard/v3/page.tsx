@@ -49,16 +49,25 @@ export default async function DashboardV3Page({
   const auditoresPorQuinzena: Record<string, [number, number]> = {};
   for (const [chave, [q1, q2]] of distintos) auditoresPorQuinzena[chave] = [q1.size, q2.size];
 
+  /* `?briefing=1` é o modo em que o Chromium headless de
+     /api/cop2026/briefing-png abre esta página. Ele não é uma segunda versão do
+     painel: é a MESMA árvore, com a moldura de navegação fora do caminho. É o
+     que garante que o PNG nunca fique desatualizado em relação à tela — toda
+     mudança aqui aparece no arquivo, sem manutenção paralela. */
+  const modoBriefing = sp.briefing === "1";
+
   return (
     <div className="tema-institucional min-h-screen bg-tatico-fundo text-[15px] text-branco">
-      <NavegacaoCop
-        lidoEm={lidoEm}
-        email={acesso?.email}
-        ehAdmin={ehAdminCop(acesso?.email)}
-        tituloPagina="Dashboard V3 — Caixa Tendência"
-      />
+      {!modoBriefing && (
+        <NavegacaoCop
+          lidoEm={lidoEm}
+          email={acesso?.email}
+          ehAdmin={ehAdminCop(acesso?.email)}
+          tituloPagina="Dashboard V3 — Caixa Tendência"
+        />
+      )}
 
-      <main className="pt-4 sm:pt-6">
+      <main className={modoBriefing ? undefined : "pt-4 sm:pt-6"}>
         <DashboardCop
           lancamentos={lancamentos}
           metas={metas}
@@ -67,10 +76,13 @@ export default async function DashboardV3Page({
           filtrosIniciais={lerFiltros(sp)}
           tendencia
           auditoresPorQuinzena={auditoresPorQuinzena}
+          modoBriefing={modoBriefing}
         />
       </main>
 
-      <RodapeCop nota="Versão em avaliação (V3) — documento operacional, não distribuir fora do Batalhão." />
+      {!modoBriefing && (
+        <RodapeCop nota="Versão em avaliação (V3) — documento operacional, não distribuir fora do Batalhão." />
+      )}
     </div>
   );
 }

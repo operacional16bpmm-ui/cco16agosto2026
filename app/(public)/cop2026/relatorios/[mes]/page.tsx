@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight, FileBarChart2, Presentation, Table2 } from "lucide-react";
 import { NavegacaoCop } from "@/components/publico16/cop/navegacao-cop";
 import { RodapeCop } from "@/components/publico16/cop/rodape-cop";
+import { CapaRelatorioMes } from "@/components/publico16/cop/marco-ciclo";
 import { lerAuditoriaCop2026 } from "@/lib/cop2026-leitura";
 import { ehAdminCop } from "@/lib/cop2026-acesso";
 import { exigirAcessoCop } from "@/lib/db/cop2026-autorizados";
@@ -78,27 +79,16 @@ export default async function RelatoriosMesPage({
           <ArrowLeft className="h-4 w-4" /> Todos os meses
         </Link>
 
-        <div className="mb-8">
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="font-serif text-3xl font-black uppercase tracking-wide text-branco sm:text-4xl">
-              {mes.rotulo} · {mes.ano}
-            </h1>
-            <span
-              className={
-                "inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-wide " +
-                (encerrado
-                  ? "border-slate-400/40 bg-slate-500/10 text-texto-suave"
-                  : "border-[#ca0202]/50 bg-[#ca0202]/10 text-vermelho")
-              }
-            >
-              {encerrado ? "Período encerrado" : "Encerra hoje 23h59"}
-            </span>
-          </div>
-          <p className="mt-3 max-w-2xl text-[14.5px] leading-relaxed text-texto-suave">
-            Dois relatórios do período — a leitura executiva consolidada e o acesso aos dados
-            detalhados para conferência.
-          </p>
-        </div>
+        {/* Capa gráfica do mês: a mesma medalha do botão que trouxe a pessoa
+            até aqui. Quem clicou no selo de AGO chega numa página que abre com
+            o selo de AGO — a peça confirma o destino antes de qualquer texto.
+            O título da página vive dentro dela (é o <h1>). */}
+        <CapaRelatorioMes mes={mes} encerrado={encerrado} />
+
+        <p className="mb-8 mt-6 max-w-2xl text-[14.5px] leading-relaxed text-texto-suave">
+          Três documentos do período — a leitura executiva consolidada, os dados detalhados para
+          conferência e o briefing de Comando.
+        </p>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {cards.map((c) => (

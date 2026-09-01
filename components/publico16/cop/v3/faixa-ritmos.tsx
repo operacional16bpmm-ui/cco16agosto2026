@@ -1,6 +1,7 @@
 "use client";
 
 import { calcularTendencia, progressoDoMes } from "@/lib/cop2026-tendencia";
+import { cn } from "@/lib/utils";
 
 /**
  * FAIXA DOS TRÊS RITMOS — a leitura comparativa que o cartão de 130px não
@@ -95,9 +96,35 @@ function Barra({
   );
 }
 
-export function FaixaRitmos({ meta, total }: { meta: number; total: number }) {
+/** Posição do mês pelo calendário civil de São Paulo. Fonte única do "dia X de Y"
+ *  — usada tanto pelo card quanto pelo cabeçalho da seção que o hospeda, para os
+ *  dois nunca divergirem. */
+export function progressoMesSP() {
   const { ano, mes, referencia } = hojeSP();
-  const p = progressoDoMes(referencia, ano, mes);
+  return { ano, mes, progresso: progressoDoMes(referencia, ano, mes) };
+}
+
+export function FaixaRitmos({
+  meta,
+  total,
+  titulo = "Tendência · ritmo diário",
+  className,
+  variante = "solo",
+  mostrarDias = true,
+}: {
+  meta: number;
+  total: number;
+  /** Cabeçalho do cartão. Default é o card do Batalhão; a grade por fração passa o nome da Cia. */
+  titulo?: string;
+  /** Mesclada por último na raiz — a grade neutraliza o mt-3/max-w-[390px] do uso solo. */
+  className?: string;
+  /** "solo" flutua sobre o velocímetro (moldura própria); "embutido" mora dentro
+   *  de outro card e usa só um divisor no topo, sem caixa-dentro-de-caixa. */
+  variante?: "solo" | "embutido";
+  /** O "dia X de Y" sai quando a seção já mostra o contador uma vez no cabeçalho. */
+  mostrarDias?: boolean;
+}) {
+  const { progresso: p } = progressoMesSP();
 
   const t = calcularTendencia({
     meta,
@@ -111,19 +138,31 @@ export function FaixaRitmos({ meta, total }: { meta: number; total: number }) {
   const pctReal = real === null || alvo <= 0 ? 0 : (real / alvo) * 100;
   const faltaPorDia = real === null ? null : Math.max(0, alvo - real);
   const diasRestantes = t.turnosRestantes;
+  /** No último dia (≤1) a recuperação por dia dispara para 15–20× e lê como
+   *  pânico. Aí vale mais o déficit absoluto do que o ritmo. */
+  const ultimoDia = t.deficit > 0 && !t.irrecuperavel && diasRestantes <= 1;
 
   return (
-    <div className="relative z-10 mt-3 w-full max-w-[390px] rounded-2xl border-2 border-slate-300 bg-white/95 px-3 py-2.5 shadow-[0_5px_14px_rgba(15,23,42,0.10)]">
+    <div
+      className={cn(
+        variante === "embutido"
+          ? "mt-3.5 w-full border-t-2 border-slate-200 pt-3"
+          : "relative z-10 mt-3 w-full max-w-[390px] rounded-2xl border-2 border-slate-300 bg-white/95 px-3 py-2.5 shadow-[0_5px_14px_rgba(15,23,42,0.10)]",
+        className
+      )}
+    >
       <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5 border-b-2 border-slate-200 pb-1.5">
         <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-800">
-          Tendência · ritmo diário
+          {titulo}
         </span>
-        <span className="dados text-[9.5px] font-semibold text-slate-500">
-          dia {N0.format(p.diasDecorridos)} de {N0.format(p.diasMes)} ·{" "}
-          {diasRestantes === 0
-            ? "mês encerrado"
-            : `${N0.format(diasRestantes)} dia${diasRestantes === 1 ? "" : "s"} restante${diasRestantes === 1 ? "" : "s"}`}
-        </span>
+        {mostrarDias && (
+          <span className="dados text-[9.5px] font-semibold text-slate-500">
+            dia {N0.format(p.diasDecorridos)} de {N0.format(p.diasMes)} ·{" "}
+            {diasRestantes === 0
+              ? "mês encerrado"
+              : `${N0.format(diasRestantes)} dia${diasRestantes === 1 ? "" : "s"} restante${diasRestantes === 1 ? "" : "s"}`}
+          </span>
+        )}
       </div>
 
       <div className="mt-2 flex flex-col gap-2">
@@ -173,6 +212,14 @@ export function FaixaRitmos({ meta, total }: { meta: number; total: number }) {
               <span className="dados font-black" style={{ color: COR_RECUP }}>
                 {N0.format(t.deficit)}
               </span>
+            </span>
+          ) : ultimoDia ? (
+            <span className="text-[10px] font-bold text-slate-700">
+              último dia · faltam{" "}
+              <span className="dados font-black" style={{ color: COR_RECUP }}>
+                {N0.format(t.deficit)}
+              </span>{" "}
+              evidências
             </span>
           ) : (
             <span className="flex flex-wrap items-baseline justify-end gap-x-1.5 gap-y-0.5">

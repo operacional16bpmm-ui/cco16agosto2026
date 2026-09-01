@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, CalendarClock, FileBarChart2, Lock } from "lucide-react";
+import { ArrowRight, CalendarClock, Lock } from "lucide-react";
 import { NavegacaoCop } from "@/components/publico16/cop/navegacao-cop";
 import { RodapeCop } from "@/components/publico16/cop/rodape-cop";
+import { SeloMes } from "@/components/publico16/cop/arte-ciclo";
 import { lerAuditoriaCop2026 } from "@/lib/cop2026-leitura";
 import { ehAdminCop } from "@/lib/cop2026-acesso";
 import { exigirAcessoCop } from "@/lib/db/cop2026-autorizados";
+import { estadoDoCiclo, hojeBrt } from "@/lib/cop2026-ciclo";
 import {
   RELATORIOS_MENSAIS,
   periodoEncerrado,
@@ -20,8 +22,17 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 export const maxDuration = 20;
 
-function CartaoMes({ mes }: { mes: RelatorioMes }) {
+/**
+ * O cartão tem três estados, não dois: publicado, EM CURSO e ainda futuro.
+ *
+ * O mês em curso costumava aparecer como "Em breve / Indisponível", igual a
+ * dezembro — o que faz o cartão do mês que a tropa está lançando agora parecer
+ * o mais morto da grade. Agora ele se identifica: medalha acesa, pastilha
+ * pulsando e a data em que a consolidação sai.
+ */
+function CartaoMes({ mes, hoje }: { mes: RelatorioMes; hoje: string }) {
   const encerrado = periodoEncerrado(mes);
+  const emCurso = !mes.disponivel && estadoDoCiclo(mes, hoje) === "em-curso";
 
   const conteudo = (
     <div
@@ -29,25 +40,32 @@ function CartaoMes({ mes }: { mes: RelatorioMes }) {
         "group relative flex h-full flex-col justify-between overflow-hidden rounded-2xl border-2 p-6 transition-all duration-300 " +
         (mes.disponivel
           ? "cursor-pointer border-slate-300/85 bg-gradient-to-b from-white via-[#f8fafc] to-[#edf3f8] shadow-[0_6px_20px_rgba(15,23,42,0.08)] hover:-translate-y-1 hover:border-[#ca0202] hover:shadow-[0_16px_36px_rgba(202,2,2,0.22)]"
-          : "border-dashed border-slate-300/70 bg-slate-100/60")
+          : emCurso
+            ? "border-[#ca0202]/45 bg-gradient-to-b from-white via-[#fff6f6] to-[#ffecec] shadow-[0_6px_20px_rgba(202,2,2,0.12)]"
+            : "border-dashed border-slate-300/70 bg-slate-100/60")
       }
     >
       <div>
-        <div className="flex items-center justify-between">
-          <div
-            className={
-              "flex h-12 w-12 items-center justify-center rounded-xl border shadow-sm transition-transform duration-300 " +
-              (mes.disponivel
-                ? "border-red-400/40 bg-[#ca0202] text-white group-hover:scale-110"
-                : "border-slate-300 bg-white text-slate-400")
-            }
-          >
-            {mes.disponivel ? (
-              <FileBarChart2 className="h-6 w-6" />
-            ) : (
+        <div className="flex items-center justify-between gap-3">
+          {/* Medalha do mês no lugar do ícone genérico: é a mesma peça que a
+              faixa de virada usa em /cop2026, para que o mês tenha uma cara só
+              no portal inteiro. Os meses ainda fechados continuam no cadeado —
+              medalha é coisa de período que já aconteceu. */}
+          {mes.disponivel || emCurso ? (
+            <SeloMes
+              abrev={mes.abrev}
+              ano={mes.ano}
+              estado={emCurso ? "em-curso" : encerrado ? "encerrado" : "aguardando"}
+              tamanho={56}
+              chave={`hub-${mes.chave}`}
+              className="shrink-0 drop-shadow-[0_6px_14px_rgba(7,24,45,0.35)] transition-transform duration-300 group-hover:scale-110"
+            />
+          ) : (
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-400 shadow-sm">
               <Lock className="h-5 w-5" />
-            )}
-          </div>
+            </div>
+          )}
+
           {mes.disponivel ? (
             encerrado ? (
               <span className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-slate-500">
@@ -58,6 +76,11 @@ function CartaoMes({ mes }: { mes: RelatorioMes }) {
                 <CalendarClock className="h-3 w-3" /> Encerra hoje 23h59
               </span>
             )
+          ) : emCurso ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-[#ca0202]/45 bg-[#ca0202]/10 px-2.5 py-1 text-[11px] font-black uppercase tracking-wide text-[#ca0202]">
+              <span className="mc-dia-hoje h-1.5 w-1.5 rounded-full bg-[#ca0202]" />
+              Meta em curso
+            </span>
           ) : (
             <span className="inline-flex items-center rounded-full border border-slate-300 bg-white px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">
               Em breve
@@ -74,7 +97,9 @@ function CartaoMes({ mes }: { mes: RelatorioMes }) {
         <p className="mt-2 text-[13px] leading-relaxed text-[#15304c]/70">
           {mes.disponivel
             ? "Relatório executivo analítico e planilha de dados do período."
-            : "Consolidação disponível ao fim do período de serviço."}
+            : emCurso
+              ? "Período aberto: a tropa está lançando agora. A consolidação é publicada quando o mês fechar."
+              : "Consolidação disponível ao fim do período de serviço."}
         </p>
       </div>
 
@@ -84,10 +109,14 @@ function CartaoMes({ mes }: { mes: RelatorioMes }) {
             "flex w-full items-center justify-center gap-2 rounded-xl py-3 px-4 text-sm font-black uppercase tracking-wider transition-all duration-300 " +
             (mes.disponivel
               ? "bg-gradient-to-r from-[#ca0202] via-[#e40707] to-[#ca0202] text-white shadow-[0_6px_20px_rgba(202,2,2,0.35)] group-hover:shadow-[0_10px_26px_rgba(202,2,2,0.5)]"
-              : "bg-slate-200 text-slate-400")
+              : emCurso
+                ? "border border-[#ca0202]/35 bg-white text-[#ca0202]"
+                : "bg-slate-200 text-slate-400")
           }
         >
-          <span>{mes.disponivel ? "Abrir relatórios" : "Indisponível"}</span>
+          <span>
+            {mes.disponivel ? "Abrir relatórios" : emCurso ? "Lançamento em andamento" : "Indisponível"}
+          </span>
           {mes.disponivel && (
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           )}
@@ -116,6 +145,10 @@ export default async function RelatoriosPage() {
     lerAuditoriaCop2026(),
     exigirAcessoCop("/cop2026/relatorios"),
   ]);
+
+  // Uma leitura só do relógio para a grade inteira: cinco cartões consultando
+  // `new Date()` cada um podem cair em lados diferentes da meia-noite.
+  const hoje = hojeBrt();
 
   return (
     <div className="tema-institucional min-h-screen bg-tatico-fundo text-[15px] text-branco">
@@ -146,7 +179,7 @@ export default async function RelatoriosPage() {
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {RELATORIOS_MENSAIS.map((mes) => (
-            <CartaoMes key={mes.chave} mes={mes} />
+            <CartaoMes key={mes.chave} mes={mes} hoje={hoje} />
           ))}
         </div>
       </main>

@@ -73,6 +73,7 @@ import {
   type LinhaAuditor,
 } from "@/lib/cop2026-metricas";
 import { cn } from "@/lib/utils";
+import { entregarArquivo } from "@/lib/entregar-arquivo";
 import { toast } from "sonner";
 import { Cartao, Selo, SemDados } from "./primitivos";
 import { PaletaComando } from "./paleta-comando";
@@ -194,6 +195,20 @@ function formatarData(iso: string) {
   const [a, m, d] = iso.split("-");
   return d ? `${d}/${m}/${a}` : iso;
 }
+
+/* Regras do modo briefing (`?briefing=1`). Duas linhas, e as duas existem para
+   que o PNG contenha só o painel:
+   1. tudo que é irmão do bloco exportado — hero, barra de recorte, abas,
+      tabelas analíticas — sai da árvore visual. Fora reduzir o arquivo, isso
+      corta o tempo de render do headless e evita que a barra `sticky` de
+      filtros cubra o topo do painel quando o Chromium rola até ele;
+   2. o botão de exportar vive DENTRO do bloco (é ele que dispara a captura) e
+      apareceria no próprio arquivo. `data-no-briefing` já era a marca usada
+      pelo modo antigo, então a mesma marca serve aos dois caminhos. */
+const MODO_BRIEFING_CSS = `
+.modo-briefing > *:not([data-briefing="painel"]) { display: none !important; }
+.modo-briefing [data-no-briefing="true"] { display: none !important; }
+`;
 
 function Grupo({ ativo, children }: { ativo: boolean; children: React.ReactNode }) {
   return (
@@ -428,6 +443,7 @@ export function DashboardCop({
   filtrosIniciais,
   tendencia,
   auditoresPorQuinzena,
+  modoBriefing,
 }: {
   lancamentos: LancamentoCop[];
   metas: MetaSubunidade[];
@@ -438,6 +454,9 @@ export function DashboardCop({
   tendencia?: boolean;
   /** Auditores distintos na 1a e na 2a quinzena, por fracao. So a v3 envia. */
   auditoresPorQuinzena?: Record<string, [number, number]>;
+  /** Pagina aberta pelo Chromium de /api/cop2026/briefing-png para virar PNG.
+   *  Some com a moldura interativa e congela o painel; ver MODO_BRIEFING_CSS. */
+  modoBriefing?: boolean;
 }) {
   // Ritmo de recuperacao em dias, para o KPI da v3. Calculado, nunca fixo.
   const agoraSP = new Intl.DateTimeFormat("en-CA", {
@@ -486,10 +505,15 @@ export function DashboardCop({
     window.setTimeout(() => setAtualizando(false), 1200);
   }, [router]);
 
+  /* Em modo briefing o relógio para: o headless espera a rede ficar ociosa
+     antes de fotografar, e um refresh a cada 60s reabre a leitura da planilha
+     no meio da captura — `networkidle0` nunca chegaria e a rota estouraria o
+     tempo. */
   useEffect(() => {
+    if (modoBriefing) return;
     const t = window.setInterval(atualizar, 60_000);
     return () => window.clearInterval(t);
-  }, [atualizar]);
+  }, [atualizar, modoBriefing]);
 
   const p = useMemo(() => calcularPainel(lancamentos, metas, f), [lancamentos, metas, f]);
   const vBase = veredito(p);
@@ -517,14 +541,51 @@ export function DashboardCop({
         }
       : vBase;
 
-  const exportarBriefingPng = useCallback(async () => {
-    if (!painelBriefingRef.current || exportandoBriefing) return;
+  /* Nome do arquivo pela data de São Paulo. `toISOString()` devolve UTC, e às
+     21h de Brasília isso já é o dia seguinte — o PNG do fechamento do mês
+     nascia datado do mês que vem. */
+  const nomeDoArquivo = useCallback(
+    () =>
+      `painel-cop-2026-${new Intl.DateTimeFormat("en-CA", {
+        timeZone: "America/Sao_Paulo",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(new Date())}.png`,
+    []
+  );
 
-    setExportandoBriefing(true);
+  /* CAMINHO PRINCIPAL — o PNG vem pronto do servidor.
+     O celular não desenha nada: /api/cop2026/briefing-png abre esta mesma
+     página num Chromium headless de 1240px e devolve o arquivo. É o que faz a
+     exportação sair igual no iPhone, no Android e no telão do CCO. O diagnóstico
+     de por que a rasterização local não tem conserto no iOS está em
+     lib/cop2026-briefing-png.ts. */
+  const exportarPeloServidor = useCallback(async (): Promise<Blob> => {
+    const resposta = await fetch(`/api/cop2026/briefing-png${escreverFiltros(f)}`, {
+      /* O cookie de acesso é httpOnly: sem `same-origin` a rota devolve 401. */
+      credentials: "same-origin",
+      cache: "no-store",
+    });
+    if (!resposta.ok) {
+      throw new Error(`a rota do briefing respondeu ${resposta.status}`);
+    }
+    const blob = await resposta.blob();
+    if (blob.size < BRIEFING_BYTES_MIN) {
+      throw new Error(`o servidor devolveu ${blob.size} bytes`);
+    }
+    return blob;
+  }, [f]);
+
+  /* PLANO B — rasterização no próprio navegador, o método antigo.
+     Fica de reserva para o caso de a função do Chromium falhar ou estourar o
+     tempo: no desktop ela funciona bem, e é melhor entregar um PNG imperfeito
+     do que nada na frente do Comando. NÃO é o caminho principal — ver o bloco
+     "Exportação do briefing em PNG" no topo deste arquivo. */
+  const exportarNoNavegador = useCallback(async (): Promise<Blob> => {
+    if (!painelBriefingRef.current) throw new Error("o painel ainda não montou");
     const node = painelBriefingRef.current;
-
     let palco: PalcoBriefing | null = null;
-
     try {
       await document.fonts?.ready;
       palco = await montarPalcoBriefing(node);
@@ -548,31 +609,58 @@ export function DashboardCop({
         throw new Error(`rasterizacao voltou vazia (${dataUrl.length} bytes)`);
       }
 
-      const nomeArquivo = `painel-cop-2026-${new Date().toISOString().slice(0, 10)}.png`;
-      const blob = await (await fetch(dataUrl)).blob();
-      const urlDownload = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.download = nomeArquivo;
-      link.href = urlDownload;
-      link.rel = "noopener";
-      link.style.display = "none";
-      document.body.appendChild(link);
-      link.click();
-      window.setTimeout(() => {
-        URL.revokeObjectURL(urlDownload);
-        link.remove();
-      }, 1000);
-      toast.success("Painel completo exportado em PNG.");
-    } catch (erro) {
-      console.error("[briefing] falha ao gerar o PNG:", erro);
-      toast.error("Nao foi possivel gerar o briefing em PNG. Tente novamente.");
+      return await (await fetch(dataUrl)).blob();
     } finally {
       /* O palco so pode cair depois do PNG estar em memoria: o modern-screenshot
          le estilo computado do no durante toda a rasterizacao. */
       palco?.desmontar();
+    }
+  }, []);
+
+  const exportarBriefingPng = useCallback(async () => {
+    if (exportandoBriefing) return;
+    setExportandoBriefing(true);
+
+    let blob: Blob;
+    let peloServidor = true;
+    try {
+      blob = await exportarPeloServidor();
+    } catch (erroServidor) {
+      console.error("[briefing] a rota do servidor falhou:", erroServidor);
+      peloServidor = false;
+      try {
+        blob = await exportarNoNavegador();
+      } catch (erroLocal) {
+        console.error("[briefing] o plano B tambem falhou:", erroLocal);
+        toast.error("Nao foi possivel gerar o painel em PNG. Tente novamente em instantes.");
+        setExportandoBriefing(false);
+        return;
+      }
+    }
+
+    try {
+      const resultado = await entregarArquivo(blob, nomeDoArquivo(), {
+        title: "16º BPM/M — Auditoria COP 2026",
+        text: `Painel da auditoria: ${PCT.format(p.pct)}% da meta (${FMT.format(p.total)} de ${FMT.format(p.meta)} evidências).`,
+      });
+      if (resultado === "cancelado") return;
+      toast.success(
+        peloServidor
+          ? "Painel completo exportado em PNG."
+          : "Painel exportado pelo modo antigo — o gerador do servidor não respondeu."
+      );
+    } finally {
       setExportandoBriefing(false);
     }
-  }, [exportandoBriefing]);
+  }, [
+    exportandoBriefing,
+    exportarPeloServidor,
+    exportarNoNavegador,
+    nomeDoArquivo,
+    p.pct,
+    p.total,
+    p.meta,
+  ]);
 
   const definir = (patch: Partial<Filtros>) => setF((a) => ({ ...a, ...patch }));
 
@@ -604,7 +692,9 @@ export function DashboardCop({
           ? "Não auditaram"
           : f.excecao === "abaixo"
             ? `Abaixo de ${p.minimo}`
-            : "Sem IDs de mídia",
+            : f.excecao === "idinvalido"
+              ? "ID fora do formato"
+              : "Sem IDs de mídia",
       limpar: () => definir({ excecao: "" }),
     },
     f.busca && { k: "busca", t: `"${f.busca}"`, limpar: () => definir({ busca: "" }) },
@@ -733,6 +823,15 @@ export function DashboardCop({
       v: p.semIds,
       icone: <FileWarning size={16} aria-hidden />,
     },
+    {
+      // Caso diferente do de cima: aqui a pessoa informou alguma coisa, e o que
+      // informou não é identificador da plataforma — número solto, número da
+      // ocorrência, endereço colado. Cobra-se correção, não preenchimento.
+      chave: "idinvalido" as const,
+      rotulo: "Informaram ID fora do formato da plataforma",
+      v: p.comIdInvalido,
+      icone: <FileWarning size={16} aria-hidden />,
+    },
   ];
 
   const tabela = useMemo(() => {
@@ -792,7 +891,23 @@ export function DashboardCop({
     setOrdem((o) => ({ col, desc: o.col === col ? !o.desc : true }));
 
   return (
-    <div className="mx-auto max-w-[1400px] px-3.5 sm:px-5 pb-12">
+    <div
+      className={cn(
+        "mx-auto max-w-[1400px] px-3.5 sm:px-5 pb-12",
+        modoBriefing && "modo-briefing"
+      )}
+    >
+      {/* Modo briefing por CSS, e não por `{!modoBriefing && ...}` espalhado
+          pela árvore: uma regra só some com TUDO que não é o painel, então uma
+          seção nova nasce automaticamente fora do PNG em vez de aparecer nele
+          porque alguém esqueceu de listá-la. O <style> é filho direto e cai na
+          própria regra — irrelevante, `display:none` em <style> não desliga a
+          folha. As animações não entram aqui: o gerador emula
+          `prefers-reduced-motion: reduce`, que o globals.css já trata. */}
+      {modoBriefing && (
+        <style>{MODO_BRIEFING_CSS}</style>
+      )}
+
       {/* ---------------- HERO INSTITUCIONAL — 16º BPM/M ---------------- */}
       <header className="relative mb-8 pt-4 pb-6">
         {/* Filete superior institucional */}
@@ -1247,8 +1362,12 @@ export function DashboardCop({
 
       {/* O bloco exportado em PNG abarca a Situação (KPIs + termômetro) e a
           camada semanal (Meta Semanal + Companhias/Força Tática): é o conjunto
-          que o Comando lê junto para decidir, então sai junto no arquivo. */}
-      <div ref={painelBriefingRef} className="bg-[#edf2f7]">
+          que o Comando lê junto para decidir, então sai junto no arquivo.
+
+          `data-briefing="painel"` é o CONTRATO com o gerador do servidor: é por
+          este seletor que o Chromium de /api/cop2026/briefing-png recorta a
+          imagem. Renomear o atributo quebra a exportação sem quebrar o build. */}
+      <div ref={painelBriefingRef} data-briefing="painel" className="bg-[#edf2f7]">
       {/* ---------------- Camada 1: Situação ---------------- */}
       <section aria-label="Situação" className="relative mb-8">
         <div className="grid gap-5 lg:grid-cols-12 lg:items-stretch">
@@ -1257,17 +1376,31 @@ export function DashboardCop({
             className="relative flex min-h-[122px] flex-wrap items-center gap-3.5 overflow-hidden rounded-2xl border-2 border-l-4 border-slate-700/80 bg-[#071225] p-5 shadow-[0_12px_30px_rgba(7,18,37,0.28)] sm:p-6 lg:col-span-12 lg:-mr-4"
             style={{ borderLeftColor: `var(--sinal-${v.nivel})` }}
           >
-            <video
-              autoPlay
-              loop
-              muted
-              playsInline
-              preload="metadata"
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-65 saturate-110 contrast-110"
-            >
-              <source src="/media/clip_patrulha_noturna.mp4" type="video/mp4" />
-            </video>
+            {/* Em modo briefing o vídeo vira foto. O Chromium do @sparticuz não
+                traz os codecs proprietários: um <video> H.264 ali renderiza um
+                retângulo preto, e a faixa de diagnóstico — a primeira coisa que
+                o Comando lê no PNG — sairia sem fundo. */}
+            {modoBriefing ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src="/media/foto_operacao.jpg"
+                alt=""
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-65 saturate-110 contrast-110"
+              />
+            ) : (
+              <video
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload="metadata"
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-65 saturate-110 contrast-110"
+              >
+                <source src="/media/clip_patrulha_noturna.mp4" type="video/mp4" />
+              </video>
+            )}
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#050c1a]/92 via-[#071225]/80 to-[#071225]/88" />
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-[#ca0202]/20" />
 
@@ -1495,7 +1628,15 @@ export function DashboardCop({
       <section aria-label="Onde agir" className="mb-6">
         <Cartao
           titulo="Onde agir · frações"
-          nota="rateio proporcional ao quadro COP (570 PMs) · clique para filtrar o painel"
+          nota={
+            tendencia
+              ? `rateio proporcional ao quadro COP (570 PMs) · dia ${FMT.format(progMes.diasDecorridos)} de ${FMT.format(progMes.diasMes)}${
+                  diasRestantes > 0
+                    ? ` · ${FMT.format(diasRestantes)} dia${diasRestantes === 1 ? "" : "s"} restante${diasRestantes === 1 ? "" : "s"}`
+                    : " · mês encerrado"
+                } · clique para filtrar o painel`
+              : "rateio proporcional ao quadro COP (570 PMs) · clique para filtrar o painel"
+          }
           ajuda={
             <p>
               A meta de cada fração é proporcional ao efetivo fixo que usa COP diariamente (universo de
@@ -1508,6 +1649,7 @@ export function DashboardCop({
             <RankingFracoes
               dados={p.fracoes}
               onSelecionar={(chave) => definir({ fracao: f.fracao === chave ? "todas" : chave })}
+              mostrarTendencia={tendencia}
             />
           ) : (
             <SemDados texto="Sem metas cadastradas na aba Parâmetros." />
@@ -1616,6 +1758,35 @@ export function DashboardCop({
                   <p className="dados mt-1.5 text-[12.5px] leading-relaxed text-texto-suave">
                     digitado <span className="text-sinal-critico">{i.descartado}</span> ·
                     contabilizado {FMT.format(i.videos)}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Mesmo critério do cartão acima: só aparece quando existe. Este é o
+            caso em que a pessoa INFORMOU um identificador e o que informou não
+            resolve para nada na plataforma — cobra-se correção, não
+            preenchimento. Fica separado de "sem IDs" de propósito. */}
+        {p.idInvalidoLista.length > 0 && (
+          <div className="mt-5 rounded-xl border border-sinal-atencao/40 bg-sinal-atencao/[0.07] p-4">
+            <p className="rotulo-dado text-sinal-atencao">
+              Identificador fora do formato da plataforma · {p.idInvalidoLista.length}
+            </p>
+            <p className="mt-1.5 text-[12.5px] leading-relaxed text-texto-suave">
+              O campo de ID foi preenchido, mas o que está ali não é o ID da mídia (32 caracteres)
+              nem o ID da gravação (com hífens) que a plataforma exibe em Visão geral — quase
+              sempre é o número da ocorrência ou a data digitada no lugar. A evidência continua
+              contando para a meta, mas não pode ser conferida na plataforma. Corrija na planilha.
+            </p>
+            <ul className="mt-3 space-y-2">
+              {p.idInvalidoLista.map((i) => (
+                <li key={i.id} className="rounded-lg border border-borda px-3 py-2.5">
+                  <p className="text-[13px] font-semibold text-branco">{i.quem}</p>
+                  <p className="dados mt-0.5 text-[11.5px] text-texto-suave">
+                    {i.fracao} · {formatarData(i.data)}
+                    {i.turno ? ` · ${i.turno}` : ""}
                   </p>
                 </li>
               ))}

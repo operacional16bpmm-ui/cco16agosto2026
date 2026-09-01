@@ -37,6 +37,7 @@ import {
 } from "@/lib/cop2026-metricas";
 import { AlertCircle } from "lucide-react";
 import type { CSSProperties } from "react";
+import { FaixaRitmos } from "@/components/publico16/cop/v3/faixa-ritmos";
 import { COR_NIVEL, Selo } from "./primitivos";
 import { cn } from "@/lib/utils";
 
@@ -649,9 +650,12 @@ export function AgulhaoMetas({
 export function RankingFracoes({
   dados,
   onSelecionar,
+  mostrarTendencia = false,
 }: {
   dados: LinhaFracao[];
   onSelecionar?: (chave: string) => void;
+  /** Anexa o card de ritmo diário (/dia) da fração abaixo dos quadros semanais. Só na V3. */
+  mostrarTendencia?: boolean;
 }) {
   return (
     <ul className="space-y-3.5">
@@ -707,10 +711,19 @@ export function RankingFracoes({
                 </span>
                 <span>
                   {d.falta > 0 ? (
-                    <>
-                      Faltam <strong className="dados font-black text-[#ca0202]">{FMT.format(d.falta)}</strong> (
-                      {FMT.format(d.ritmoProporcional ?? Math.ceil(d.ritmoNecessario))}/turno proporcional em {FMT.format(d.turnosRestantes)} rest.)
-                    </>
+                    /* Com o termômetro ligado, o ritmo/recuperação vem por dia logo
+                       abaixo — repetir "/turno proporcional em N rest." aqui criaria
+                       duas contas de tempo (turno × dia) contradizendo o card. */
+                    mostrarTendencia ? (
+                      <>
+                        Faltam <strong className="dados font-black text-[#ca0202]">{FMT.format(d.falta)}</strong>
+                      </>
+                    ) : (
+                      <>
+                        Faltam <strong className="dados font-black text-[#ca0202]">{FMT.format(d.falta)}</strong> (
+                        {FMT.format(d.ritmoProporcional ?? Math.ceil(d.ritmoNecessario))}/turno proporcional em {FMT.format(d.turnosRestantes)} rest.)
+                      </>
+                    )
                   ) : (
                     <span className={cn("font-black", TEXTO_FAIXA[nivelDeFecho(d.nivel)])}>
                       {SUBTITULO_NIVEL[nivelDeFecho(d.nivel)]}
@@ -752,6 +765,16 @@ export function RankingFracoes({
                   </div>
                 ))}
               </div>
+            )}
+
+            {/* Tendência · ritmo diário da fração (mesmo card do Batalhão, rateado) — só na V3 */}
+            {mostrarTendencia && (
+              <FaixaRitmos
+                meta={d.meta}
+                total={d.feito}
+                variante="embutido"
+                mostrarDias={false}
+              />
             )}
           </div>
         </li>
