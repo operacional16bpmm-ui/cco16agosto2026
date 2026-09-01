@@ -23,6 +23,7 @@ import { ArrowRight, CalendarDays, FileCheck2, Sunrise } from "lucide-react";
 import {
   cicloCorrente,
   hojeBrt,
+  mesAnterior,
   periodoPorExtenso,
   ultimoRelatorioPublicado,
   type Ciclo,
@@ -173,6 +174,8 @@ export function MarcoCiclo({ urlFormulario, hoje }: { urlFormulario: string; hoj
   // às 23h59 — a medalha e a etiqueta seguem `periodoEncerrado`, não o fato de
   // o relatório existir.
   const estadoSelo = fechado && periodoEncerrado(fechado) ? "encerrado" : "em-curso";
+  // O mês que encerra hoje, quando a faixa já anuncia o próximo.
+  const fechando = ciclo.estado === "vespera" ? mesAnterior(ciclo.mes) : undefined;
 
   const parametros = [
     { rotulo: "Evidências por turno", valor: "3", nota: "mínimo obrigatório" },
@@ -207,8 +210,12 @@ export function MarcoCiclo({ urlFormulario, hoje }: { urlFormulario: string; hoj
               className="mc-entra mt-5 max-w-xl text-[15px] leading-relaxed text-slate-300"
               style={{ ["--mc-d" as string]: "180ms" }}
             >
+              {/* Na véspera a faixa fala de DOIS meses: o título anuncia o que
+                  abre à meia-noite e este parágrafo explica o que encerra às
+                  23h59. São meses diferentes — daí `fechando`, e não
+                  `ciclo.mes`, que é o do título. */}
               {ciclo.estado === "vespera"
-                ? "O período de agosto encerra hoje às 23h59 e o relatório entra em consolidação. A partir da meia-noite a contagem recomeça: três evidências auditadas por turno, com os IDs das mídias, todo dia de serviço."
+                ? `O período de ${(fechando ?? ciclo.mes).rotulo.toLowerCase()} encerra hoje às 23h59 e o relatório entra em consolidação. A partir da meia-noite a contagem recomeça: três evidências auditadas por turno, com os IDs das mídias, todo dia de serviço.`
                 : `A contagem de ${ciclo.mes.rotulo.toLowerCase()} corre desde o dia 1º e nada do período anterior é aproveitado. São três evidências auditadas por turno, com os IDs das mídias, todo dia de serviço.`}
             </p>
 
@@ -220,7 +227,9 @@ export function MarcoCiclo({ urlFormulario, hoje }: { urlFormulario: string; hoj
                   no meio da frase e uma encavala na outra. */}
               <p className="mt-2.5 flex flex-col gap-1 border-t border-white/15 pt-2.5 font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-white/55 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                 <span>{legendaDoPeriodo(ciclo)}</span>
-                <span className="shrink-0 text-white/35">{periodoPorExtenso(ciclo.mes)}</span>
+                {/* /35 dava 3,36:1 sobre o fundo da faixa — abaixo do mínimo
+                    AA. Página institucional lida no sol, dentro da viatura. */}
+                <span className="shrink-0 text-white/60">{periodoPorExtenso(ciclo.mes)}</span>
               </p>
             </div>
 

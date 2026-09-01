@@ -115,6 +115,21 @@ export function cicloCorrente(hoje = hojeBrt()): Ciclo {
  * e ainda não estar liberado; nesse caso o botão continua apontando para o
  * anterior, em vez de levar a tropa a um 404.
  */
+/**
+ * O mês imediatamente anterior na lista — o que ESTÁ FECHANDO quando a faixa
+ * já anuncia o seguinte.
+ *
+ * Existe por causa de um erro que foi ao ar: no estado `vespera` a faixa fala
+ * de dois meses ao mesmo tempo (o título anuncia o que abre à meia-noite, o
+ * corpo explica o que encerra às 23h59) e o corpo estava pegando o mês do
+ * título. Em 30/09 a página dizia "OUTUBRO COMEÇA À MEIA-NOITE" logo acima de
+ * "O período de outubro encerra hoje".
+ */
+export function mesAnterior(mes: RelatorioMes): RelatorioMes | undefined {
+  const i = RELATORIOS_MENSAIS.findIndex((m) => m.chave === mes.chave);
+  return i > 0 ? RELATORIOS_MENSAIS[i - 1] : undefined;
+}
+
 export function ultimoRelatorioPublicado(): RelatorioMes | undefined {
   const publicados = RELATORIOS_MENSAIS.filter((m) => m.disponivel);
   return publicados[publicados.length - 1];
