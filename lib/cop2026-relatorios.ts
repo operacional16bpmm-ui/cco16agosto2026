@@ -77,14 +77,3 @@ export function periodoEncerrado(mes: RelatorioMes): boolean {
   const limite = Date.parse(mes.encerraEm);
   return Number.isFinite(limite) && Date.now() > limite;
 }
-
-/**
- * Publicação read-only da planilha, para embed inline no relatório de dados.
- * É a porta pública ("Publicar na web"), separada do `/edit` — não esbarra em
- * compartilhamento e nunca deixa editar por acidente. O ID de publicação é o
- * mesmo que `lib/cop2026-leitura.ts` usa para a leitura ao vivo por CSV.
- */
-const PUB_ID_PLANILHA =
-  "2PACX-1vTIsyLDSi4hSINQP3akwk3hZ575HuTSDo3F3Q9Ec0P8tYl5wgsKLpYexT76GB_2pnJA_HpZ37k4gAx-";
-
-export const URL_PLANILHA_EMBED = `https://docs.google.com/spreadsheets/d/e/${PUB_ID_PLANILHA}/pubhtml?widget=true&headers=false`;

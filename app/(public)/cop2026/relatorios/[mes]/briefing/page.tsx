@@ -4,9 +4,8 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { NavegacaoCop } from "@/components/publico16/cop/navegacao-cop";
 import { RodapeCop } from "@/components/publico16/cop/rodape-cop";
-import { RelatorioDadosDocumento } from "@/components/publico16/cop/relatorio-dados-documento";
+import { BriefingDocumento } from "@/components/publico16/cop/briefing-documento";
 import { lerAuditoriaCop2026 } from "@/lib/cop2026-leitura";
-import { URL_PLANILHA } from "@/lib/cop2026";
 import {
   FILTROS_VAZIOS,
   calcularPainel,
@@ -18,14 +17,14 @@ import { exigirAcessoCop } from "@/lib/db/cop2026-autorizados";
 import { relatorioPorChave, periodoEncerrado } from "@/lib/cop2026-relatorios";
 
 export const metadata: Metadata = {
-  title: "Relatório de dados · Auditoria de COP 2026",
+  title: "Briefing executivo · Auditoria de COP 2026",
   robots: { index: false, follow: false },
 };
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 20;
 
-export default async function RelatorioDadosPage({
+export default async function BriefingDocumentoPage({
   params,
 }: {
   params: Promise<{ mes: string }>;
@@ -36,7 +35,7 @@ export default async function RelatorioDadosPage({
 
   const [{ lancamentos, metas, erro, lidoEm }, acesso] = await Promise.all([
     lerAuditoriaCop2026(),
-    exigirAcessoCop(`/cop2026/relatorios/${chave}/dados`),
+    exigirAcessoCop(`/cop2026/relatorios/${chave}/briefing`),
   ]);
 
   const painel = calcularPainel(lancamentos, metas, {
@@ -51,7 +50,7 @@ export default async function RelatorioDadosPage({
         lidoEm={lidoEm}
         email={acesso?.email}
         ehAdmin={ehAdminCop(acesso?.email)}
-        tituloPagina={`Relatório de dados · ${mes.rotulo}`}
+        tituloPagina={`Briefing · ${mes.rotulo}`}
       />
 
       <main className="pt-2">
@@ -64,7 +63,7 @@ export default async function RelatorioDadosPage({
           </Link>
         </div>
 
-        <RelatorioDadosDocumento
+        <BriefingDocumento
           mes={mes}
           painel={painel}
           lidoEm={lidoEm}
@@ -72,7 +71,6 @@ export default async function RelatorioDadosPage({
           encerrado={periodoEncerrado(mes)}
           csvRespostas={lancamentosParaCsv(painel.dados)}
           csvAuditores={auditoresParaCsv(painel.auditoresLinhas)}
-          urlPlanilha={URL_PLANILHA}
         />
       </main>
 

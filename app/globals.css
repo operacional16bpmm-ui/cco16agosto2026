@@ -634,3 +634,134 @@ body {
   .briefing-raiz * { color: #111 !important; border-color: rgba(17, 17, 17, 0.25) !important; }
   .briefing-raiz .overflow-y-auto { overflow: visible !important; }
 }
+
+/* ============================================================================
+   DOCUMENTOS DE RELATÓRIO (Relatórios da COP) — PDF técnico e colorido.
+
+   O usuário salva em PDF pelo diálogo do navegador. O padrão do navegador
+   descarta os fundos coloridos, e o Comando pediu o documento COLORIDO — então
+   `print-color-adjust: exact` é obrigatório aqui, e vale na tela também (não
+   tem efeito fora da impressão). A navegação e o rodapé do portal somem no
+   papel: o documento carrega cabeçalho e rodapé próprios (`.so-impressao`).
+   Cada seção quebra inteira, e `.quebra-antes` começa em nova página.
+   ============================================================================ */
+.documento-cop,
+.documento-cop * {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+@media print {
+  body:has(.documento-cop) header,
+  body:has(.documento-cop) .rodape-inst,
+  body:has(.documento-cop) .faixa-institucional {
+    display: none !important;
+  }
+
+  .documento-cop {
+    background: #fff !important;
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .documento-cop .cartao-doc,
+  .documento-cop section,
+  .documento-cop table,
+  .documento-cop .evita-quebra {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .documento-cop thead {
+    display: table-header-group;
+  }
+
+  .documento-cop .quebra-antes {
+    break-before: page;
+    page-break-before: always;
+  }
+}
+
+/* ============================================================================
+   VIRADA DE CICLO (/cop2026) — o mês que começou
+
+   A faixa do ciclo é a única peça de CHAMADA do portal: ela existe para que
+   quem abre a página no dia 1º entenda, sem ler, que o mês virou e a meta de
+   cada companhia voltou a zero. Por isso o tratamento é mais gráfico que o
+   resto da tela — e por isso, também, ele para na porta do painel: nenhum
+   número de conformidade é decorado aqui.
+
+   Toda a arte é vetor e gradiente. Nenhum arquivo de imagem entra no bundle
+   por causa desta faixa: a aurora são três radiais, o selo é um SVG de 200px
+   desenhado no componente e a trilha dos dias são divs. Isso importa porque a
+   tropa abre esta página no 4G da viatura.
+
+   Três movimentos, todos lentos de propósito — página de trabalho não pisca:
+   a aurora respira no fundo, um brilho metálico atravessa o selo do mês
+   encerrado e o dia de hoje pulsa na trilha. Tudo morre em
+   prefers-reduced-motion, na regra do fim do bloco.
+   ============================================================================ */
+@keyframes mc-aurora {
+  0%, 100% { transform: translate3d(-3%, 0, 0) scale(1.04); opacity: 0.55; }
+  50%      { transform: translate3d(3%, -2%, 0) scale(1.16); opacity: 0.9; }
+}
+@keyframes mc-foil {
+  0%        { transform: translateX(-140%) skewX(-18deg); opacity: 0; }
+  10%       { opacity: 0.85; }
+  55%, 100% { transform: translateX(320%) skewX(-18deg); opacity: 0; }
+}
+@keyframes mc-gira {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes mc-hoje {
+  0%, 100% { opacity: 1;    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.6); }
+  50%      { opacity: 0.5;  box-shadow: 0 0 0 5px rgba(255, 255, 255, 0); }
+}
+@keyframes mc-acende {
+  from { opacity: 0; transform: scaleY(0.25); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes mc-surge {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.mc-aurora { animation: mc-aurora 22s ease-in-out infinite; }
+
+/* Brilho metálico do selo/botão. Fica dentro de um overflow-hidden e só
+   aparece no hover do grupo (o botão) ou sozinho, em passadas largas, quando
+   é a peça decorativa da faixa. */
+.mc-foil { animation: mc-foil 5.2s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+
+/* Anel de microtexto gravado do selo: uma volta a cada minuto. Devagar o
+   bastante para ler como brasão, não como spinner de carregamento. */
+.mc-anel { animation: mc-gira 72s linear infinite; transform-origin: 50% 50%; }
+
+.mc-dia-hoje { animation: mc-hoje 2s ease-in-out infinite; }
+
+/* Trilha dos dias: cada barra sobe com o atraso do seu índice, que quem
+   chama passa em --mc-d. Sem isso a trilha "aparece", com isso ela é lida da
+   esquerda para a direita — que é a ordem do mês. */
+.mc-dia {
+  transform-origin: bottom;
+  animation: mc-acende 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--mc-d, 0ms);
+}
+
+.mc-entra {
+  animation: mc-surge 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--mc-d, 0ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mc-aurora,
+  .mc-foil,
+  .mc-anel,
+  .mc-dia-hoje,
+  .mc-dia,
+  .mc-entra {
+    animation: none !important;
+  }
+}

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ArrowRight, FileBarChart2, Table2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, FileBarChart2, Presentation, Table2 } from "lucide-react";
 import { NavegacaoCop } from "@/components/publico16/cop/navegacao-cop";
 import { RodapeCop } from "@/components/publico16/cop/rodape-cop";
 import { lerAuditoriaCop2026 } from "@/lib/cop2026-leitura";
@@ -48,8 +48,16 @@ export default async function RelatoriosMesPage({
       icone: <Table2 className="h-7 w-7 text-white" />,
       titulo: "Relatório de Dados",
       descricao:
-        "Base detalhada para quem quer aprofundar: planilha manuseável, abertura direta no Google Sheets e exportação em CSV das respostas e do consolidado por auditor.",
-      botao: "Abrir dados detalhados",
+        "Documento consolidado a partir da planilha: resumo, por fração, por auditor e o registro completo lançamento a lançamento — com exportação em CSV e atalho para o Google Sheets.",
+      botao: "Abrir dados consolidados",
+    },
+    {
+      href: `/cop2026/relatorios/${chave}/briefing`,
+      icone: <Presentation className="h-7 w-7 text-white" />,
+      titulo: "Briefing Executivo",
+      descricao:
+        "Síntese de Comando pronta como relatório: situação, diagnóstico por fração, ritmo, qualidade e pontos de atenção — enxuta e direta, para leitura em minutos.",
+      botao: "Abrir briefing",
     },
   ];
 
@@ -92,7 +100,7 @@ export default async function RelatoriosMesPage({
           </p>
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {cards.map((c) => (
             <Link
               key={c.href}
