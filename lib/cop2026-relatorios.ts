@@ -93,7 +93,12 @@ export function mesCorrente(agora: Date = new Date()): RelatorioMes | undefined 
 
 /** Verdadeiro depois do instante de encerramento do mês. */
 export function periodoEncerrado(mes: RelatorioMes): boolean {
-  if (!mes.encerraEm) return false;
-  const limite = Date.parse(mes.encerraEm);
+  // Sem `encerraEm`, o fim do período é o fim do último dia dele em Brasília.
+  // Antes esta função devolvia `false` para todo mês sem o campo, e só agosto
+  // o tinha — então o primeiro relatório publicado depois dele nasceria
+  // carimbado "Encerra hoje 23h59" para sempre, com a medalha em "período em
+  // curso" meses depois de o período ter fechado. `encerraEm` continua valendo
+  // para quando o Comando fecha o mês em hora diferente da meia-noite.
+  const limite = Date.parse(mes.encerraEm ?? `${mes.periodo.ate}T23:59:59-03:00`);
   return Number.isFinite(limite) && Date.now() > limite;
 }

@@ -124,6 +124,18 @@ export function BotaoRelatorioMes({
 function manchete(ciclo: Ciclo) {
   const nome = ciclo.mes.rotulo.toUpperCase();
   if (ciclo.estado === "em-curso") {
+    // Normalmente o último dia já cai em `vespera`, porque a faixa passa a
+    // anunciar o mês seguinte. Quando não existe seguinte — dezembro, fim da
+    // lista — sobra este caso, e aí "COMEÇOU / a meta voltou a zero" seria a
+    // frase errada no dia em que o período está acabando.
+    if (ciclo.restam === 0) {
+      return {
+        chapeu: "Último dia",
+        titulo: `${nome} ENCERRA HOJE`,
+        linha: "às 23h59 o período fecha e entra em consolidação",
+        icone: CalendarDays,
+      };
+    }
     return {
       chapeu: "Ciclo em curso",
       titulo: `${nome} COMEÇOU`,
@@ -136,6 +148,17 @@ function manchete(ciclo: Ciclo) {
       chapeu: "Virada de ciclo",
       titulo: `${nome} COMEÇA À MEIA-NOITE`,
       linha: "a meta de cada companhia volta a zero",
+      icone: CalendarDays,
+    };
+  }
+  // Passado o último mês da lista não há ciclo nenhum para anunciar. Dizer
+  // "DEZEMBRO ABRE EM BREVE" em janeiro de 2027 é pior que não dizer nada —
+  // a faixa admite que o próximo período depende do Comando abrir.
+  if (ciclo.estado === "encerrado") {
+    return {
+      chapeu: "Ciclo encerrado",
+      titulo: `${nome} ENCERRADO`,
+      linha: "o próximo período de auditoria ainda não foi aberto",
       icone: CalendarDays,
     };
   }
