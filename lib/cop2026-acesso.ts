@@ -22,7 +22,12 @@ export const DURACAO_ACESSO_SEGUNDOS = 60 * 60 * 12;
 
 /** Rotas que deixam de herdar o "público" de /cop2026. A página de acesso e as
  *  rotas de handshake precisam continuar abertas, senão o login não acontece. */
-export const ROTAS_RESTRITAS_COP = ["/cop2026/dashboard", "/cop2026/briefing", "/cop2026/admin"];
+export const ROTAS_RESTRITAS_COP = [
+  "/cop2026/dashboard",
+  "/cop2026/briefing",
+  "/cop2026/admin",
+  "/cop2026/relatorios",
+];
 
 export const ROTA_ACESSO_COP = "/cop2026/acesso";
 

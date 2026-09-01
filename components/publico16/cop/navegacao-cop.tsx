@@ -11,6 +11,7 @@ import {
   ChevronRight,
   Clock,
   ExternalLink,
+  FileBarChart2,
   FileSpreadsheet,
   FileText,
   Home,
@@ -51,6 +52,12 @@ export function NavegacaoCop({
       rotulo: "Briefing",
       icone: <Presentation className="h-4 w-4" />,
       ativo: pathname === "/cop2026/briefing",
+    },
+    {
+      href: "/cop2026/relatorios",
+      rotulo: "Relatórios",
+      icone: <FileBarChart2 className="h-4 w-4" />,
+      ativo: pathname.startsWith("/cop2026/relatorios"),
     },
     {
       href: "/cop2026",

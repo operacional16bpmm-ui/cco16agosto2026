@@ -1,10 +1,12 @@
 import Image from "next/image";
+import Link from "next/link";
 import {
   AlertTriangle,
   ArrowRight,
   BarChart3,
   CalendarDays,
   ExternalLink,
+  FileBarChart2,
   FileCheck2,
   Presentation,
   RefreshCw,
@@ -155,11 +157,22 @@ export default function Cop2026Page() {
 
       <header className="border-b border-slate-300/80 bg-[#edf2f6] text-[#07182d] shadow-[0_10px_30px_rgba(7,24,45,0.08)]">
         <div className="mx-auto max-w-6xl px-4 pb-5 pt-3 sm:pb-6 sm:pt-4">
-          <div className="mb-3 flex items-center gap-3 text-[9px] font-bold uppercase tracking-[0.28em] text-[#15304c]/65 sm:text-[10px]">
-            <span className="h-0.5 w-7 bg-[#ca0202]" />
-            Governo do Estado de São Paulo
-            <span className="hidden h-px flex-1 bg-[#15304c]/15 sm:block" />
-            <span className="hidden sm:inline">Polícia Militar</span>
+          <div className="mb-3 flex items-center gap-3">
+            <div className="flex min-w-0 items-center gap-3 text-[9px] font-bold uppercase tracking-[0.28em] text-[#15304c]/65 sm:text-[10px]">
+              <span className="h-0.5 w-7 shrink-0 bg-[#ca0202]" />
+              <span className="truncate">Governo do Estado de São Paulo · Polícia Militar</span>
+            </div>
+            {/* Botão destacado dos Relatórios: topo-direito do cabeçalho, na
+                mesma família de cor/tipografia do portal. Fica em fluxo (ml-auto)
+                para não colidir com o brasão no mobile. */}
+            <Link
+              href="/cop2026/relatorios"
+              className="group ml-auto inline-flex shrink-0 items-center gap-2 rounded-lg bg-[#ca0202] px-3.5 py-2 text-[12px] font-bold uppercase tracking-wide text-white shadow-[0_6px_16px_rgba(202,2,2,0.28)] transition-all hover:-translate-y-0.5 hover:bg-[#e40707] hover:shadow-[0_10px_22px_rgba(202,2,2,0.42)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#07182d] sm:text-[13px]"
+            >
+              <FileBarChart2 className="h-4 w-4" />
+              Relatórios
+              <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+            </Link>
           </div>
 
           <div className="mx-auto grid max-w-5xl items-center gap-y-5 md:grid-cols-[220px_minmax(0,1fr)_220px] md:gap-x-0">
