@@ -4,9 +4,9 @@ import { lerAuditoriaCop2026 } from "@/lib/cop2026-leitura";
 import {
   calcularPainel,
   filtrosDoMesCorrente,
-  mapearDuplicados,
   FILTROS_VAZIOS,
 } from "@/lib/cop2026-metricas";
+import { ehIdentificadorValido, separarIdentificadores } from "@/lib/cop2026";
 import { hojeBrt } from "@/lib/cop2026-ciclo";
 import { mesCorrente } from "@/lib/cop2026-relatorios";
 
@@ -124,13 +124,20 @@ export async function GET(req: NextRequest) {
   }
 
   /* ---- 6. CPF que escapou da redação ------------------------------------ */
-  /* Onze dígitos isolados num campo de ID, fora de um `[CPF removido]`. Se
-     aparecer, é dado pessoal de terceiro indo para a tela e para o CSV. */
+  /* Onze dígitos isolados num campo de ID = possível CPF de terceiro indo para
+   * a tela e para o CSV.
+   *
+   * A varredura é POR TOKEN e ignora identificador válido — a mesma regra do
+   * `redigirCpf`. Sem isso a sonda grita em ID de mídia legítimo: um hex de 32
+   * caracteres contém 11 dígitos seguidos por acaso com frequência alta
+   * (`15fece525bf8ae3fda56b15682841978` carrega `15682841978` no meio). Medido
+   * em 02/09/2026: 4 falsos positivos na planilha, zero CPF real. */
   const RE_CPF_CRU = /(?<!\d)\d{11}(?!\d)/;
-  const cpfCru = leitura.lancamentos.filter((l) => {
-    const semRedacao = l.idsMidia.replace(/\[CPF removido\]/g, "");
-    return RE_CPF_CRU.test(semRedacao);
-  }).length;
+  const cpfCru = leitura.lancamentos.filter((l) =>
+    separarIdentificadores(l.idsMidia.replace(/\[CPF removido\]/g, "")).some(
+      (tk) => !ehIdentificadorValido(tk) && RE_CPF_CRU.test(tk)
+    )
+  ).length;
   if (cpfCru > 0) {
     achados.push({
       chave: "cpf-em-campo-publico",
@@ -141,13 +148,39 @@ export async function GET(req: NextRequest) {
   }
 
   /* ---- 7. mesma mídia contada duas vezes -------------------------------- */
-  const duplicados = mapearDuplicados(leitura.lancamentos);
+
   if (p.comIdDuplicado > 0) {
     achados.push({
       chave: "id-duplicado",
       gravidade: "medio",
       descricao: `${p.comIdDuplicado} lançamento(s) com identificador já auditado por outro (${p.idsDuplicadosNoRecorte} ID distintos no recorte).`,
       acao: "Cobrar a retirada de um dos lados na planilha — a mídia está contando duas vezes contra a meta.",
+    });
+  }
+
+  /* ---- 7-B. a MESMA linha vindo de duas fontes -------------------------- */
+  /* `lerComBanco` mescla planilha (antes do corte) + banco, e quem separa as
+   * duas é só `COP2026_CORTE_BANCO`. Se agosto for importado para o banco e o
+   * corte NÃO for movido junto para o início de agosto, cada linha de agosto
+   * entra duas vezes e todo relatório daquele mês dobra.
+   *
+   * O código já avisa disso ("corte e backfill andam no mesmo passo"), mas
+   * avisos em comentário não disparam alarme. A assinatura é registro
+   * byte-idêntico em RE+data+turno+quantidade+IDs: dois auditores nunca
+   * produzem isso por acaso — a mesma pessoa lançando duas vezes no turno
+   * digita identificadores diferentes. */
+  const impressao = new Map<string, number>();
+  for (const l of leitura.lancamentos) {
+    const k = `${l.re}|${l.data}|${l.turno}|${l.videos}|${l.idsMidia}`;
+    impressao.set(k, (impressao.get(k) ?? 0) + 1);
+  }
+  const linhasEmDobro = [...impressao.values()].filter((n) => n > 1).length;
+  if (linhasEmDobro > 0) {
+    achados.push({
+      chave: "fonte-duplicada",
+      gravidade: "critico",
+      descricao: `${linhasEmDobro} registro(s) idêntico(s) na base — planilha e banco servindo o mesmo período.`,
+      acao: "Mover COP2026_CORTE_BANCO para o início do mês já importado. Corte e backfill andam no mesmo passo.",
     });
   }
 
@@ -207,7 +240,8 @@ export async function GET(req: NextRequest) {
         somaSemanas,
         somaFracoes,
         totalNaPlanilha: p.totalNaPlanilha,
-        idsDuplicadosDistintos: duplicados.size,
+        idsDuplicadosDistintos: p.idsDuplicadosNoRecorte,
+        linhasEmDobro,
       },
       achados,
     },
