@@ -1,5 +1,5 @@
 import "server-only";
-import type { Browser, BrowserContext } from "puppeteer-core";
+import type { Browser, Page } from "puppeteer-core";
 
 /**
  * Rasterização do painel da COP no SERVIDOR — e o motivo de ela existir.
@@ -88,14 +88,12 @@ async function abrirNavegador(): Promise<Browser> {
   chromium.setGraphicsMode = false;
 
   navegador = await puppeteer.launch({
-    /* `"shell"`, e NÃO `true`. Este binário é compilado com `headless.gn`: é o
-       headless *shell*, sem GUI, e não entende o `--headless=new` que o
-       Puppeteer manda quando recebe `headless: true`. O processo subia e morria
-       na hora, e o erro chegava disfarçado três camadas acima, como
-       `Protocol error (Target.createTarget): Target closed` — nada que aponte
-       para a flag culpada. Os args passam pelo `defaultArgs` com o mesmo modo,
-       senão a lista sai coerente com o headless errado. */
-    args: await puppeteer.defaultArgs({ args: chromium.args, headless: "shell" }),
+    /* `chromium.args` já traz `--headless='shell'`, `--no-sandbox` e
+       `--single-process`. O `headless: "shell"` aqui é para o puppeteer-core
+       falar o protocolo do binário certo: este Chromium é compilado com
+       `headless.gn` e não entende o `--headless=new` que `headless: true`
+       dispara. */
+    args: chromium.args,
     executablePath: await chromium.executablePath(),
     headless: "shell",
     timeout: ESPERA_LANCAMENTO_MS,
@@ -133,24 +131,34 @@ export async function capturarPainel(
   url: string,
   cookie: { nome: string; valor: string; dominio: string }
 ): Promise<Buffer> {
-  let contexto: BrowserContext | null = null;
+  const biscoito = {
+    name: cookie.nome,
+    value: cookie.valor,
+    domain: cookie.dominio,
+    path: "/",
+    httpOnly: true,
+    secure: cookie.dominio !== "localhost",
+  };
+
+  let pagina: Page | null = null;
+  let navegadorUsado: Browser | null = null;
   try {
     const browser = await abrirNavegador();
+    navegadorUsado = browser;
 
-    /* Contexto isolado por captura: o navegador é compartilhado entre
-       requisições, e cookie de sessão não pode sobreviver de uma para a
-       seguinte. Fechar o contexto leva junto os cookies e o cache. */
-    contexto = await browser.createBrowserContext();
-    await contexto.setCookie({
-      name: cookie.nome,
-      value: cookie.valor,
-      domain: cookie.dominio,
-      path: "/",
-      httpOnly: true,
-      secure: cookie.dominio !== "localhost",
-    });
+    /* Contexto PADRÃO, e não um contexto isolado por captura.
+       `createBrowserContext()` seria o isolamento certo — o navegador é
+       reaproveitado entre requisições e cookie de sessão não pode sobreviver de
+       uma para a seguinte — mas o `chromium.args` do @sparticuz inclui
+       `--single-process`, obrigatório no Lambda para não esbarrar em
+       `prctl(PR_SET_NO_NEW_PRIVS) failed`. Nesse modo o Chromium não consegue
+       criar um segundo contexto: ele morre ao abrir a primeira aba, e o erro
+       sobe como `Protocol error (Target.createTarget): Target closed`, que não
+       menciona contexto nenhum.
+       O isolamento é feito à mão, apagando o cookie no `finally`. */
+    await browser.setCookie(biscoito);
 
-    const pagina = await contexto.newPage();
+    pagina = await browser.newPage();
     await pagina.setViewport({
       width: BRIEFING_LARGURA,
       height: BRIEFING_ALTURA,
@@ -203,6 +211,17 @@ export async function capturarPainel(
     await descartarNavegador();
     throw erro;
   } finally {
-    await contexto?.close().catch(() => {});
+    /* Sem contexto isolado a limpeza é manual, e não pode ser esquecida: o
+       navegador sobrevive à requisição e o cookie é de sessão nominal. A
+       remoção vai pela ABA — é a única assinatura que aceita a chave do cookie
+       em vez do objeto inteiro — e por isso acontece ANTES de fechá-la. No
+       caminho de erro o navegador já foi descartado, e aí não sobra jarra
+       nenhuma para limpar. */
+    if (navegadorUsado?.connected) {
+      await pagina
+        ?.deleteCookie({ name: biscoito.name, domain: biscoito.domain, path: biscoito.path })
+        .catch(() => {});
+    }
+    await pagina?.close().catch(() => {});
   }
 }
