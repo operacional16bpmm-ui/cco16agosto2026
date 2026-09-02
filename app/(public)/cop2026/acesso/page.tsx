@@ -132,8 +132,6 @@ export default async function AcessoCopPage({
             <div className="mt-3 flex flex-wrap gap-2.5">
               <a
                 href={URL_FORMULARIO}
-                target="_blank"
-                rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 rounded-md border border-vermelho/40 px-4 py-2.5 text-[13px] font-bold uppercase tracking-wide text-vermelho hover:bg-vermelho/5"
               >
                 Abrir o formulário

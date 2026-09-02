@@ -42,9 +42,9 @@ import {
   X,
 } from "lucide-react";
 import { domToPng } from "modern-screenshot";
-import { CartaoTrajetoria } from "@/components/publico16/cop/v3/cartao-trajetoria";
-import { FaixaRitmos } from "@/components/publico16/cop/v3/faixa-ritmos";
-import { CaixaTendencia } from "@/components/publico16/cop/v3/caixa-tendencia";
+import { CartaoTrajetoria } from "@/components/publico16/cop/ciclo/cartao-trajetoria";
+import { FaixaRitmos } from "@/components/publico16/cop/ciclo/faixa-ritmos";
+import { CaixaTendencia } from "@/components/publico16/cop/ciclo/caixa-tendencia";
 import { progressoDoMes } from "@/lib/cop2026-tendencia";
 import {
   ROTULO_SUBUNIDADE,
@@ -204,10 +204,18 @@ function formatarData(iso: string) {
       filtros cubra o topo do painel quando o Chromium rola até ele;
    2. o botão de exportar vive DENTRO do bloco (é ele que dispara a captura) e
       apareceria no próprio arquivo. `data-no-briefing` já era a marca usada
-      pelo modo antigo, então a mesma marca serve aos dois caminhos. */
+      pelo modo antigo, então a mesma marca serve aos dois caminhos;
+   3. as tabelas largas (Tendência por Fração, calendário) vivem em envoltórios
+      com `overflow-x-auto`: na tela quem rola é o dedo, mas no PNG a rolagem
+      não existe e as últimas colunas — QUINZENA e AÇÃO — sumiam cortadas na
+      borda direita. Soltar o recorte é o que faz o arquivo conter a tabela
+      inteira; a largura de captura (BRIEFING_LARGURA) é escolhida para
+      caber nelas. */
 const MODO_BRIEFING_CSS = `
 .modo-briefing > *:not([data-briefing="painel"]) { display: none !important; }
 .modo-briefing [data-no-briefing="true"] { display: none !important; }
+.modo-briefing .overflow-x-auto,
+.modo-briefing .overflow-auto { overflow: visible !important; }
 `;
 
 function Grupo({ ativo, children }: { ativo: boolean; children: React.ReactNode }) {
@@ -450,15 +458,16 @@ export function DashboardCop({
   lidoEm: string;
   erro?: string;
   filtrosIniciais: Filtros;
-  /** Liga a caixa TENDENCIA (rota /cop2026/dashboard/v3). Ausente = painel atual. */
+  /** Liga a caixa TENDENCIA. Nasceu como diferenca da V3; hoje o painel unico
+   *  em /cop2026/dashboard sempre envia. Ausente = painel sem tendencia. */
   tendencia?: boolean;
-  /** Auditores distintos na 1a e na 2a quinzena, por fracao. So a v3 envia. */
+  /** Auditores distintos na 1a e na 2a quinzena, por fracao. */
   auditoresPorQuinzena?: Record<string, [number, number]>;
   /** Pagina aberta pelo Chromium de /api/cop2026/briefing-png para virar PNG.
    *  Some com a moldura interativa e congela o painel; ver MODO_BRIEFING_CSS. */
   modoBriefing?: boolean;
 }) {
-  // Ritmo de recuperacao em dias, para o KPI da v3. Calculado, nunca fixo.
+  // Ritmo de recuperacao em dias, para o KPI da caixa. Calculado, nunca fixo.
   const agoraSP = new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Sao_Paulo",
     year: "numeric",

@@ -986,7 +986,7 @@ export function BriefingSlides({
             <span className="mr-1 hidden items-center gap-2 text-[11px] text-white/40 lg:inline-flex">
               {ehAdmin && (
                 <a href="/cop2026/admin" className="font-bold hover:text-white">
-                  Autorizados
+                  Admin
                 </a>
               )}
               <span className="dados">{email}</span>

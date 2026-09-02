@@ -9,7 +9,7 @@
  * O contrato está em docs/cop2026-padroes-comando.md — se um termo mudar lá,
  * muda aqui junto.
  */
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 
 /** Só as superfícies do COP. O resto do portal fala outra língua e não é aqui
@@ -21,6 +21,12 @@ const ESCOPO = [
   "lib/cop2026.ts",
   "lib/cop2026-metricas.ts",
   "lib/cop2026-acesso.ts",
+  // Entraram com o formulário próprio (01/09/2026): a rota de lançamento fala
+  // com a tropa e é a superfície mais nova a herdar o vocabulário do Comando.
+  "lib/cop2026-lancamento.ts",
+  "lib/db/cop2026-lancamentos.ts",
+  "lib/db/cop2026-auditor.ts",
+  "lib/db/cop2026-parametros.ts",
 ];
 
 /** Arquivos que citam fonte externa (boletim, pesquisa acadêmica) e por isso
@@ -65,16 +71,27 @@ const REGRA_MANOMETRO = {
 
 const ehComentario = (linha) => /^\s*(\/\/|\*|\/\*|\{\s*\/\*)/.test(linha);
 
+/**
+ * O que está NO DISCO, não o que o git conhece.
+ *
+ * `git ls-files` sozinho falhava dos dois lados: engasgava com arquivo apagado
+ * mas ainda não commitado (as rotas /dashboard/v2 e /v3, em 01/09/2026, mataram
+ * a verificação com ENOENT) e — pior, porque é silencioso — pulava arquivo novo
+ * ainda não rastreado. A rota de lançamento inteira, a superfície mais nova a
+ * falar com a tropa, passou dias fora da guarda por isso. `--others
+ * --exclude-standard` traz os não rastreados respeitando o .gitignore, e o
+ * filtro de existência resolve o outro lado.
+ */
 function arquivosDoEscopo() {
   const saida = execFileSync(
     "git",
-    ["ls-files", "-z", "--", ...ESCOPO],
+    ["ls-files", "-z", "--cached", "--others", "--exclude-standard", "--", ...ESCOPO],
     { encoding: "utf8", maxBuffer: 32 * 1024 * 1024 }
   );
-  return saida
-    .split("\0")
+  return [...new Set(saida.split("\0"))]
     .filter((f) => /\.(tsx?|mdx?)$/.test(f))
-    .filter((f) => !ISENTOS.has(f));
+    .filter((f) => !ISENTOS.has(f))
+    .filter((f) => existsSync(f));
 }
 
 const achados = [];

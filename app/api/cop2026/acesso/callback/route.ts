@@ -59,13 +59,29 @@ export async function GET(request: NextRequest) {
     if (!identidade.emailVerificado) {
       return recusar(request, { negado: identidade.email, motivo: "nao-verificado" });
     }
-    if (!(await emailAutorizado(identidade.email))) {
-      return recusar(request, { negado: identidade.email });
-    }
 
     const destino = estadoGravado.destino.startsWith("/cop2026/")
       ? estadoGravado.destino
       : "/cop2026/dashboard";
+
+    /* A lista de autorizados é o gate do COMANDO, não da tropa.
+     *
+     * O lançamento (`/cop2026/lancar`) é da tropa inteira — 570 policiais que
+     * nunca estarão nas 22 contas escolhidas a dedo para o Dashboard. Recusar
+     * aqui trancaria o formulário justamente para quem ele existe.
+     *
+     * Emitir o cookie para qualquer conta Google verificada é seguro porque a
+     * autorização NUNCA dependeu deste cookie: toda superfície restrita
+     * recheca a lista por requisição em sessaoCop() — dashboard, briefing,
+     * relatórios, admin e o PNG do briefing. O cookie diz "esta identidade foi
+     * verificada pelo Google"; quem diz "esta pessoa pode ver" é a página. É
+     * essa recheca que também faz a revogação valer na hora, sem esperar o
+     * cookie de 12h vencer.
+     */
+    const soIdentidade = destino.startsWith("/cop2026/lancar");
+    if (!soIdentidade && !(await emailAutorizado(identidade.email))) {
+      return recusar(request, { negado: identidade.email });
+    }
     const resposta = NextResponse.redirect(new URL(destino, request.nextUrl.origin));
     resposta.cookies.set(COOKIE_ACESSO_COP, await assinarAcesso(identidade.email, identidade.nome), {
       httpOnly: true,

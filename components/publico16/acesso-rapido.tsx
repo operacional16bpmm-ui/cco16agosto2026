@@ -1,15 +1,12 @@
 import Link from "next/link";
 import Image from "next/image";
 import {
-  AlertTriangle,
-  FileSpreadsheet,
+  FileBarChart2,
   BarChart3,
   Presentation,
   FileCheck2,
   Lock,
   ArrowRight,
-  ExternalLink,
-  ShieldCheck,
   Sparkles,
 } from "lucide-react";
 import { AjudaWhatsApp } from "@/components/publico16/ajuda-whatsapp";
@@ -18,29 +15,25 @@ import { cn } from "@/lib/utils";
 type Atalho = {
   rotulo: string;
   subtitulo: string;
-  faixa?: string;
   nota: string;
   href: string;
   botaoTexto: string;
   foto?: string;
   video?: string;
   icone: React.ReactNode;
-  externo?: boolean;
   restrito?: boolean;
   destaque?: boolean;
 };
 
-export function AcessoRapido({
-  urlFormulario,
-  urlPlanilha,
-}: {
-  urlFormulario: string;
-  urlPlanilha: string;
-}) {
+export function AcessoRapido({ urlFormulario }: { urlFormulario: string }) {
   const atalhos: Atalho[] = [
     {
       rotulo: "Lançar Auditoria do Turno",
-      faixa: "Faixa de Atenção da Meta",
+      // Sem `faixa`: aqui havia a pastilha fixa "Faixa de Atenção da Meta",
+      // texto cravado que classificava o Batalhão sem olhar o dado — continuava
+      // dizendo "atenção" com a meta em superação. A classificação tem fonte
+      // única em lib/cop2026-metricas.ts e nenhum componente reclassifica por
+      // conta própria; a posição real de cada fração está no Quadro 08, ao vivo.
       subtitulo: "Registro obrigatório das mídias auditadas com mínimo de 3 IDs por turno.",
       nota: "Formulário da Auditoria",
       href: urlFormulario,
@@ -48,7 +41,8 @@ export function AcessoRapido({
       video: "/media/clip_patrulha_noturna.mp4",
       foto: "/media/foto-viatura.jpg",
       icone: <FileCheck2 className="h-6 w-6 text-white" />,
-      externo: true,
+      // Deixou de ser externo em 01/09/2026: o lançamento é rota do próprio
+      // portal (/cop2026/lancar), e abrir em aba nova custaria o rascunho.
       destaque: true,
     },
     {
@@ -62,14 +56,18 @@ export function AcessoRapido({
       restrito: true,
     },
     {
-      rotulo: "Planilha de Controle",
-      subtitulo: "Base oficial de respostas no Google Sheets com fórmulas e conferência.",
-      nota: "Planilha de Respostas",
-      href: urlPlanilha,
-      botaoTexto: "Abrir no Sheets",
+      // Ocupa o lugar do antigo card "Planilha de Controle", que abria a base
+      // bruta no Google Sheets. A planilha saiu da página aberta à tropa em
+      // 01/09/2026 e vive dentro do Relatório de Dados de cada mês — que é
+      // exatamente onde este card leva.
+      rotulo: "Relatórios Mensais",
+      subtitulo:
+        "Consolidação de cada período: relatório executivo analítico, dados detalhados e briefing.",
+      nota: "Documentos do Período",
+      href: "/cop2026/relatorios",
+      botaoTexto: "Abrir Relatórios",
       foto: "/media/foto-rua.jpg",
-      icone: <FileSpreadsheet className="h-6 w-6 text-white" />,
-      externo: true,
+      icone: <FileBarChart2 className="h-6 w-6 text-white" />,
       restrito: true,
     },
     {
@@ -80,6 +78,9 @@ export function AcessoRapido({
       botaoTexto: "Abrir Apresentação",
       foto: "/media/foto-oficial.jpg",
       icone: <Presentation className="h-6 w-6 text-white" />,
+      // Exige conta Google autorizada como os dois cards ao lado — faltava só
+      // o selo, e o cartão sem cadeado prometia entrada aberta.
+      restrito: true,
     },
   ];
 
@@ -191,14 +192,6 @@ export function AcessoRapido({
                       {a.rotulo}
                     </h3>
 
-                    {/* Faixa de Atenção da Meta no Meio */}
-                    {a.faixa && (
-                      <div className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-amber-500/30 border border-amber-400/80 px-2.5 py-1 text-xs font-black uppercase tracking-wider text-amber-300 backdrop-blur-md shadow-md animate-pulse">
-                        <AlertTriangle size={13} className="text-amber-400 shrink-0" />
-                        <span>{a.faixa}</span>
-                      </div>
-                    )}
-
                     {/* Subtítulo / Descrição */}
                     <p className="mt-2.5 text-xs sm:text-[13px] leading-relaxed text-slate-200 font-medium drop-shadow">
                       {a.subtitulo}
@@ -221,34 +214,21 @@ export function AcessoRapido({
                       </span>
 
                       <span className="relative z-10">{a.botaoTexto}</span>
-                      {a.externo ? (
-                        <ExternalLink size={15} className="relative z-10 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                      ) : (
-                        <ArrowRight size={15} className="relative z-10 transition-transform duration-300 group-hover:translate-x-1" />
-                      )}
+                      <ArrowRight size={15} className="relative z-10 transition-transform duration-300 group-hover:translate-x-1" />
                     </div>
                   </div>
                 </div>
               </div>
             );
 
+            // Todos os quatro destinos são rotas do próprio portal desde
+            // 01/09/2026 — o último link externo daqui era a planilha.
             return (
               <div key={a.rotulo} className="relative h-full">
                 {isDestaque && <AjudaWhatsApp />}
-                {a.externo ? (
-                  <a
-                    href={a.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block h-full"
-                  >
-                    {cardContent}
-                  </a>
-                ) : (
-                  <Link href={a.href} className="block h-full">
-                    {cardContent}
-                  </Link>
-                )}
+                <Link href={a.href} className="block h-full">
+                  {cardContent}
+                </Link>
               </div>
             );
           })}

@@ -37,7 +37,7 @@ import {
 } from "@/lib/cop2026-metricas";
 import { AlertCircle } from "lucide-react";
 import type { CSSProperties } from "react";
-import { FaixaRitmos } from "@/components/publico16/cop/v3/faixa-ritmos";
+import { FaixaRitmos } from "@/components/publico16/cop/ciclo/faixa-ritmos";
 import { COR_NIVEL, Selo } from "./primitivos";
 import { cn } from "@/lib/utils";
 
@@ -387,8 +387,8 @@ export function AgulhaoMetas({
   turnosRestantes?: number;
   /** Substitui o cartao "Ritmo necessario". Sem ele, nada muda. */
   cartaoRitmo?: React.ReactNode;
-  /** Faixa em largura inteira sob as duas caixas — a comparacao de ritmos da
-   *  V3, que nao cabia dentro de um cartao de 130px. Sem ela, nada muda. */
+  /** Faixa em largura inteira sob as duas caixas — a comparacao de ritmos que
+   *  nao cabia dentro de um cartao de 130px. Sem ela, nada muda. */
   faixaRitmos?: React.ReactNode;
   /** Marca a leitura atual dentro do cartao ativo da regua de faixas. */
   marcaPosicao?: string;
@@ -654,7 +654,7 @@ export function RankingFracoes({
 }: {
   dados: LinhaFracao[];
   onSelecionar?: (chave: string) => void;
-  /** Anexa o card de ritmo diário (/dia) da fração abaixo dos quadros semanais. Só na V3. */
+  /** Anexa o card de ritmo diário (/dia) da fração abaixo dos quadros semanais. */
   mostrarTendencia?: boolean;
 }) {
   return (
@@ -767,7 +767,7 @@ export function RankingFracoes({
               </div>
             )}
 
-            {/* Tendência · ritmo diário da fração (mesmo card do Batalhão, rateado) — só na V3 */}
+            {/* Tendência · ritmo diário da fração (mesmo card do Batalhão, rateado) */}
             {mostrarTendencia && (
               <FaixaRitmos
                 meta={d.meta}

@@ -118,10 +118,21 @@ reaproveite em vez de reescrever.
 | Superfície | Rota | Componente |
 |---|---|---|
 | Hub público | `/cop2026` | `app/(public)/cop2026/page.tsx` |
-| Dashboard (produção) | `/cop2026/dashboard` | `components/publico16/cop/dashboard-cop.tsx` + `cop/graficos.tsx` |
-| Dashboard V2 (prévia) | `/cop2026/dashboard/v2` | `components/publico16/cop/v2/*` |
+| Painel do ciclo (único) | `/cop2026/dashboard` | `components/publico16/cop/dashboard-cop.tsx` + `cop/graficos.tsx` + `cop/ciclo/*` |
+| Relatórios mensais | `/cop2026/relatorios[/<mes>]` | `app/(public)/cop2026/relatorios/*` |
 | Briefing executivo | `/cop2026/briefing` | `components/publico16/briefing-slides.tsx` |
 | Prévia de link | — | `app/(public)/cop2026/opengraph-image.tsx` |
+
+**Painel é um só.** Em 01/09/2026 o Comando encerrou a avaliação das três versões que
+conviviam (V1 na URL limpa, V2 de prévia de layout, V3 do ciclo): ficou o V3, em
+`/cop2026/dashboard`. `/cop2026/dashboard/v2` e `/cop2026/dashboard/v3` são redirect
+permanente em `next.config.ts` e preservam a query. **Não recriar variante de painel em
+rota nova** — a divergência entre o que o menu abria e o que o botão da home abria foi
+exatamente o problema que isso resolveu.
+
+**A planilha não aparece em página aberta.** O atalho para a base bruta no Google Sheets
+sai só dentro do Relatório de Dados do mês (`/cop2026/relatorios/<mes>/dados`). Ele foi
+removido do hub público e do menu do módulo — não repor.
 
 Regra de ouro: **texto institucional muda em todas as superfícies ao mesmo tempo.** O Major
 navega entre elas e cobra a divergência.

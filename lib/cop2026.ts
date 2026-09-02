@@ -12,14 +12,35 @@
  * recebe resposta o dia inteiro e o Comando precisa do número de agora. Não há
  * ingestão no Supabase nem script manual no caminho.
  *
- * Existe uma tabela cop_auditoria_respostas (migration 008) de um desenho
- * anterior, por importação de CSV. Ela deixou de ser usada aqui: dependia de
- * alguém exportar e rodar script, e a tela mostraria sempre a última carga, não
- * o dado corrente.
+ * A PARTIR DE SETEMBRO/2026 a planilha deixa de ser a única fonte: o
+ * lançamento passa a ser feito em `/cop2026/lancar`, no próprio portal, e
+ * gravado em `cop_auditoria_lancamento` (migration 026). Este módulo continua
+ * sendo a fonte única do PARSER — as regras de identificador, subunidade e
+ * quantidade valem para as duas origens, e é `lib/cop2026-leitura.ts` que
+ * escolhe de onde os números vêm (`COP2026_FONTE`).
+ *
+ * A tabela cop_auditoria_respostas (migration 008) era um terceiro desenho, por
+ * importação manual de CSV; nunca recebeu uma linha e foi derrubada pela 026,
+ * junto de lib/db/cop-auditoria.ts, que calculava meta própria e era uma
+ * segunda fonte de classificação.
  */
 
 export const PLANILHA_ID = "11tdaTRSSf-K-y13rIg3hmHCGmyOeWFhkBfRbCqKF1Bg";
-export const URL_FORMULARIO = "https://forms.gle/kqiRxSbCHqYKRkf2A";
+
+/**
+ * Onde a tropa lança. Rota do próprio portal desde 01/09/2026 — era
+ * `https://forms.gle/kqiRxSbCHqYKRkf2A`.
+ *
+ * O Forms NÃO é desligado junto com esta troca, e o endereço antigo continua
+ * abaixo de propósito: `forms.gle` é domínio do Google e não redireciona, então
+ * o corte não é uma configuração — é fechar o Forms e usar a mensagem de
+ * encerramento apontando o novo endereço. Enquanto isso não acontece, os dois
+ * convivem: quem chegar pelo QR Code antigo ou por um print de WhatsApp de
+ * agosto continua conseguindo lançar. Em escala 12x36, avisar todo o efetivo
+ * leva ~4 dias por aritmética da escala, não por falha de comunicação.
+ */
+export const URL_FORMULARIO = "/cop2026/lancar";
+export const URL_FORMULARIO_GOOGLE = "https://forms.gle/kqiRxSbCHqYKRkf2A";
 export const URL_PLANILHA = `https://docs.google.com/spreadsheets/d/${PLANILHA_ID}/edit`;
 
 // ---------------------------------------------------------------------------
@@ -384,7 +405,7 @@ export function separarIdentificadores(bruto: string): string[] {
  * (18). Não é regra de negócio nem limite de esforço — é a linha entre um
  * número e um erro de digitação.
  */
-const TETO_VIDEOS_POR_LANCAMENTO = 60;
+export const TETO_VIDEOS_POR_LANCAMENTO = 60;
 
 /**
  * Quantidade auditada do lançamento, com o número implausível posto de lado.
@@ -395,7 +416,7 @@ const TETO_VIDEOS_POR_LANCAMENTO = 60;
  * zerar. Zerar seria punir o auditor por um erro de digitação; somar seria
  * mentir para o Comando.
  */
-function quantidadeAuditada(lista: number, exata: number) {
+export function quantidadeAuditada(lista: number, exata: number) {
   const brutos = [lista, exata];
   const plausiveis = brutos.filter((n) => n <= TETO_VIDEOS_POR_LANCAMENTO);
   const descartados = brutos.filter((n) => n > TETO_VIDEOS_POR_LANCAMENTO);

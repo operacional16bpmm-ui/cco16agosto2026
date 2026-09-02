@@ -23,8 +23,12 @@ import {
   extrairLancamentos,
   extrairMetas,
   normalizar,
+  type LancamentoCop,
   type LeituraCop2026,
 } from "@/lib/cop2026";
+import { lerLancamentosDoBanco } from "@/lib/db/cop2026-lancamentos";
+import { lerMetas, periodoDe } from "@/lib/db/cop2026-parametros";
+import { hojeBrt } from "@/lib/cop2026-ciclo";
 import { parseCsv } from "@/lib/inventario-2026";
 
 /** Documento publicado na web em 26/08/2026 (Arquivo > Compartilhar > Publicar
@@ -279,6 +283,85 @@ function relerUmaVezSo(prazoMs: number): Promise<void> {
  * Só a primeira visita de cada instância paga a espera. As outras leem memória.
  */
 export async function lerAuditoriaCop2026(): Promise<LeituraCop2026> {
+  const fonte = fonteCop2026();
+  if (fonte !== "planilha") return lerComBanco(fonte);
+  return lerDaPlanilha();
+}
+
+/* --------------------------------------------------------------- fonte */
+
+export type FonteCop2026 = "planilha" | "uniao" | "banco";
+
+/**
+ * De onde os números vêm. Variável de ambiente e não constante de código
+ * porque, neste projeto, é o ÚNICO rollback que funciona em minutos: um deploy
+ * da Vercel já ficou `Ready` sem promover o alias e serviu build velho por
+ * horas (ver LEIA-ME.md). Se o banco se comportar mal no meio de um turno, o
+ * painel volta para a planilha sem esperar build.
+ *
+ * - `planilha` (padrão) — como sempre foi. O formulário grava no banco, mas
+ *   quem manda no painel ainda é a planilha; é o modo da rodagem paralela.
+ * - `uniao` — planilha até o corte, banco a partir dele. É o modo da virada.
+ * - `banco` — só o banco. Depois que o Forms fechar.
+ */
+export function fonteCop2026(): FonteCop2026 {
+  const v = process.env.COP2026_FONTE;
+  return v === "banco" || v === "uniao" ? v : "planilha";
+}
+
+/** Data em que o banco passa a mandar, no modo `uniao`. Corte explícito, e não
+ *  "o que for mais novo": sem uma linha divisória declarada, o mesmo lançamento
+ *  entra pelas duas fontes e 960 vira 1920 (A-5). */
+function corteDoBanco(): string {
+  const v = process.env.COP2026_CORTE_BANCO;
+  return v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : "2026-09-01";
+}
+
+/**
+ * Leitura com banco.
+ *
+ * Quem separa as fontes é o CORTE DE DATA, e só ele. A tentação é deduplicar
+ * por `re|data|turno` "por segurança", e isso está errado: essa chave não é
+ * única no mundo real — 12 grupos de agosto/2026 têm lançamentos
+ * complementares no mesmo turno, com identificadores diferentes (migration
+ * 028). Deduplicar por ela apagaria lançamentos legítimos e faria o painel
+ * cair sem que ninguém soubesse por quê.
+ *
+ * Consequência operacional, que precisa estar clara para quem opera a virada:
+ * ao importar agosto para o banco, o corte tem que ir junto para o início de
+ * agosto. Corte e backfill andam no mesmo passo.
+ */
+async function lerComBanco(fonte: Exclude<FonteCop2026, "planilha">): Promise<LeituraCop2026> {
+  const corte = corteDoBanco();
+  const [doBanco, metas] = await Promise.all([
+    lerLancamentosDoBanco(),
+    lerMetas(periodoDe(hojeBrt())),
+  ]);
+
+  if (fonte === "banco") {
+    return {
+      lancamentos: doBanco.lancamentos,
+      metas,
+      lidoEm: agoraEmSaoPaulo(),
+      ...(doBanco.erro ? { erro: doBanco.erro, stale: true } : {}),
+    };
+  }
+
+  const daPlanilha = await lerDaPlanilha();
+  const anteriores = daPlanilha.lancamentos.filter((l: LancamentoCop) => l.data < corte);
+
+  return {
+    // `id` é só chave de lista na tabela do painel; reindexar evita duas linhas
+    // com a mesma key vindas de fontes diferentes.
+    lancamentos: [...anteriores, ...doBanco.lancamentos].map((l, i) => ({ ...l, id: i })),
+    metas,
+    lidoEm: daPlanilha.lidoEm,
+    ...(daPlanilha.erro ? { erro: daPlanilha.erro, stale: true } : {}),
+    ...(doBanco.erro ? { erro: doBanco.erro, stale: true } : {}),
+  };
+}
+
+async function lerDaPlanilha(): Promise<LeituraCop2026> {
   const vencido = performance.now() - retratoEm > VALIDADE_RETRATO_MS;
 
   if (!retrato) {

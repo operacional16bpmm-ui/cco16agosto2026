@@ -7,24 +7,19 @@ import { usePathname } from "next/navigation";
 import {
   ArrowLeft,
   BarChart3,
-  BookOpen,
-  ChevronRight,
   Clock,
-  ExternalLink,
   FileBarChart2,
-  FileSpreadsheet,
   FileText,
-  Home,
   LogOut,
   Menu,
   PenSquare,
   Presentation,
-  ShieldCheck,
   X,
 } from "lucide-react";
-import { URL_FORMULARIO, URL_PLANILHA } from "@/lib/cop2026";
+import { URL_FORMULARIO } from "@/lib/cop2026";
 import { cn } from "@/lib/utils";
 import { FaixaCreditos } from "@/components/publico16/creditos";
+import { BotaoAdmin } from "@/components/publico16/cop/botao-admin";
 
 export function NavegacaoCop({
   lidoEm,
@@ -65,12 +60,10 @@ export function NavegacaoCop({
       icone: <PenSquare className="h-4 w-4" />,
       ativo: pathname === "/cop2026",
     },
-    {
-      href: URL_PLANILHA,
-      rotulo: "Planilha",
-      icone: <FileSpreadsheet className="h-4 w-4" />,
-      externo: true,
-    },
+    /* O item "Planilha" saiu daqui em 01/09/2026: o atalho para a base bruta
+       do Google Sheets deixou de aparecer em toda tela do módulo e vive só no
+       Relatório de Dados do mês (/cop2026/relatorios/<mes>/dados), onde tem
+       contexto. Com ele foi embora o último link externo do menu. */
   ];
 
   return (
@@ -102,43 +95,52 @@ export function NavegacaoCop({
               priority
             />
           </Link>
+
+          {/* Onde a pessoa está. Cada página já passava o próprio título nesta
+              prop e o componente simplesmente não o desenhava — oito telas
+              distintas com o mesmo cabeçalho. Só no desktop: no mobile o
+              espaço é do logo e do botão do menu. */}
+          <span
+            className="hidden max-w-[22ch] truncate border-l border-borda pl-3 text-[13px] font-semibold text-texto-suave md:block"
+            title={tituloPagina}
+          >
+            {tituloPagina}
+          </span>
         </div>
 
         {/* Links Desktop */}
         <nav className="hidden items-center gap-1 lg:flex" aria-label="Navegação do COP2026">
-          {linksNavegacao.map((l) =>
-            l.externo ? (
-              <a
-                key={l.rotulo}
-                href={l.href}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-semibold text-texto-suave transition-colors hover:bg-branco/5 hover:text-branco"
-              >
-                {l.icone}
-                <span>{l.rotulo}</span>
-                <ExternalLink className="h-3 w-3 opacity-60" />
-              </a>
-            ) : (
-              <Link
-                key={l.rotulo}
-                href={l.href}
-                className={cn(
-                  "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-semibold transition-colors",
-                  l.ativo
-                    ? "border border-vermelho/40 bg-vermelho/10 text-vermelho"
-                    : "text-texto-suave hover:bg-branco/5 hover:text-branco"
-                )}
-              >
-                {l.icone}
-                <span>{l.rotulo}</span>
-              </Link>
-            )
-          )}
+          {linksNavegacao.map((l) => (
+            <Link
+              key={l.rotulo}
+              href={l.href}
+              className={cn(
+                "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-semibold transition-colors",
+                l.ativo
+                  ? "border border-vermelho/40 bg-vermelho/10 text-vermelho"
+                  : "text-texto-suave hover:bg-branco/5 hover:text-branco"
+              )}
+            >
+              {l.icone}
+              <span>{l.rotulo}</span>
+            </Link>
+          ))}
         </nav>
 
         {/* Informações da Leitura & Usuário */}
         <div className="flex items-center gap-2.5 sm:gap-3">
+          {/* O lançamento saiu do Google Forms e virou rota do portal em
+              01/09/2026. Ganhou lugar fixo no cabeçalho — e não só no menu
+              mobile — porque o Comando abre o painel, vê a fração atrasada e o
+              caminho para cobrar precisa estar à mão, na mesma tela. */}
+          <Link
+            href={URL_FORMULARIO}
+            className="hidden items-center gap-1.5 rounded-md border border-vermelho/40 bg-vermelho/10 px-3 py-1.5 text-[12.5px] font-bold text-vermelho transition-colors hover:bg-vermelho/20 md:flex"
+          >
+            <FileText className="h-3.5 w-3.5" />
+            <span>Lançar auditoria</span>
+          </Link>
+
           {lidoEm && (
             <span className="hidden items-center gap-1.5 text-[11.5px] text-texto-suave xl:flex">
               <span className="h-2 w-2 rounded-full bg-sinal-conforme animar-ao-vivo" />
@@ -147,15 +149,7 @@ export function NavegacaoCop({
             </span>
           )}
 
-          {ehAdmin && (
-            <Link
-              href="/cop2026/admin"
-              className="hidden items-center gap-1 rounded-md border border-ouro/40 bg-ouro/10 px-2.5 py-1 text-[12px] font-semibold text-ouro transition-colors hover:bg-ouro/20 sm:flex"
-            >
-              <ShieldCheck className="h-3.5 w-3.5" />
-              <span>Autorizados</span>
-            </Link>
-          )}
+          <BotaoAdmin ehAdmin={ehAdmin} className="hidden sm:inline-flex" />
 
           {email && (
             <div className="hidden items-center gap-2 sm:flex">
@@ -190,51 +184,41 @@ export function NavegacaoCop({
             <p className="px-2 text-[11px] font-bold uppercase tracking-wider text-ouro">
               Módulos de Auditoria
             </p>
-            {linksNavegacao.map((l) =>
-              l.externo ? (
-                <a
-                  key={l.rotulo}
-                  href={l.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  onClick={() => setMenuAberto(false)}
-                  className="flex items-center justify-between rounded-lg p-2.5 text-sm font-semibold text-texto-suave hover:bg-branco/5 hover:text-branco"
-                >
-                  <div className="flex items-center gap-2.5">
-                    {l.icone}
-                    <span>{l.rotulo}</span>
-                  </div>
-                  <ExternalLink className="h-3.5 w-3.5 opacity-60" />
-                </a>
-              ) : (
-                <Link
-                  key={l.rotulo}
-                  href={l.href}
-                  onClick={() => setMenuAberto(false)}
-                  className={cn(
-                    "flex items-center gap-2.5 rounded-lg p-2.5 text-sm font-semibold transition-colors",
-                    l.ativo
-                      ? "border border-vermelho/40 bg-vermelho/10 text-vermelho font-bold"
-                      : "text-texto-suave hover:bg-branco/5 hover:text-branco"
-                  )}
-                >
-                  {l.icone}
-                  <span>{l.rotulo}</span>
-                </Link>
-              )
-            )}
+            {linksNavegacao.map((l) => (
+              <Link
+                key={l.rotulo}
+                href={l.href}
+                onClick={() => setMenuAberto(false)}
+                className={cn(
+                  "flex items-center gap-2.5 rounded-lg p-2.5 text-sm font-semibold transition-colors",
+                  l.ativo
+                    ? "border border-vermelho/40 bg-vermelho/10 text-vermelho font-bold"
+                    : "text-texto-suave hover:bg-branco/5 hover:text-branco"
+                )}
+              >
+                {l.icone}
+                <span>{l.rotulo}</span>
+              </Link>
+            ))}
 
             <div className="mt-2 border-t border-borda/60 pt-3">
               <a
                 href={URL_FORMULARIO}
-                target="_blank"
-                rel="noreferrer"
                 className="flex w-full items-center justify-center gap-2 rounded-lg bg-vermelho p-3 text-center text-sm font-bold text-white shadow-sm hover:bg-vermelho/90"
               >
                 <PenSquare className="h-4 w-4" />
-                <span>Lançar Auditoria no Google Forms</span>
+                <span>Lançar Auditoria do Turno</span>
               </a>
             </div>
+
+            {/* O botão de admin some abaixo de `sm` no cabeçalho; sem esta
+                entrada, quem administra pelo celular não tinha caminho nenhum
+                para a administração — e o Major abre o painel no telefone. */}
+            {ehAdmin && (
+              <div className="mt-2 border-t border-borda/60 pt-3">
+                <BotaoAdmin ehAdmin={ehAdmin} className="w-full justify-center py-2.5 text-sm" />
+              </div>
+            )}
 
             {email && (
               <div className="mt-2 flex items-center justify-between border-t border-borda/60 pt-2 text-xs text-texto-suave">

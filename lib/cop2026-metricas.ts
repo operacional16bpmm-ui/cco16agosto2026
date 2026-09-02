@@ -106,6 +106,24 @@ export const FILTROS_VAZIOS: Filtros = {
   excecao: "",
 };
 
+/**
+ * Recorte padrão de QUALQUER superfície que confronte lançamentos com a meta:
+ * o MÊS CORRENTE, nunca "tudo o que já entrou".
+ *
+ * A meta de 960 é MENSAL. Somar agosto com setembro contra ela faz o
+ * percentual passar de 100% sem ninguém ter superado nada — foi exatamente o
+ * que o quadro 08 da página pública exibiu em 01/09/2026: 627/960 de agosto
+ * anunciados como "posição na meta do mês" no primeiro dia de setembro.
+ *
+ * Fora do ciclo de 2026 `mesCorrente()` não acha nada e volta a valer o ciclo
+ * inteiro, que é a degradação certa: melhor o ciclo todo do que tela vazia.
+ */
+export function filtrosDoMesCorrente(): Filtros {
+  const mes = mesCorrente();
+  if (!mes) return FILTROS_VAZIOS;
+  return { ...FILTROS_VAZIOS, de: mes.periodo.de, ate: mes.periodo.ate };
+}
+
 export function lerFiltros(sp: Record<string, string | string[] | undefined>): Filtros {
   const um = (k: string) => {
     const v = sp[k];
@@ -114,28 +132,22 @@ export function lerFiltros(sp: Record<string, string | string[] | undefined>): F
   const excecao = um("excecao");
   const semana = um("semana");
 
-  /* Sem data na URL, o painel abre no MÊS CORRENTE — não em "tudo o que já
-   * entrou". A meta de 960 é mensal, então somar agosto com setembro contra ela
-   * faria o percentual passar de 100% sem ninguém ter superado nada.
+  /* Sem data na URL, o painel abre no mês corrente (ver `filtrosDoMesCorrente`).
    *
    * Fica visível: com `de`/`ate` preenchidos, a barra de filtros mostra a
    * tarja do período, e um clique em limpar volta a ver o ciclo inteiro. É o
    * contrário de um recorte escondido — o link que o Comando compartilha passa
-   * a dizer de que mês ele fala.
-   *
-   * Fora do ciclo de 2026 `mesCorrente()` não acha nada e o painel volta a
-   * mostrar tudo, que é a degradação certa: melhor o ciclo inteiro do que uma
-   * tela vazia. */
+   * a dizer de que mês ele fala. */
   const de = um("de");
   const ate = um("ate");
-  const mes = !de && !ate ? mesCorrente() : undefined;
+  const padrao = !de && !ate ? filtrosDoMesCorrente() : undefined;
 
   return {
     fracao: um("fracao") || "todas",
     turno: um("turno") || "todos",
     semana: ["1", "2", "3", "4"].includes(semana) ? semana : "todas",
-    de: de || mes?.periodo.de || "",
-    ate: ate || mes?.periodo.ate || "",
+    de: de || padrao?.de || "",
+    ate: ate || padrao?.ate || "",
     busca: um("busca"),
     excecao: (["naoauditou", "abaixo", "semids"] as const).includes(excecao as never)
       ? (excecao as Filtros["excecao"])

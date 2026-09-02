@@ -5,7 +5,6 @@ import {
   ArrowRight,
   BarChart3,
   CalendarDays,
-  ExternalLink,
   FileBarChart2,
   FileCheck2,
   Presentation,
@@ -21,11 +20,15 @@ import { Instagram16 } from "@/components/publico16/instagram-16";
 import { RodapeCop } from "@/components/publico16/cop/rodape-cop";
 import { FaixaCreditos } from "@/components/publico16/creditos";
 import { MarcoCiclo } from "@/components/publico16/cop/marco-ciclo";
-import { URL_FORMULARIO, URL_PLANILHA } from "@/lib/cop2026";
+import { URL_FORMULARIO } from "@/lib/cop2026";
 import { ehDataIso } from "@/lib/cop2026-ciclo";
 import { lerAuditoriaCop2026 } from "@/lib/cop2026-leitura";
-import { calcularPainel, FILTROS_VAZIOS } from "@/lib/cop2026-metricas";
+import { calcularPainel, filtrosDoMesCorrente } from "@/lib/cop2026-metricas";
+import { mesCorrente } from "@/lib/cop2026-relatorios";
 import { QuadroRankingCias } from "@/components/publico16/cop/quadro-ranking-cias";
+import { BotaoAdmin } from "@/components/publico16/cop/botao-admin";
+import { ehAdminCop } from "@/lib/cop2026-acesso";
+import { identidadeCop } from "@/lib/db/cop2026-autorizados";
 
 // Nenhuma fonte é carregada aqui: Cinzel (títulos), Inter (corpo) e IBM Plex
 // Mono (números) já vêm do layout raiz e valem para o portal inteiro. Esta
@@ -78,20 +81,16 @@ const CLASSE_CARIMBO =
 function BlocoPlanilha({ lidoEm, erro }: { lidoEm?: string; erro?: string }) {
   return (
     <>
+      {/* Só o carimbo de leitura. O atalho para a planilha saiu daqui em
+          01/09/2026 por determinação do Comando: a base bruta não é peça de
+          página aberta à tropa, e ela continua a um clique de quem tem acesso,
+          dentro do Relatório de Dados do mês
+          (/cop2026/relatorios/<mes>/dados). O horário fica: dizer "de quando é
+          este número" é informação, não link. */}
       <div className="mb-6 flex flex-wrap items-center justify-end gap-4">
-        <div className="flex flex-col items-end gap-1.5">
-          <a
-            href={URL_PLANILHA}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-branco/15 px-3 py-1.5 text-sm font-semibold text-branco/60 transition-colors hover:border-vermelho/50 hover:text-vermelho"
-          >
-            <ExternalLink size={12} /> Abrir a planilha
-          </a>
-          <span className={CLASSE_CARIMBO}>
-            <RefreshCw size={10} /> {lidoEm ? `leitura de ${lidoEm}` : "lendo a planilha…"}
-          </span>
-        </div>
+        <span className={CLASSE_CARIMBO}>
+          <RefreshCw size={10} /> {lidoEm ? `leitura de ${lidoEm}` : "lendo a planilha…"}
+        </span>
       </div>
 
       {erro && (
@@ -142,11 +141,23 @@ async function BlocoPlanilhaAoVivo() {
  */
 async function QuadroRankingCiasAoVivo() {
   const { lancamentos, metas } = await lerAuditoriaCop2026();
-  const painel = calcularPainel(lancamentos, metas, FILTROS_VAZIOS);
+  // MÊS CORRENTE, e não o acumulado: a meta de 960 é mensal. Sem este recorte o
+  // quadro somava agosto + setembro contra a meta de um mês só — em 01/09/2026
+  // ele anunciava os 627/960 de agosto como "posição na meta do mês", com a
+  // Força Tática em 202%, no dia em que setembro ainda não tinha lançamento.
+  const painel = calcularPainel(lancamentos, metas, filtrosDoMesCorrente());
   // Sem nenhum lançamento lido, o quadro fica no próprio esqueleto em vez de
-  // anunciar 0% para as seis frações.
+  // anunciar 0% para as seis frações. `totalNaPlanilha` é PRÉ-filtro de
+  // propósito: mês recém-aberto tem zero lançamentos e mesmo assim é dado bom —
+  // seis frações em 0% no dia 1º é a verdade, não falha de leitura.
   if (painel.totalNaPlanilha === 0) return <QuadroRankingCias />;
-  return <QuadroRankingCias linhas={painel.fracoes} pctBatalhao={painel.pct} />;
+  return (
+    <QuadroRankingCias
+      linhas={painel.fracoes}
+      pctBatalhao={painel.pct}
+      mes={mesCorrente()?.rotulo}
+    />
+  );
 }
 
 /**
@@ -163,6 +174,11 @@ export default async function Cop2026Page({
 }) {
   const { dia } = await searchParams;
   const diaSimulado = ehDataIso(dia) ? dia : undefined;
+
+  /* `identidadeCop` e não `sessaoCop`: esta página é ABERTA, e perguntar
+     "quem é" não pode virar exigência de estar na lista de 22 autorizados.
+     Sem cookie devolve null, `ehAdmin` fica falso e o botão não existe. */
+  const ehAdmin = ehAdminCop((await identidadeCop())?.email);
 
   return (
     <div
@@ -181,9 +197,13 @@ export default async function Cop2026Page({
             {/* Botão destacado dos Relatórios: topo-direito do cabeçalho, na
                 mesma família de cor/tipografia do portal. Fica em fluxo (ml-auto)
                 para não colidir com o brasão no mobile. */}
+            {/* Admin ao lado de Relatórios: o botão tem que existir em TODA
+                tela da COP, e esta é a única do conjunto que não usa a
+                NavegacaoCop. Só aparece para quem está em COP2026_ADMINS. */}
+            <BotaoAdmin ehAdmin={ehAdmin} className="ml-auto shrink-0" />
             <Link
               href="/cop2026/relatorios"
-              className="group ml-auto inline-flex shrink-0 items-center gap-2 rounded-lg bg-[#ca0202] px-3.5 py-2 text-[12px] font-bold uppercase tracking-wide text-white shadow-[0_6px_16px_rgba(202,2,2,0.28)] transition-all hover:-translate-y-0.5 hover:bg-[#e40707] hover:shadow-[0_10px_22px_rgba(202,2,2,0.42)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#07182d] sm:text-[13px]"
+              className="group inline-flex shrink-0 items-center gap-2 rounded-lg bg-[#ca0202] px-3.5 py-2 text-[12px] font-bold uppercase tracking-wide text-white shadow-[0_6px_16px_rgba(202,2,2,0.28)] transition-all hover:-translate-y-0.5 hover:bg-[#e40707] hover:shadow-[0_10px_22px_rgba(202,2,2,0.42)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#07182d] sm:text-[13px]"
             >
               <FileBarChart2 className="h-4 w-4" />
               Relatórios
@@ -231,7 +251,11 @@ export default async function Cop2026Page({
 
           <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5 border-t border-[#15304c]/15 pt-4">
             {/* Botões de vitrine: mostram os destinos do Batalhão sem levar a
-                lugar nenhum — esta página trata só da auditoria de COP. */}
+                lugar nenhum — esta página trata só da auditoria de COP.
+                Chegaram a virar link para /16bpmm e /16bpmm/calendario em
+                01/09/2026 e o Fabrício mandou tirar no mesmo dia: quem entra
+                pelo QR Code da tropa não pode ser desviado do lançamento.
+                Decisão firme — não repor o href. */}
             <span
               aria-disabled="true"
               className="inline-flex cursor-default items-center gap-2 rounded-md bg-[#ca0202] px-4 py-2.5 text-[14px] font-bold text-white shadow-sm"
@@ -326,14 +350,16 @@ export default async function Cop2026Page({
           <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
             <a
               href={URL_FORMULARIO}
-              target="_blank"
-              rel="noopener noreferrer"
               className="group inline-flex min-h-12 items-center justify-center gap-2.5 rounded-xl border border-red-300/40 bg-gradient-to-br from-[#d50909] to-[#a90000] px-7 py-3.5 text-[15px] font-bold text-white shadow-[0_10px_24px_rgba(126,0,0,0.32)] transition-all duration-200 hover:-translate-y-0.5 hover:from-[#e40707] hover:to-[#bd0000] hover:shadow-[0_14px_28px_rgba(126,0,0,0.42)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white active:translate-y-0"
             >
               <FileCheck2 className="h-[18px] w-[18px]" />
               Preencher a auditoria do turno
               <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
             </a>
+            {/* Painel único desde 01/09/2026: o painel do ciclo (Caixa
+                Tendência e título que se anuncia pelo mês corrente) assumiu a
+                URL limpa. Os endereços versionados /v2 e /v3 seguem como
+                redirect permanente em next.config.ts. */}
             <a
               href="/cop2026/dashboard"
               className="group inline-flex min-h-12 items-center justify-center gap-2.5 rounded-xl border border-white/25 bg-[#07182d]/55 px-6 py-3.5 text-[15px] font-bold text-white shadow-[0_8px_20px_rgba(0,0,0,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/55 hover:bg-[#07182d]/75 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
@@ -382,7 +408,7 @@ export default async function Cop2026Page({
         }
       />
 
-      <AcessoRapido urlFormulario={URL_FORMULARIO} urlPlanilha={URL_PLANILHA} />
+      <AcessoRapido urlFormulario={URL_FORMULARIO} />
 
       <FundamentacaoCop />
 
@@ -397,19 +423,19 @@ export default async function Cop2026Page({
         </div>
 
         <p className="mt-8 border-t border-branco/10 pt-4 text-[13px] leading-relaxed text-branco/40">
-          Leitura direta da planilha de respostas do formulário &quot;Auditoria COP Motorola · 16
-          BPM/M&quot;, da conta institucional operacional16bpmm@gmail.com, atualizada a cada minuto.
-          A fonte de verdade continua sendo a planilha: correção de lançamento e ajuste de auditores
-          ou de meta são feitos lá, na aba Parametros, e esta página apenas reflete o que estiver
-          preenchido. Meta do período = auditores designados × 3 evidências mínimas por turno × 15
-          turnos de serviço no período (escala 12x36), conforme fixado pelo Batalhão na própria
-          planilha. Os números do acompanhamento ficam no Dashboard de controle.
+          Leitura direta da base de respostas da &quot;Auditoria COP Motorola · 16 BPM/M&quot;, da
+          conta institucional operacional16bpmm@gmail.com, atualizada a cada minuto. Correção de
+          lançamento e ajuste de auditores ou de meta são feitos pelo Comando na área de
+          administração do próprio portal, e esta página apenas reflete o que estiver registrado.
+          Meta do período = auditores designados × 3 evidências mínimas por turno × 15 turnos de
+          serviço no período (escala 12x36), conforme fixado pelo Batalhão. Os números do
+          acompanhamento ficam no painel do mês, de acesso restrito.
         </p>
       </main>
 
       <Instagram16 />
 
-      <RodapeCop nota="Página aberta à tropa. Dashboard e Briefing são de acesso restrito." />
+      <RodapeCop nota="Página aberta à tropa. Painel, Briefing e Relatórios são de acesso restrito." />
     </div>
   );
 }

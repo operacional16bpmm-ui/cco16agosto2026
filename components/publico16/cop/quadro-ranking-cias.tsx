@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { FMT, PCT, type LinhaFracao, type Nivel } from "@/lib/cop2026-metricas";
+import { FMT, PCT, nivelPorCumprimento, type LinhaFracao, type Nivel } from "@/lib/cop2026-metricas";
 
 /**
  * Quadro 08 do bloco "Registro Operacional" — posição de cada fração na meta.
@@ -45,9 +45,12 @@ export type LinhaRanking = Pick<
 export function QuadroRankingCias({
   linhas = [],
   pctBatalhao,
+  mes,
 }: {
   linhas?: LinhaRanking[];
   pctBatalhao?: number;
+  /** Mês do recorte ("Setembro"), só para a tela dizer de que mês ela fala. */
+  mes?: string;
 }) {
   const temDados = linhas.length > 0;
   // A ordem do painel é a ordem regimental (EM, 1ª… FT); ranking é por
@@ -59,16 +62,11 @@ export function QuadroRankingCias({
   // dois blocos conviveram, cada um apontando uma fração diferente na mesma
   // frase, era contradição na cara de quem lia.
   const ultima = ordenadas.length > 1 ? ordenadas[ordenadas.length - 1] : undefined;
-  const nivelBatalhao: Nivel =
-    pctBatalhao === undefined
-      ? "neutro"
-      : pctBatalhao > 100
-        ? "superacao"
-        : pctBatalhao >= 80
-          ? "conforme"
-          : pctBatalhao >= 50
-            ? "atencao"
-            : "critico";
+  // Mês recém-aberto: há dado, e o dado é zero. Não é o esqueleto (que fala de
+  // leitura em curso) nem é ranking — "Força Tática lidera com 0%" no dia 1º
+  // seria disputa entre seis zeros. A ordem exibida volta a ser a regimental.
+  const mesZerado = temDados && ordenadas.every((l) => l.feito === 0);
+  const nivelBatalhao: Nivel = nivelPorCumprimento(pctBatalhao ?? 0, pctBatalhao !== undefined);
 
   return (
     <div className="relative isolate min-h-72 overflow-hidden rounded-xl border border-white/20 bg-[#1d2c46] shadow-[0_10px_24px_rgba(0,0,0,0.2)] transition-transform duration-300 hover:-translate-y-1 sm:col-span-2">
@@ -91,7 +89,8 @@ export function QuadroRankingCias({
               Companhias e Força Tática
             </h4>
             <p className="mt-1 text-xs leading-relaxed text-white/75">
-              Posição de cada fração na meta do mês · atualiza a cada minuto
+              Posição de cada fração na meta{mes ? ` de ${mes}` : " do mês"} · atualiza a cada
+              minuto
             </p>
           </div>
 
@@ -115,7 +114,10 @@ export function QuadroRankingCias({
                 style={{ background: COR_BARRA[l.nivel] }}
                 aria-hidden
               >
-                {i + 1}
+                {/* Com todo mundo em zero não há colocação: numerar de 1 a 6 diria
+                    que o Estado-Maior está à frente da 2ª Cia por ordem alfabética
+                    do array. */}
+                {mesZerado ? "·" : i + 1}
               </span>
 
               <div className="min-w-0 flex-1">
@@ -159,7 +161,19 @@ export function QuadroRankingCias({
           ))}
         </ul>
 
-        {temDados && lider && (
+        {mesZerado && (
+          <div className="mt-4 border-t border-white/15 pt-3 text-[10px] font-semibold text-white/55 sm:text-[11px]">
+            <span>
+              {mes ? `${mes} ` : "O mês "}começou. Nenhum lançamento registrado ainda — a meta de{" "}
+              <span className="dados font-black text-white/80">
+                {FMT.format(ordenadas.reduce((s, l) => s + l.meta, 0))}
+              </span>{" "}
+              evidências está inteira pela frente.
+            </span>
+          </div>
+        )}
+
+        {temDados && !mesZerado && lider && (
           <div className="mt-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-t border-white/15 pt-3 text-[10px] font-semibold text-white/55 sm:text-[11px]">
             <span>
               <span className="font-black text-white/85">{lider.rotulo}</span> lidera com{" "}

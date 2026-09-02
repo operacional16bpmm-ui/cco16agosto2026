@@ -42,7 +42,7 @@ import {
 // dado pessoal, mas há dado administrativo sensível. Para voltar a proteger,
 // basta remover esta entrada da lista: a rota volta a exigir login pelo
 // fail-closed, sem mais nenhuma alteração.
-// "/cop2026" é o painel da auditoria de câmera operacional portátil. Aberto a
+// "/cop2026" é o painel da auditoria de câmera operacional corporal. Aberto a
 // pedido do usuário em 03/08/2026: a tropa inteira precisa alcançar o
 // formulário e conferir o próprio lançamento, e o link vai circular por
 // WhatsApp, sem passar pela credencial única da Sala de Comando.

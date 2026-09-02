@@ -32,6 +32,17 @@ export const ROTAS_RESTRITAS_COP = [
      fail-closed geral do proxy e exigiria a credencial única da Sala de
      Comando, que quem usa a COP não tem — o gate correto é a conta Google. */
   "/api/cop2026/briefing-png",
+  /* O LANÇAMENTO é aberto por padrão e entra aqui só se o Comando mandar.
+   *
+   * O gate escolhido para quem lança nunca foi login: é o padrão do
+   * identificador — lançamento fora do formato denuncia o erro. A Diretriz
+   * §6.1.6 já exige credencial pessoal do SiGCED para auditar, então o ID só
+   * existe se a pessoa esteve autenticada lá. Ligar isto no dia 1 seria pôr um
+   * portão exatamente na métrica que se quer aumentar: 17% da lista de
+   * autorizados de hoje sequer usa conta Google nativa (2 hotmail, 1 outlook), e
+   * a extrapolação para 570 praças só piora. Fica atrás de variável de ambiente
+   * para poder ser relaxado em minutos se a adesão cair. */
+  ...(process.env.COP2026_LANCAR_EXIGE_LOGIN === "1" ? ["/cop2026/lancar"] : []),
 ];
 
 export const ROTA_ACESSO_COP = "/cop2026/acesso";
@@ -81,10 +92,26 @@ export function ehAdminCop(email: string | undefined | null): boolean {
 
 export type PayloadAcesso = { email: string; nome?: string; exp: number };
 
+/**
+ * Separação de domínio da assinatura.
+ *
+ * Este cookie e o da sessão do portal (lib/auth-simples.ts) são assinados com o
+ * MESMO segredo. Hoje nenhum passa pelo verificador do outro por acidente de
+ * formato — o payload da COP não tem `usuario`/`perfil`, o do portal não tem
+ * `email` — e "não colide por acidente" não é garantia: basta alguém acrescentar
+ * um campo. Com o rótulo, os dois espaços de assinatura ficam disjuntos por
+ * construção. Prefixar um dos lados já basta.
+ *
+ * O `v1` existe para que trocar a regra um dia seja uma troca de rótulo. Efeito
+ * colateral conhecido e aceito: ao entrar em produção, os cookies já emitidos
+ * deixam de valer e quem estava logado refaz o login com o Google.
+ */
+const DOMINIO_ASSINATURA = "cop-acesso:v1|";
+
 export async function assinarAcesso(email: string, nome?: string): Promise<string> {
   const exp = Date.now() + DURACAO_ACESSO_SEGUNDOS * 1000;
   const payload = paraBase64Url(JSON.stringify({ email: email.toLowerCase(), nome, exp }));
-  return `${payload}.${await hmacHex(payload)}`;
+  return `${payload}.${await hmacHex(DOMINIO_ASSINATURA + payload)}`;
 }
 
 /**
@@ -104,7 +131,7 @@ export async function verificarAssinaturaAcesso(
   if (!valor) return null;
   const [payload, assinatura] = valor.split(".");
   if (!payload || !assinatura) return null;
-  if (!comparacaoConstante(await hmacHex(payload), assinatura)) return null;
+  if (!comparacaoConstante(await hmacHex(DOMINIO_ASSINATURA + payload), assinatura)) return null;
 
   const bruto = deBase64Url(payload);
   if (!bruto) return null;

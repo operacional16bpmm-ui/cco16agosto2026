@@ -41,8 +41,14 @@ do espelho público do hero (`ranking-fracoes-publico`). Dois blocos da mesma
 página cobrando frações diferentes na mesma frase seria contradição na cara do
 Comando.
 
-Os números saem de `calcularPainel` com `FILTROS_VAZIOS`, o mesmo do Dashboard,
-dentro de `<Suspense>` próprio: os sete quadros normativos chegam na hora e só
+Os números saem de `calcularPainel` com **`filtrosDoMesCorrente()`**, o mesmo
+recorte padrão do Dashboard — e não com `FILTROS_VAZIOS`, que era o que estava
+aqui até 01/09/2026 e somava agosto com setembro contra uma meta mensal: no
+primeiro dia de setembro o quadro exibia os 627/960 de agosto como "posição na
+meta do mês", com a Força Tática em 202%. Mês recém-aberto agora mostra as seis
+frações em 0% e uma linha dizendo que o mês começou — sem numerar colocação
+entre seis zeros. Tudo dentro de `<Suspense>` próprio: os sete quadros
+normativos chegam na hora e só
 este espera o Google. A leitura não custa uma segunda ida à planilha —
 `lerAuditoriaCop2026` serve do retrato em memória, compartilhado com o espelho do
 hero e o bloco da planilha.
@@ -115,6 +121,9 @@ pelo Major (`960 ÷ 300 = 3,20`).
 31 — fevereiro bissexto sai certo sem ninguém tocar.
 
 ### Onde vive
+
+> **Desatualizado desde 01/09/2026** — a V3 virou o painel único e mudou de
+> endereço para `/cop2026/dashboard`. Ver a última seção deste arquivo.
 
 - `/cop2026/dashboard/v3` — caixa TENDÊNCIA dentro do velocímetro (no lugar do
   cartão do 73) e o detalhamento por fração entre a barra-resumo e a camada
@@ -389,3 +398,68 @@ Deployment `portal-cco16-ieh3m93js`, criado 19:39:56, `● Ready`, **aliased** p
 `portal-cco16.vercel.app`, que responde **HTTP 200 em 0,55 s**. Publica o commit
 `8d79c8c` — que estava commitado às 19:17 e **nunca tinha ido ao ar**: o deploy no
 alias era o `co4jtbn5s`, das 19:12, cinco minutos anterior ao commit.
+
+---
+
+## 01/09/2026 — painel único, e a planilha saiu da página aberta
+
+### Três painéis no ar para o mesmo dado
+
+A varredura de `/cop2026` encontrou **três dashboards vivos**: o V1 na URL limpa
+(`/cop2026/dashboard`), o V2 de prévia de layout e o V3 do ciclo. O menu interno, o
+briefing (`?excecao=`) e o cabeçalho do admin apontavam para o **V1**; o botão do hero e
+o card do Acesso Rápido apontavam para o **V3**. O Comando clicava em "Dashboard" e caía
+numa versão diferente da que o botão da home entregava — com Caixa Tendência num lado e
+o cartão do 73 no outro.
+
+**O V3 assumiu `/cop2026/dashboard`.** O corpo de `dashboard/v3/page.tsx` virou o
+`dashboard/page.tsx`; as rotas `/v2` e `/v3` e os componentes `cop/v2/*` foram apagados.
+Os dois endereços versionados viraram **redirect permanente** em `next.config.ts` — o
+Next repassa a query sozinho, então `?excecao=`, `?semana=` e `?briefing=1` de link
+salvo continuam abrindo. `components/publico16/cop/v3/` virou `cop/ciclo/`: pasta com
+nome de versão, sem versão nenhuma para distinguir, só confunde.
+
+`/api/cop2026/briefing-png` passou a abrir `/cop2026/dashboard?briefing=1` direto, sem
+salto de redirect no Chromium headless.
+
+### A planilha saiu de toda página aberta
+
+O Google Sheets aparecia **duas vezes no hub público** (botão "Abrir a planilha" e card
+"Planilha de Controle") e mais uma no menu do módulo, em toda tela. Agora vive só dentro
+do **Relatório de Dados do mês** (`/cop2026/relatorios/<mes>/dados`, botão "Abrir no
+Google Sheets"), que é onde ela tem contexto. Ficou no hub apenas o carimbo *"leitura de
+HH:MM"* — dizer de quando é o número é informação, não link. O card vago do Acesso
+Rápido virou **Relatórios Mensais**, que é para onde quem procurava a planilha deve ir.
+Com isso o menu do módulo perdeu o último link externo, e as duas ramificações
+`externo ? <a> : <Link>` (desktop e gaveta) foram colapsadas.
+
+### Inconsistências corrigidas na mesma passada
+
+| O que estava errado | Onde |
+|---|---|
+| `tituloPagina` era **prop morta**: oito páginas passavam um título e o cabeçalho nunca desenhava | `cop/navegacao-cop.tsx` |
+| Card do **Briefing sem selo "Restrito"**, embora exija a mesma conta Google dos outros | `acesso-rapido.tsx` |
+| Pastilha fixa **"Faixa de Atenção da Meta"** — classificação cravada, contra a fonte única do §2; dizia "atenção" com a meta em superação | `acesso-rapido.tsx` |
+| Rodapé do hub citava só "Dashboard e Briefing" como restritos — **Relatórios** também é, e é o botão vermelho do cabeçalho | `cop2026/page.tsx` |
+| Nota final mandava corrigir lançamento "na aba Parametros" da planilha — hoje isso é `/cop2026/admin/*` no próprio portal | `cop2026/page.tsx` |
+| Imports mortos (`ShieldCheck`, `BookOpen`, `ChevronRight`, `Home`, `FileSpreadsheet`, `ExternalLink`) | `acesso-rapido.tsx`, `navegacao-cop.tsx` |
+
+**Um item foi recusado.** Os dois botões-vitrine do cabeçalho ("Calendário de eventos" e
+"Página do 16º BPM/M") chegaram a virar link para `/16bpmm` e `/16bpmm/calendario`, que
+respondem 200. O Fabrício mandou tirar no mesmo dia: quem chega pelo QR Code da tropa vem
+lançar auditoria e não pode ser desviado da página. Voltaram a `<span aria-disabled>` — é
+decisão, não esquecimento. **Não repor o href.**
+
+### Como conferir
+
+    for r in /cop2026 /cop2026/dashboard /cop2026/dashboard/v2 /cop2026/dashboard/v3 \
+             /cop2026/briefing /cop2026/relatorios /cop2026/lancar; do
+      printf "%-34s " "$r"
+      curl -s -o /dev/null -w "%{http_code} -> %{redirect_url}\n" "https://portal-cco16.vercel.app$r"
+    done
+
+`/v2` e `/v3` em **308** para `/cop2026/dashboard`; `/cop2026/dashboard`, `/briefing` e
+`/relatorios` em **307** para o login; `/cop2026` e `/cop2026/lancar` em **200**. E o hub
+não pode mais servir o endereço do Sheets:
+
+    curl -s https://portal-cco16.vercel.app/cop2026 | grep -c docs.google.com   # 0

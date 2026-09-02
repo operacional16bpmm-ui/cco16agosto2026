@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
      domínios *.vercel.app (ver REESCRITA_RAIZ_POR_HOST no proxy) e o headless
      precisa bater no mesmo host que serviu esta requisição. */
   const origem = request.nextUrl.origin;
-  const alvo = new URL("/cop2026/dashboard/v3", origem);
+  const alvo = new URL("/cop2026/dashboard", origem);
   alvo.searchParams.set("briefing", "1");
   for (const chave of FILTROS_ACEITOS) {
     const valor = request.nextUrl.searchParams.get(chave);

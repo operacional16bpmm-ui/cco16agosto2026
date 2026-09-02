@@ -9,7 +9,10 @@
     "lint": "eslint",
     "verificar:vocabulario": "node scripts/verificar-vocabulario-cop.mjs",
     "verificar:dado-pessoal": "node scripts/verificar-dado-pessoal-cop.mjs",
-    "verificar:periodo": "node --experimental-strip-types --no-warnings --test scripts/verificar-periodo-cop.mjs"
+    "verificar:periodo": "node --experimental-strip-types --no-warnings --test scripts/verificar-periodo-cop.mjs",
+    "verificar:lancamento": "node --experimental-strip-types --no-warnings --import ./scripts/alias-loader.mjs --test scripts/verificar-lancamento-cop.mjs",
+    "verificar:paridade": "node --experimental-strip-types --no-warnings --import ./scripts/alias-loader.mjs scripts/verificar-paridade-cop.mjs",
+    "backfill": "node --experimental-strip-types --no-warnings --import ./scripts/alias-loader.mjs scripts/backfill-planilha.mjs"
   },
   "dependencies": {
     "@sparticuz/chromium": "^149.0.0",

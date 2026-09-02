@@ -19,10 +19,13 @@ import type { Browser, BrowserContext } from "puppeteer-core";
  * verdade, o viewport é sempre o mesmo, e o celular só faz baixar o arquivo.
  */
 
-/** A largura em que o painel foi desenhado para ser lido — acima do breakpoint
- *  `lg` (1024px) e abaixo do `xl` (1280px), que é o recorte que o Comando
- *  aprovou no telão. Mudar este número muda o LAYOUT, não só o tamanho. */
-export const BRIEFING_LARGURA = 1240;
+/** Largura de captura. Não é um número de estética: é o menor viewport em que a
+ *  tabela "Tendência por Fração" cabe SEM rolagem. Ela pede ~1.250px de colunas
+ *  e o container do painel é `max-w-[1400px]` com 20px de recuo de cada lado —
+ *  a 1240px as duas últimas colunas (QUINZENA e AÇÃO) saíam cortadas na borda
+ *  do PNG. Mudar este número muda o LAYOUT (breakpoints do Tailwind), não só o
+ *  tamanho do arquivo. */
+export const BRIEFING_LARGURA = 1440;
 /** Altura inicial do viewport. O painel é mais alto que isso; quem define o
  *  recorte final é a caixa do elemento, não esta altura. */
 const BRIEFING_ALTURA = 2000;

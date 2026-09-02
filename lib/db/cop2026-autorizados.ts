@@ -149,6 +149,22 @@ export async function sessaoCop(): Promise<PayloadAcesso | null> {
   return sessao;
 }
 
+/**
+ * QUEM é a pessoa, sem perguntar se ela PODE.
+ *
+ * `sessaoCop()` responde "esta conta abre o painel do Comando" — 22 contas
+ * escolhidas a dedo. O formulário de lançamento é outra pergunta: quem lança é
+ * a tropa inteira (570 PMs), que nunca vai estar nessa lista. Aqui só se
+ * confere assinatura e vencimento do cookie, para carimbar a autoria do
+ * lançamento de quem por acaso já esteja logado.
+ *
+ * Devolver `null` é o caso NORMAL, não uma falha: o formulário é aberto.
+ */
+export async function identidadeCop(): Promise<PayloadAcesso | null> {
+  const biscoitos = await cookies();
+  return verificarAssinaturaAcesso(biscoitos.get(COOKIE_ACESSO_COP)?.value);
+}
+
 /** Gate das páginas restritas: fail-closed na própria página, e não só no proxy. */
 export async function exigirAcessoCop(destino: string): Promise<PayloadAcesso> {
   const sessao = await sessaoCop();

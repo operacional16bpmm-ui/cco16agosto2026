@@ -22,6 +22,22 @@ const nextConfig: NextConfig = {
       // public/painel/index.html, e arquivo em public/ só responde no caminho
       // exato. O redirect segura o endereço curto que se digita na tropa.
       { source: "/painel", destination: "/painel/index.html", permanent: false },
+      // A Auditoria de COP teve três painéis no ar ao mesmo tempo: o V1 na URL
+      // limpa, o V2 de prévia de layout e o V3 do ciclo. O Comando encerrou a
+      // avaliação em 01/09/2026 — ficou o V3, e ficou em /cop2026/dashboard.
+      // Os dois redirects seguram o link salvo de quem já tinha o endereço
+      // versionado; o Next repassa a query string sozinho, então `?excecao=`,
+      // `?semana=` e `?briefing=1` continuam chegando no painel.
+      {
+        source: "/cop2026/dashboard/v3",
+        destination: "/cop2026/dashboard",
+        permanent: true,
+      },
+      {
+        source: "/cop2026/dashboard/v2",
+        destination: "/cop2026/dashboard",
+        permanent: true,
+      },
     ];
   },
 };
