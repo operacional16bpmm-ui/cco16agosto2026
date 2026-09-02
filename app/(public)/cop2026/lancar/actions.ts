@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 
 import { validarLancamento, type EntradaLancamento } from "@/lib/cop2026-lancamento";
+import { MOTIVOS_ABAIXO_DO_MINIMO } from "@/lib/cop2026";
+import { MINIMO_PADRAO } from "@/lib/cop2026-metricas";
 import { ESTADO_INICIAL, type LancamentoState } from "./estado";
 import { identidadeCop } from "@/lib/db/cop2026-autorizados";
 import { identificarPorRe, resolverVinculo } from "@/lib/db/cop2026-auditor";
@@ -35,6 +37,40 @@ export async function enviarLancamentoAction(
 ): Promise<LancamentoState> {
   const texto = (campo: string) => String(formData.get(campo) ?? "").trim();
 
+  const auditou = texto("auditou") === "sim";
+  const quantidadeDeclarada = Number.parseInt(texto("quantidadeDeclarada") || "0", 10);
+  const camposId = formData.getAll("identificador").map((v) => String(v));
+  const detalhe = texto("justificativa");
+  const motivo = texto("motivoAbaixoMinimo");
+
+  /* Motivo é OBRIGATÓRIO quando o auditor não auditou OU auditou abaixo do
+     mínimo, e precisa vir da lista fechada — refeito no servidor porque o UI
+     bloqueia, mas server action é endpoint público (C-4). Envie um motivo fora
+     da lista pelo curl e ele cai aqui. */
+  const idsInformados = camposId.filter((v) => v.trim()).length;
+  const quantidadeEfetiva = quantidadeDeclarada > 0 ? quantidadeDeclarada : idsInformados;
+  const abaixoDoMinimo = auditou && quantidadeEfetiva < MINIMO_PADRAO;
+  const precisaDeMotivo = !auditou || abaixoDoMinimo;
+  const motivoValido = MOTIVOS_ABAIXO_DO_MINIMO.includes(
+    motivo as (typeof MOTIVOS_ABAIXO_DO_MINIMO)[number]
+  );
+  if (precisaDeMotivo && !motivoValido) {
+    return falha(
+      auditou
+        ? `Escolha um dos motivos padronizados para lançamento abaixo do mínimo de ${MINIMO_PADRAO}.`
+        : "Escolha um dos motivos padronizados para não ter auditado neste turno."
+    );
+  }
+
+  /* O motivo viaja na `justificativa` como prefixo `MOTIVO — detalhe`. Assim o
+     campo do banco continua o mesmo (nenhuma migração, nenhum recorte
+     histórico) e o painel agrupa pelo prefixo antes do travessão. */
+  const justificativaFinal = precisaDeMotivo
+    ? detalhe
+      ? `${motivo} — ${detalhe}`
+      : motivo
+    : detalhe;
+
   const entrada: EntradaLancamento = {
     dataAuditoria: texto("dataAuditoria"),
     turno: texto("turno"),
@@ -42,14 +78,14 @@ export async function enviarLancamentoAction(
     nomeGuerra: texto("nomeGuerra"),
     posto: texto("posto"),
     funcao: texto("funcao"),
-    auditou: texto("auditou") === "sim",
-    quantidadeDeclarada: Number.parseInt(texto("quantidadeDeclarada") || "0", 10),
+    auditou,
+    quantidadeDeclarada,
     // Todos os campos de identificador chegam sob o mesmo nome. Um campo pode
     // trazer vários identificadores colados de uma vez — quem separa é
     // `lerEvidencias`, no módulo puro.
-    camposId: formData.getAll("identificador").map((v) => String(v)),
+    camposId,
     numeroParte: texto("numeroParte"),
-    justificativa: texto("justificativa"),
+    justificativa: justificativaFinal,
     idSubmissao: texto("idSubmissao"),
   };
 

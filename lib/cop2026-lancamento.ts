@@ -428,9 +428,13 @@ export function validarLancamento(
       );
     }
   } else {
-    // Quem não auditou tem caminho de 3 toques. Justificativa é o que o
-    // Comando cobra; número da parte NÃO pode ser obrigatório — se a parte
-    // ainda não foi redigida, exigir o número faz a pessoa inventar um.
+    // Quem não auditou tem caminho curto. A `justificativa` chega já com o
+    // motivo padronizado escolhido na tela (o action prepende
+    // `MOTIVO — detalhe`, ver `app/(public)/cop2026/lancar/actions.ts`), então
+    // este piso de 5 caracteres continua sendo só um bloqueio contra envio
+    // completamente vazio; o motivo em si tem 40+ caracteres em qualquer
+    // opção. Número da parte NÃO pode ser obrigatório: exigir força a pessoa
+    // a inventar um antes de a parte ser redigida.
     if (String(entrada.justificativa ?? "").trim().length < 5) {
       erros.push("Informe a justificativa de não ter auditado no turno.");
     }

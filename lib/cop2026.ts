@@ -432,6 +432,25 @@ export function separarIdentificadores(bruto: string): string[] {
 export const TETO_VIDEOS_POR_LANCAMENTO = 60;
 
 /**
+ * Justificativas padronizadas para quem NÃO auditou ou ficou ABAIXO do mínimo.
+ *
+ * Determinação do Maj PM em 02/09/2026: em vez de campo livre, escolha entre um
+ * conjunto fechado — texto livre continua permitido, mas só depois da escolha.
+ * Sem isso, cada auditor descrevia o mesmo motivo com uma palavra diferente e a
+ * consolidação do relatório virava garimpo.
+ *
+ * A lista é fonte única — o painel usa para rotular e agrupar; o formulário,
+ * para oferecer. Ordem intencional: da causa mais frequente para a mais grave.
+ */
+export const MOTIVOS_ABAIXO_DO_MINIMO = [
+  "Auditoria interrompida por demanda operacional",
+  "Auditoria de evento complexo/gravidade diverso",
+  "Auditoria de evento MDIP/LCDIP",
+] as const;
+
+export type MotivoAbaixoDoMinimo = (typeof MOTIVOS_ABAIXO_DO_MINIMO)[number];
+
+/**
  * Quantidade auditada do lançamento, com o número implausível posto de lado.
  *
  * Vale o maior entre a lista e o campo exato, mas só entre os que passam no

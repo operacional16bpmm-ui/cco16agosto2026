@@ -19,6 +19,8 @@ import {
   normalizarRe,
   prefixoExibicao,
 } from "@/lib/cop2026-lancamento";
+import { MINIMO_PADRAO } from "@/lib/cop2026-metricas";
+import { MOTIVOS_ABAIXO_DO_MINIMO } from "@/lib/cop2026";
 import { hojeBrt } from "@/lib/cop2026-ciclo";
 import { enviarLancamentoAction } from "./actions";
 import { ESTADO_INICIAL, type LancamentoState } from "./estado";
@@ -67,6 +69,9 @@ type Rascunho = {
   campos: string[];
   numeroParte: string;
   justificativa: string;
+  /** Motivo pré-ajustado escolhido; "" quando o auditor escreveu texto livre
+   *  em vez de escolher uma das opções fechadas. */
+  motivo: string;
 };
 
 /**
@@ -144,6 +149,14 @@ export function FormularioLancamento({ identificado }: { identificado: string | 
   const [campos, setCampos] = useState<Campo[]>([novoCampo()]);
   const [numeroParte, setNumeroParte] = useState("");
   const [justificativa, setJustificativa] = useState("");
+  /**
+   * Motivo pré-ajustado — obrigatório quando o auditor NÃO auditou ou auditou
+   * ABAIXO do mínimo do Batalhão (`MINIMO_PADRAO`, hoje 3). Determinação do
+   * Comando em 02/09/2026: em vez de campo livre, escolha entre um conjunto
+   * fechado, com detalhe opcional no `justificativa`. Sem isso, o mesmo motivo
+   * saía de dez pessoas com dez redações diferentes.
+   */
+  const [motivo, setMotivo] = useState("");
   const [avisoColagem, setAvisoColagem] = useState<string | null>(null);
   const [rascunhoRestaurado, setRascunhoRestaurado] = useState(false);
   /** Ficha do roster para o RE digitado — só para confirmar na tela quem é. */
@@ -178,6 +191,7 @@ export function FormularioLancamento({ identificado }: { identificado: string | 
     );
     setNumeroParte(guardado.numeroParte ?? "");
     setJustificativa(guardado.justificativa ?? "");
+    setMotivo(guardado.motivo ?? "");
     // O que veio do rascunho é do usuário, não do roster: zerar o marcador
     // impede que a busca por RE reescreva por cima do que ele já tinha.
     escritoPeloRoster.current = null;
@@ -214,6 +228,7 @@ export function FormularioLancamento({ identificado }: { identificado: string | 
           campos: campos.map((c) => c.valor),
           numeroParte,
           justificativa,
+          motivo,
         };
         window.localStorage.setItem(chaveRascunho(data, turno), JSON.stringify(rascunho));
       } catch {
@@ -235,6 +250,7 @@ export function FormularioLancamento({ identificado }: { identificado: string | 
     campos,
     numeroParte,
     justificativa,
+    motivo,
     estado.ok,
   ]);
 
@@ -345,11 +361,26 @@ export function FormularioLancamento({ identificado }: { identificado: string | 
     setCampos((atuais) => atuais.map((c, i) => (i === indice ? { ...c, valor } : c)));
   }
 
+  /* Quantidade que vai valer: o campo explícito, ou o nº de identificadores. */
+  const quantidadeEfetiva =
+    quantidade.trim() ? Number(quantidade) : leitura.evidencias.length;
+  /* Determinação do Comando (02/09/2026): abaixo do mínimo do Batalhão, o
+     motivo é OBRIGATÓRIO e vem de uma lista fechada — mesma lista de quem não
+     auditou, para que os dois casos consolidem juntos no relatório. Detalhe
+     livre continua permitido em `justificativa`, agora opcional. */
+  const abaixoDoMinimo = auditou === true && quantidadeEfetiva < MINIMO_PADRAO;
+  const precisaDeMotivo = auditou === false || abaixoDoMinimo;
+  const motivoValido = precisaDeMotivo
+    ? MOTIVOS_ABAIXO_DO_MINIMO.includes(motivo as (typeof MOTIVOS_ABAIXO_DO_MINIMO)[number])
+    : true;
+
   const podeEnviar =
     Boolean(turno) &&
     auditou !== null &&
     !enviando &&
-    (auditou ? leitura.evidencias.length > 0 : justificativa.trim().length >= 5);
+    (auditou
+      ? leitura.evidencias.length > 0 && motivoValido
+      : motivoValido && justificativa.trim().length >= 0);
 
   /* ------------------------------------------------------------ sucesso */
 
@@ -582,16 +613,14 @@ export function FormularioLancamento({ identificado }: { identificado: string | 
           <legend className="px-2 text-[11.5px] font-bold uppercase tracking-[0.14em] text-texto-suave">
             3 · Justificativa
           </legend>
-          <Campo rotulo="Por que não foi possível auditar neste turno">
-            <textarea
-              name="justificativa"
-              value={justificativa}
-              onChange={(e) => setJustificativa(e.target.value)}
-              rows={4}
-              required
-              className={`${entrada} resize-y`}
-            />
-          </Campo>
+          <CaixaMotivo
+            titulo="Motivo pelo qual não foi possível auditar neste turno"
+            motivo={motivo}
+            setMotivo={setMotivo}
+            justificativa={justificativa}
+            setJustificativa={setJustificativa}
+            entrada={entrada}
+          />
           <Campo rotulo="Número da parte (se já houver)">
             <input
               name="numeroParte"
@@ -649,6 +678,24 @@ export function FormularioLancamento({ identificado }: { identificado: string | 
               Em branco, vale a quantidade de identificadores informados abaixo.
             </p>
           </Campo>
+
+          {abaixoDoMinimo && (
+            /* Só aparece quando a QUANTIDADE já foi definida e ficou abaixo do
+               piso — não polui a tela de quem ainda vai colar mais IDs. */
+            <div className="mt-4 rounded-lg border border-sinal-atencao/40 bg-sinal-atencao-suave/40 p-4">
+              <p className="mb-3 text-[13px] font-bold text-sinal-atencao">
+                Auditou abaixo do mínimo de {MINIMO_PADRAO} — justifique.
+              </p>
+              <CaixaMotivo
+                titulo="Motivo do lançamento abaixo do mínimo do Batalhão"
+                motivo={motivo}
+                setMotivo={setMotivo}
+                justificativa={justificativa}
+                setJustificativa={setJustificativa}
+                entrada={entrada}
+              />
+            </div>
+          )}
 
           {avisoColagem && (
             <p className="mt-4 flex items-start gap-2 rounded-lg border border-borda px-3 py-2 text-[12.5px] text-texto-suave">
@@ -780,5 +827,74 @@ function Campo({ rotulo, children }: { rotulo: string; children: React.ReactNode
       </span>
       <div className="mt-1">{children}</div>
     </label>
+  );
+}
+
+/**
+ * Caixa pré-ajustada de motivo — mesma peça para "não auditou" e "auditou
+ * abaixo do mínimo". Escolha OBRIGATÓRIA entre um conjunto fechado; o detalhe
+ * livre é opcional e vira o `justificativa` do lançamento no envio.
+ *
+ * O motivo escolhido viaja em `justificativa` também: a coluna do painel e o
+ * CSV que o Comando distribui já leem esse campo, e criar uma coluna nova
+ * exigiria migração de banco e recorte histórico. A convenção é
+ * `MOTIVO — detalhe`, e o painel agrupa pelo prefixo antes do travessão.
+ */
+function CaixaMotivo({
+  titulo,
+  motivo,
+  setMotivo,
+  justificativa,
+  setJustificativa,
+  entrada,
+}: {
+  titulo: string;
+  motivo: string;
+  setMotivo: (v: string) => void;
+  justificativa: string;
+  setJustificativa: (v: string) => void;
+  entrada: string;
+}) {
+  return (
+    <div className="space-y-3">
+      <fieldset>
+        <legend className="mb-2 text-[12px] font-bold uppercase tracking-wide text-texto-suave">
+          {titulo}
+        </legend>
+        <div className="space-y-1.5">
+          {MOTIVOS_ABAIXO_DO_MINIMO.map((opcao) => (
+            <label
+              key={opcao}
+              className={`flex cursor-pointer items-start gap-3 rounded-md border px-3 py-2.5 text-[14px] transition-colors ${
+                motivo === opcao
+                  ? "border-vermelho bg-vermelho/10 text-branco"
+                  : "border-borda text-texto-suave hover:border-vermelho/40"
+              }`}
+            >
+              <input
+                type="radio"
+                name="motivoAbaixoMinimo"
+                value={opcao}
+                checked={motivo === opcao}
+                onChange={() => setMotivo(opcao)}
+                required
+                className="mt-1 accent-vermelho"
+              />
+              <span>{opcao}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      <Campo rotulo="Detalhe (opcional)">
+        <textarea
+          name="justificativa"
+          value={justificativa}
+          onChange={(e) => setJustificativa(e.target.value)}
+          rows={2}
+          placeholder="Nº da ocorrência, contexto, ou o que for útil para a auditoria."
+          className={`${entrada} resize-y`}
+        />
+      </Campo>
+    </div>
   );
 }
