@@ -83,6 +83,76 @@ export async function identificarPorRe(reBruto: string): Promise<IdentificacaoRe
   }
 }
 
+/* ----------------------------------------------------- ficha nominal por RE */
+
+export type FichaEfetivo = {
+  /** RE como está no roster (`NNNNNN-X`), não o que foi digitado. */
+  re: string;
+  /** Nome completo, em caixa alta, como consta na relação do Batalhão. */
+  nome: string;
+  /** Posto/graduação padronizado (`CB PM`, `1º SGT PM`, `CAP PM`...). */
+  posto: string;
+  /** Subunidade/função do roster (`EM`, `1ª CIA`, `FT`, `P4`...). */
+  cia: string;
+};
+
+/**
+ * Devolve a ficha nominal a partir do RE.
+ *
+ * DECISÃO DE COMANDO (Fabricio, 01/09/2026), que RELAXA a regra A-2 descrita no
+ * cabeçalho deste arquivo: o auditor digita o RE e a tela mostra o nome. Isso
+ * existe para padronizar o painel — hoje o mesmo PM aparece como "RAFAEL",
+ * "Rafael S." e "CB RAFAEL" em lançamentos diferentes, e a contagem por pessoa
+ * não fecha.
+ *
+ * O CUSTO, REGISTRADO DE PROPÓSITO: `/cop2026/lancar` é público. Quem varrer
+ * `/api/cop2026/efetivo?re=NNNNNN` de 100000 a 999999 reconstrói o efetivo
+ * nominal do 16º BPM/M — a tabela `p4_efetivo` é marcada como sensível na
+ * migration 008. A mitigação (responder só para sessão autenticada) está a uma
+ * linha de distância em `app/api/cop2026/efetivo/route.ts`; foi decidido não
+ * ligá-la. Nunca devolvemos e-mail, fone nem situação: só o que o painel exibe.
+ *
+ * Casa pela BASE de 6 dígitos, como `identificarPorRe`. Duas linhas para a mesma
+ * base (2 das 570) devolvem nada: chutar entre dois nomes é pior que não saber.
+ */
+export async function fichaPorRe(reBruto: string): Promise<FichaEfetivo | null> {
+  const { base } = normalizarRe(reBruto);
+  if (base.length < 6 || !supabaseConfigurado()) return null;
+
+  try {
+    const { data, error } = await createAdminClient()
+      .from("p4_efetivo")
+      .select("re, nome, posto_grad, cia")
+      .like("re", `${base}%`)
+      .limit(2);
+    if (error) throw new Error(error.message);
+
+    const linhas = (data ?? []) as {
+      re: string | null;
+      nome: string | null;
+      posto_grad: string | null;
+      cia: string | null;
+    }[];
+    if (linhas.length !== 1) return null;
+
+    const linha = linhas[0];
+    const nome = (linha.nome ?? "").trim();
+    if (!nome) return null;
+
+    return {
+      re: (linha.re ?? "").trim(),
+      nome: nome.toLocaleUpperCase("pt-BR"),
+      posto: (linha.posto_grad ?? "").trim(),
+      cia: (linha.cia ?? "").trim(),
+    };
+  } catch (erro) {
+    // Roster fora do ar não pode travar o lançamento: a tela volta a ser
+    // digitação livre, exatamente como era antes desta função existir.
+    console.error("[cop2026-auditor] falha ao buscar ficha por RE:", erro);
+    return null;
+  }
+}
+
 /* --------------------------------------------------------------- vínculo */
 
 export type Vinculo = {

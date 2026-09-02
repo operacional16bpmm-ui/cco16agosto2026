@@ -68,6 +68,12 @@ const ROTAS_PUBLICAS = [
   // Handshake do acesso restrito da COP: a própria porta não pode estar
   // trancada por dentro.
   "/api/cop2026/acesso",
+  // RE → nome, para o formulário de lançamento preencher sozinho. Pública
+  // porque /cop2026/lancar é público: atrás do login ela não serviria a quem
+  // lança. É a rota que o cabeçalho de lib/db/cop2026-auditor.ts chama de
+  // oráculo sobre o efetivo nominal — decisão de Comando, e o conserto (mover
+  // esta linha para ROTAS_RESTRITAS_COP) está descrito no próprio route.ts.
+  "/api/cop2026/efetivo",
   // A Diretriz da COP é norma aberta à tropa e fica embutida na /cop2026;
   // sem esta exceção o leitor de PDF cairia no login.
   "/documentos/diretriz-pm3-001-02-25.pdf",

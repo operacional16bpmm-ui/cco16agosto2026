@@ -146,6 +146,12 @@ export function FormularioLancamento({ identificado }: { identificado: string | 
   const [justificativa, setJustificativa] = useState("");
   const [avisoColagem, setAvisoColagem] = useState<string | null>(null);
   const [rascunhoRestaurado, setRascunhoRestaurado] = useState(false);
+  /** Ficha do roster para o RE digitado — só para confirmar na tela quem é. */
+  const [fichaRoster, setFichaRoster] = useState<{
+    nome: string;
+    posto: string;
+    cia: string;
+  } | null>(null);
 
   /* ------------------------------------------------- restaurar rascunho */
 
@@ -172,6 +178,9 @@ export function FormularioLancamento({ identificado }: { identificado: string | 
     );
     setNumeroParte(guardado.numeroParte ?? "");
     setJustificativa(guardado.justificativa ?? "");
+    // O que veio do rascunho é do usuário, não do roster: zerar o marcador
+    // impede que a busca por RE reescreva por cima do que ele já tinha.
+    escritoPeloRoster.current = null;
     setRascunhoRestaurado(true);
   }
 
@@ -241,6 +250,79 @@ export function FormularioLancamento({ identificado }: { identificado: string | 
   );
 
   const reNormalizado = useMemo(() => normalizarRe(re), [re]);
+
+  /* ------------------------------------------ RE → nome, posto e subunidade */
+
+  /**
+   * Digitou o RE, a tela preenche nome/posto/função a partir do roster do
+   * Batalhão (`p4_efetivo`, via /api/cop2026/efetivo).
+   *
+   * Por que isto existe: o mesmo PM chegava ao painel como "RAFAEL", "Rafael S."
+   * e "CB RAFAEL", e a contagem por pessoa não fechava. Agora o nome que sai é
+   * sempre o da relação.
+   *
+   * TRÊS CUIDADOS QUE NÃO SÃO OPCIONAIS
+   *
+   * 1. **Não sobrescreve o que a pessoa escreveu.** Só preenche campo vazio ou
+   *    campo cujo conteúdo é EXATAMENTE o que uma busca anterior escreveu
+   *    (`escritoPeloRoster`) — trocar o RE troca o nome, mas quem corrigiu o
+   *    próprio nome à mão não vê a correção sumir na tecla seguinte. Um flag
+   *    booleano não bastaria: ele reescreveria por cima da correção.
+   * 2. **Rascunho restaurado não dispara nada** — `restaurar()` já devolveu os
+   *    valores gravados, e eles valem mais que o roster.
+   * 3. **Corrida de resposta**: quem digita rápido gera duas buscas, e a lenta
+   *    pode chegar depois da certa. `AbortController` + guarda pelo RE pedido
+   *    impedem que o nome do RE anterior caia no formulário.
+   *
+   * Roster fora do ar, RE de fora do efetivo ou base duplicada: a resposta é a
+   * mesma (`ficha: null`) e a tela volta a ser digitação livre — nunca recusa o
+   * lançamento, pela mesma razão do "roster enriquece, nunca bloqueia".
+   */
+  const escritoPeloRoster = useRef<{ nome: string; posto: string; funcao: string } | null>(null);
+  const baseRe = reNormalizado.base;
+
+  useEffect(() => {
+    if (baseRe.length < 6) {
+      // Apagou o RE: a ficha some junto, senão a tela continua afirmando um
+      // nome que já não corresponde ao campo.
+      setFichaRoster(null);
+      return;
+    }
+    const controle = new AbortController();
+    // 350 ms: o roster só é consultado quando a digitação para, não a cada
+    // dígito do verificador.
+    const agendado = setTimeout(async () => {
+      try {
+        const resposta = await fetch(
+          `/api/cop2026/efetivo?re=${encodeURIComponent(baseRe)}`,
+          { signal: controle.signal }
+        );
+        if (!resposta.ok) return;
+        const { ficha } = (await resposta.json()) as {
+          ficha: { nome: string; posto: string; cia: string } | null;
+        };
+        if (!ficha) return;
+
+        const anterior = escritoPeloRoster.current;
+        const substituir = (atual: string, anteriorDoRoster: string, novo: string) =>
+          atual.trim().length === 0 || atual === anteriorDoRoster ? novo : atual;
+
+        setNomeGuerra((atual) => substituir(atual, anterior?.nome ?? " ", ficha.nome));
+        setPosto((atual) => substituir(atual, anterior?.posto ?? " ", ficha.posto));
+        setFuncao((atual) => substituir(atual, anterior?.funcao ?? " ", ficha.cia));
+        // O sentinela ` ` na primeira busca evita que `anterior` ausente
+        // vire string vazia e case com qualquer campo já digitado.
+        escritoPeloRoster.current = { nome: ficha.nome, posto: ficha.posto, funcao: ficha.cia };
+        setFichaRoster(ficha);
+      } catch {
+        // Abortado ou rede caída: segue digitação livre.
+      }
+    }, 350);
+    return () => {
+      clearTimeout(agendado);
+      controle.abort();
+    };
+  }, [baseRe]);
 
   /**
    * Colagem múltipla: se um campo resolve para mais de um identificador, ele
@@ -374,6 +456,17 @@ export function FormularioLancamento({ identificado }: { identificado: string | 
             {re.length > 0 && reNormalizado.base.length === 6 && (
               <p className="mt-1.5 text-[12px] text-texto-suave">
                 Registrado como <span className="dados">{reNormalizado.canonico}</span>
+              </p>
+            )}
+            {/* Confirmação de quem é — o auditor vê o nome da relação e percebe
+                na hora se digitou o RE errado, que era o erro mais caro do
+                Google Forms: lançamento correto atribuído a outra pessoa. */}
+            {fichaRoster && (
+              <p className="mt-1 text-[12px] text-texto-suave">
+                <span className="dados text-branco">
+                  {fichaRoster.posto} {fichaRoster.nome}
+                </span>
+                {fichaRoster.cia ? ` · ${fichaRoster.cia}` : ""}
               </p>
             )}
           </Campo>
