@@ -103,7 +103,91 @@ exatamente as cinco linhas acima.
 
 ---
 
+## 3-A. Semana operacional — zera na virada do mês (02/09/2026)
+
+Determinação do Major, por WhatsApp, em 02/09/2026 às 07:40 e 07:48 ("ajustar no
+briefing" — vale nas duas superfícies):
+
+> "Temos o bug das semanas, ver como resetar a quarta de um mês para a primeira do outro mês."
+> "E as outras 2 e 3 têm que zerar também."
+
+Os cartões semanais somam **só o recorte do mês corrente**. A base é
+`dadosSemFiltroDeSemana` em `calcularPainel` — o mesmo recorte do resto do painel,
+menos o próprio filtro de semana (os cartões SÃO o seletor de semana; aplicá-lo
+zeraria os outros três).
+
+O que estava errado: a base tinha filtro próprio, só por fração e turno, e
+ignorava `de`/`ate`. Como `identificarSemana` classifica pelo **dia do mês**,
+24/08 e 24/09 caíam os dois na Semana 4 — em 02/09/2026 a tela anunciou
+**SEMANA 4 · 1.146/240 · 477,5% · "Meta semanal superada"**, e as quatro semanas
+somavam 1.341 contra 87 do mês.
+
+O rótulo da 4ª semana também acompanha o mês (`diasDaSemana`): **22 a 30** em
+setembro e novembro, 22 a 31 nos demais. Não existe 31 de setembro.
+
+---
+
 ## 4. Ritmo necessário
+
+**Unidade fixada em 31/08/2026 e cobrada de novo em 02/09/2026** ("métrica dos
+turnos e ritmo precisam ser ajustados" · "corrigir ritmo / turnos na métrica
+atual"):
+
+| Sujeito | Unidade | Como sai |
+|---|---|---|
+| **Batalhão** | por **DIA** | `960 ÷ 30 = 32/dia`; recuperação = `falta ÷ dias restantes` |
+| **Fração** | por **TURNO-FRAÇÃO** | 2 turnos por dia, 60 num mês de 30 dias. `195 ÷ 60 = 3,25/turno` |
+
+Fonte única: `janelaDoRecorte` em `cop2026-metricas.ts` — dias e turnos vêm do
+**calendário**, nunca do histórico de lançamentos.
+
+Três números que estavam na tela e **não podem voltar**:
+
+- **"Faltam 873 evidências em 13 turnos — 68 por turno"**: os 13 saíam de
+  `15 turnos de 12x36 − 2 dias com lançamento`, somando maçã com laranja. O
+  Batalhão não se mede por turno.
+- **"meta de 65 por turno"** (cartão do briefing e linha do gráfico diário):
+  era `Σ meta ÷ turnos` com `turnos: 15`. O certo é `meta ÷ dias do mês` = **32**,
+  e o rótulo é **meta/dia**, porque o eixo é diário.
+- **"RITMO 15/turno"** no cartão da 1ª Cia: vinha de `mat.ritmoProporcional`, o
+  rateio inteiro da constante `RITMO_GLOBAL_RESTANTE = 73`. Quase cinco vezes a
+  cota real. O alvo agora é `meta da fração ÷ turnos-fração do mês`.
+
+`RITMO_GLOBAL_RESTANTE` e `TURNOS_RESTANTES_GLOBAL` **saíram da tela**. A linha
+"Todos os valores são calculados a cada leitura — nenhum é fixo no código" só
+podia ser escrita depois disso.
+
+**Dia decorrido conta o dia em curso.** `progressoDoMes` contava só dias
+encerrados enquanto o realizado já incluía o que foi lançado hoje — numerador de
+dois dias sobre denominador de um. Foi o que pôs "dia 1 de 30", "REAL 87,00/dia"
+(eram 43,5), "TRAJETÓRIA 271,9% · ADIANTADA" ao lado do selo "Crítica · ABAIXO
+DA META" e a linha impossível **"Dias com lançamento: 2 de 1"**.
+
+### Mínimo por turno é 3, e é do Batalhão
+
+O mínimo exibido sai de `minimoDoRecorte`: com uma fração isolada vale a
+determinação dela; no Batalhão vale a **maior** determinação vigente — 3, a do
+policiamento, não a do Estado-Maior (2), que é administrativa.
+
+Saía de `metas.find((m) => m.evidenciasPorTurno > 0)`, a **primeira linha do
+array**. Como o Estado-Maior abre a lista, o Batalhão inteiro passou a ser
+cobrado por 2 e o painel, o briefing e o plano de ação anunciavam
+"CONFORMIDADE (≥2)", "abaixo do mínimo de 2" e "Garantir o mínimo de 2".
+
+### Evidência sem fração aparece; não some nem soma calada
+
+Lançamento sem fração declarada não casa com linha de meta nenhuma e sumia do
+ranking, mas continuava somando no total. Resultado em 02/09/2026: "EVIDÊNCIAS
+AUDITADAS 87" no topo e "Realizado 65" na Tendência por Fração, na mesma tela.
+O total do Batalhão soma tudo e a caixa carimba **"N sem fração"** em vermelho —
+o conserto é o auditor declarar a fração na planilha.
+
+### Mesma mídia auditada duas vezes
+
+`mapearDuplicados` acusa identificador **válido** lançado por mais de um
+auditor — dupla contagem contra a meta. Vira a exceção
+**"Lançaram ID já auditado por outro"**, distinta de "sem IDs" (cobra informar) e
+de "ID fora do formato" (cobra corrigir).
 
 O par **RITMO NECESSÁRIO** (evidências/turno) + **SALDO RESTANTE** nasceu no diagnóstico do
 briefing e foi mandado **também para o dashboard**. Os números vêm do `Painel`

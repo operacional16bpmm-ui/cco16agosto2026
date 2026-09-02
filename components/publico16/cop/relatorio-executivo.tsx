@@ -251,9 +251,9 @@ export function RelatorioExecutivo({
             nota="Quanto ainda falta e em que ritmo por turno para fechar a meta do período."
           >
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <Kpi rotulo="Turnos cumpridos" valor={`${FMT.format(p.turnosCumpridos)}/${FMT.format(p.turnosPrevistos)}`} />
-              <Kpi rotulo="Turnos restantes" valor={FMT.format(p.turnosRestantes)} />
-              <Kpi rotulo="Ritmo necessário" valor={FMT.format(Math.ceil(p.ritmoNecessario))} nota="evid. / turno" />
+              <Kpi rotulo="Dias com lançamento" valor={`${FMT.format(p.diasComLancamento)}/${FMT.format(p.janela.decorridos)}`} />
+              <Kpi rotulo="Dias restantes" valor={FMT.format(p.janela.diasRestantes)} />
+              <Kpi rotulo="Ritmo necessário" valor={FMT.format(Math.ceil(p.ritmoNecessario))} nota="evid. / dia" />
               <Kpi rotulo="Saldo" valor={FMT.format(p.falta)} nota="evidências" />
             </div>
             <p className="mt-4 text-[12.5px] leading-relaxed text-[#15304c]/75">{conclusaoRitmo(p)}</p>

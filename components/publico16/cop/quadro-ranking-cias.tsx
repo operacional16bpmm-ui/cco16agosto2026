@@ -86,7 +86,7 @@ export function QuadroRankingCias({
           <div className="min-w-0">
             <span className="text-4xl font-black leading-none text-[#e5d332]/90">08</span>
             <h4 className="mt-2 text-sm font-black uppercase leading-tight">
-              Companhias e Força Tática
+              Frações do Batalhão
             </h4>
             <p className="mt-1 text-xs leading-relaxed text-white/75">
               Posição de cada fração na meta{mes ? ` de ${mes}` : " do mês"} · atualiza a cada

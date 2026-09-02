@@ -235,10 +235,10 @@ export function BriefingSlides({
             />
             <Kpi
               i={5}
-              rotulo="Turnos restantes"
+              rotulo="Turnos-fração restantes"
               valor={p.turnosRestantes}
               nivel={p.turnosRestantes > 0 ? "atencao" : "neutro"}
-              nota={`de ${FMT.format(p.turnosPrevistos)} previstos`}
+              nota={`de ${FMT.format(p.turnosPrevistos)} no período`}
               icone={<Timer size={13} />}
             />
           </div>
@@ -296,8 +296,12 @@ export function BriefingSlides({
                 rotulo="Ritmo necessário"
                 valor={ritmo}
                 nivel="atencao"
-                sufixo="/turno"
-                nota={`para fechar em ${FMT.format(p.turnosRestantes)} turno(s)`}
+                /* O Batalhão se mede POR DIA; por turno-fração é a medida da
+                   fração. Esta peça dizia "68/turno · para fechar em 13
+                   turno(s)" — o modelo antigo, que o Comando mandou corrigir
+                   em 02/09/2026. */
+                sufixo="/dia"
+                nota={`para fechar em ${FMT.format(p.janela.diasRestantes)} dia(s)`}
                 icone={<TrendingUp size={13} />}
               />
               <Kpi
@@ -310,9 +314,9 @@ export function BriefingSlides({
               />
               <Kpi
                 i={4}
-                rotulo="Média por turno"
+                rotulo="Média por dia"
                 valor={p.mediaDia}
-                nota={`meta de ${FMT.format(Math.round(p.metaDia))} por turno`}
+                nota={`meta de ${FMT.format(Math.round(p.metaDia))} por dia`}
                 icone={<Activity size={13} />}
               />
             </div>
@@ -462,7 +466,7 @@ export function BriefingSlides({
                   className="h-0.5 w-4"
                   style={{ background: `repeating-linear-gradient(90deg, ${INST.ouro} 0 4px, transparent 4px 7px)` }}
                 />
-                meta por turno ({FMT.format(Math.round(p.metaDia))})
+                meta por dia ({FMT.format(Math.round(p.metaDia))})
               </span>
               <span className={`${T.apoio} flex items-center gap-1.5 text-white/55`}>
                 <span className="h-2.5 w-4 rounded-sm bg-white/15" /> variação normal (±3σ)
@@ -670,9 +674,9 @@ export function BriefingSlides({
             ))}
             <Kpi
               i={4}
-              rotulo="Turnos cumpridos"
-              valor={p.turnosCumpridos}
-              nota={`de ${FMT.format(p.turnosPrevistos)} previstos no ciclo`}
+              rotulo="Dias com lançamento"
+              valor={p.diasComLancamento}
+              nota={`de ${FMT.format(p.janela.decorridos)} dias corridos`}
               icone={<CalendarRange size={13} />}
             />
             <Kpi
@@ -840,7 +844,7 @@ export function BriefingSlides({
     // -------------------------------------------------------------------
     {
       selo: "Encerramento e recomendações",
-      titulo: "Plano de ação para os turnos restantes",
+      titulo: "Plano de ação para os dias restantes",
       subtitulo: "Diretrizes executivas para Comandantes de Companhia e Oficiais de Operações",
       icone: <Target size={13} />,
       corpo: (
@@ -858,8 +862,8 @@ export function BriefingSlides({
                 n: "2",
                 cor: "#d97706",
                 selo: "Recuperação do saldo",
-                titulo: `Ritmo de ${FMT.format(ritmo)} por turno`,
-                desc: `Faltam ${FMT.format(p.falta)} evidências em ${FMT.format(p.turnosRestantes)} turno(s). Concentrar o reforço em ${criticas.map((f) => f.rotulo).join(", ")}.`,
+                titulo: `Ritmo de ${FMT.format(ritmo)} por dia`,
+                desc: `Faltam ${FMT.format(p.falta)} evidências em ${FMT.format(p.janela.diasRestantes)} dia(s). Concentrar o reforço em ${criticas.map((f) => f.rotulo).join(", ")}.`,
               },
               {
                 n: "3",

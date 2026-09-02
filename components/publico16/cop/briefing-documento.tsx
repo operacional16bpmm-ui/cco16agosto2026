@@ -144,9 +144,9 @@ export function BriefingDocumento({
           <SecaoDoc n="03" titulo="Ritmo e Projeção">
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {[
-                { r: "Turnos cumpridos", v: `${FMT.format(p.turnosCumpridos)}/${FMT.format(p.turnosPrevistos)}` },
-                { r: "Turnos restantes", v: FMT.format(p.turnosRestantes) },
-                { r: "Ritmo necessário", v: `${FMT.format(Math.ceil(p.ritmoNecessario))}/turno` },
+                { r: "Dias com lançamento", v: `${FMT.format(p.diasComLancamento)}/${FMT.format(p.janela.decorridos)}` },
+                { r: "Dias restantes", v: FMT.format(p.janela.diasRestantes) },
+                { r: "Ritmo necessário", v: `${FMT.format(Math.ceil(p.ritmoNecessario))}/dia` },
                 { r: "Saldo", v: FMT.format(p.falta) },
               ].map((k) => (
                 <div key={k.r} className="rounded-xl border border-slate-200 bg-[#fafbfc] p-4">

@@ -48,8 +48,6 @@ import { CaixaTendencia } from "@/components/publico16/cop/ciclo/caixa-tendencia
 import { progressoDoMes } from "@/lib/cop2026-tendencia";
 import {
   ROTULO_SUBUNIDADE,
-  RITMO_GLOBAL_RESTANTE,
-  TURNOS_RESTANTES_GLOBAL,
   type LancamentoCop,
   type MetaSubunidade,
 } from "@/lib/cop2026";
@@ -59,6 +57,7 @@ import {
   PCT,
   auditoresParaCsv,
   calcularPainel,
+  diasDaSemana,
   lancamentosParaCsv,
   conclusaoDistribuicao,
   conclusaoFunil,
@@ -825,7 +824,7 @@ export function DashboardCop({
     },
     f.semana !== "todas" && {
       k: "semana",
-      t: `Semana ${f.semana} (${f.semana === "1" ? "01–07" : f.semana === "2" ? "08–14" : f.semana === "3" ? "15–21" : "22–31"})`,
+      t: `Semana ${f.semana} (${diasDaSemana(Number(f.semana), p.janela.ate ? Number(p.janela.ate.slice(8, 10)) : 31).replace(" a ", "–")})`,
       limpar: () => definir({ semana: "todas" }),
     },
     f.turno !== "todos" && {
@@ -847,7 +846,9 @@ export function DashboardCop({
             ? `Abaixo de ${p.minimo}`
             : f.excecao === "idinvalido"
               ? "ID fora do formato"
-              : "Sem IDs de mídia",
+              : f.excecao === "duplicado"
+                ? "ID já auditado por outro"
+                : "Sem IDs de mídia",
       limpar: () => definir({ excecao: "" }),
     },
     f.busca && { k: "busca", t: `"${f.busca}"`, limpar: () => definir({ busca: "" }) },
@@ -889,13 +890,13 @@ export function DashboardCop({
       icone: <CheckCircle2 size={18} aria-hidden />,
     },
     {
+      /* Vem do Painel, calculado sobre o calendário do recorte. Aqui saía
+         RITMO_GLOBAL_RESTANTE (73) e TURNOS_RESTANTES_GLOBAL (12), escritos à
+         mão em `lib/cop2026.ts` — números que nunca fechavam com os dados e que
+         desmentiam a própria linha do painel ("nenhum é fixo no código"). */
       rotulo: tendencia ? "Ritmo de recuperação" : "Ritmo necessário",
-      valor: tendencia
-        ? FMT.format(Math.ceil(Math.max(0, p.meta - p.total) / Math.max(1, diasRestantes)))
-        : FMT.format(RITMO_GLOBAL_RESTANTE),
-      nota: tendencia
-        ? `evidências/dia · ${FMT.format(diasRestantes)} dia${diasRestantes === 1 ? "" : "s"} restante${diasRestantes === 1 ? "" : "s"}`
-        : `evidências/turno · ${FMT.format(TURNOS_RESTANTES_GLOBAL)} turnos restantes`,
+      valor: FMT.format(Math.ceil(p.ritmoNecessario)),
+      nota: `evidências/dia · ${FMT.format(p.janela.diasRestantes)} dia${p.janela.diasRestantes === 1 ? "" : "s"} restante${p.janela.diasRestantes === 1 ? "" : "s"}`,
       foto: "/media/reel-operacao.jpg",
       icone: <TrendingUp size={22} strokeWidth={2.4} aria-hidden />,
     },
@@ -985,6 +986,16 @@ export function DashboardCop({
       chave: "idinvalido" as const,
       rotulo: "Informaram ID fora do formato da plataforma",
       v: p.comIdInvalido,
+      icone: <FileWarning size={16} aria-hidden />,
+    },
+    {
+      // Terceiro caso, distinto dos dois de cima: o ID está certo e já foi
+      // lançado por outro auditor. A mesma mídia soma duas vezes contra a meta
+      // e nenhuma exceção acusava — apareceu em 02/09/2026 com o mesmo ID
+      // lançado pela 4ª Cia num dia e por outra auditora no seguinte.
+      chave: "duplicado" as const,
+      rotulo: "Lançaram ID já auditado por outro",
+      v: p.comIdDuplicado,
       icone: <FileWarning size={16} aria-hidden />,
     },
   ];
@@ -1585,8 +1596,8 @@ export function DashboardCop({
               pct={p.pct}
               total={p.total}
               meta={p.meta}
-              ritmo={tendencia ? undefined : RITMO_GLOBAL_RESTANTE}
-              turnosRestantes={tendencia ? undefined : TURNOS_RESTANTES_GLOBAL}
+              ritmo={tendencia ? undefined : Math.ceil(p.ritmoNecessario)}
+              turnosRestantes={tendencia ? undefined : p.janela.diasRestantes}
               cartaoRitmo={tendencia ? <CartaoTrajetoria meta={p.meta} total={p.total} /> : undefined}
               faixaRitmos={tendencia ? <FaixaRitmos meta={p.meta} total={p.total} /> : undefined}
               marcaPosicao={tendencia ? `leitura atual ${PCT.format(p.pct)}%` : undefined}
@@ -1612,17 +1623,17 @@ export function DashboardCop({
                 <>
                   Dias decorridos:{" "}
                   <strong className="dados font-black text-slate-950">
-                    {FMT.format(progMes.diasDecorridos)}
+                    {FMT.format(p.janela.decorridos)}
                   </strong>{" "}
-                  de {FMT.format(progMes.diasMes)} · turnos-fração{" "}
+                  de {FMT.format(p.janela.dias)} · turnos-fração{" "}
                   <strong className="dados font-black text-slate-950">
-                    {FMT.format(progMes.turnosDecorridos)}
+                    {FMT.format(p.janela.turnosFracaoDecorridos)}
                   </strong>{" "}
-                  de {FMT.format(progMes.turnosMes)}
+                  de {FMT.format(p.janela.turnosFracao)}
                 </>
               ) : (
                 <>
-                  Turnos cumpridos:{" "}
+                  Turnos-fração decorridos:{" "}
                   <strong className="dados font-black text-slate-950">
                     {FMT.format(p.turnosCumpridos)}
                   </strong>{" "}
@@ -1634,9 +1645,9 @@ export function DashboardCop({
               <span className="relative">
                 Dias com lançamento:{" "}
                 <strong className="dados font-black text-slate-950">
-                  {FMT.format(p.turnosCumpridos)}
+                  {FMT.format(p.diasComLancamento)}
                 </strong>{" "}
-                de {FMT.format(progMes.diasDecorridos)}
+                de {FMT.format(p.janela.decorridos)}
               </span>
             )}
             <span className="relative">
@@ -1651,6 +1662,7 @@ export function DashboardCop({
               <CaixaTendencia
                 fracoes={p.fracoes}
                 auditoresPorQuinzena={auditoresPorQuinzena}
+                semFracao={p.semFracao}
               />
             </div>
           )}
@@ -1755,7 +1767,11 @@ export function DashboardCop({
           <aside className="rounded-2xl border-2 border-slate-300/85 bg-gradient-to-b from-white via-[#f8fafc] to-[#edf3f8] p-4 shadow-[0_8px_22px_rgba(15,23,42,0.09)] sm:p-5" aria-label="Barras de progresso das frações">
             <div className="mb-4 border-b border-slate-300/80 pb-3">
               <p className="font-serif text-sm font-black uppercase tracking-[0.1em] text-slate-950">
-                Companhias e Força Tática
+                {/* "Companhias" não cabe: o Estado-Maior está na lista e NÃO é
+                    companhia. É o mesmo erro institucional que o Comando já
+                    mandou tirar do título do desempenho comparativo
+                    (docs/cop2026-padroes-comando.md §1). */}
+                Frações do Batalhão
               </p>
               <p className="mt-1 text-[11px] font-semibold text-slate-500">Progresso visual por fração</p>
             </div>
@@ -1798,9 +1814,9 @@ export function DashboardCop({
           titulo="Onde agir · frações"
           nota={
             tendencia
-              ? `rateio proporcional ao quadro COP (570 PMs) · dia ${FMT.format(progMes.diasDecorridos)} de ${FMT.format(progMes.diasMes)}${
-                  diasRestantes > 0
-                    ? ` · ${FMT.format(diasRestantes)} dia${diasRestantes === 1 ? "" : "s"} restante${diasRestantes === 1 ? "" : "s"}`
+              ? `rateio proporcional ao quadro COP (570 PMs) · dia ${FMT.format(p.janela.decorridos)} de ${FMT.format(p.janela.dias)}${
+                  p.janela.diasRestantes > 0
+                    ? ` · ${FMT.format(p.janela.diasRestantes)} dia${p.janela.diasRestantes === 1 ? "" : "s"} restante${p.janela.diasRestantes === 1 ? "" : "s"}`
                     : " · mês encerrado"
                 } · clique para filtrar o painel`
               : "rateio proporcional ao quadro COP (570 PMs) · clique para filtrar o painel"

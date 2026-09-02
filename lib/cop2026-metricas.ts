@@ -16,12 +16,15 @@ import {
   RITMO_GLOBAL_RESTANTE,
   TURNOS_RESTANTES_GLOBAL,
   redigirCpf,
+  classificarIdentificador,
   ehIdentificadorValido,
   separarIdentificadores,
   type LancamentoCop,
   type MetaSubunidade,
 } from "@/lib/cop2026";
-import { mesCorrente } from "@/lib/cop2026-relatorios";
+import { diasEntre, hojeBrt } from "@/lib/cop2026-ciclo";
+import { RELATORIOS_MENSAIS, mesCorrente } from "@/lib/cop2026-relatorios";
+import { TURNOS_POR_DIA } from "@/lib/cop2026-tendencia";
 
 export {
   MATRIZ_PROPORCIONAL_2026,
@@ -44,6 +47,20 @@ export const SEMANAS_ROTULOS = [
   { semana: 4, rotulo: "Semana 4", dias: "22 a 31" },
 ] as const;
 
+/**
+ * Rótulo de dias da semana operacional, ajustado ao mês do recorte.
+ *
+ * A quarta semana é a única elástica: fecha no dia 30 em setembro e novembro e
+ * no dia 31 nos demais. O rótulo era fixo em "22 a 31" e anunciava à tropa um
+ * dia 31 de setembro que não existe.
+ */
+export function diasDaSemana(semana: number, ultimoDiaDoMes: number): string {
+  const base = SEMANAS_ROTULOS.find((s) => s.semana === semana);
+  if (!base) return "";
+  if (semana !== 4) return base.dias;
+  return `22 a ${String(Math.max(22, ultimoDiaDoMes)).padStart(2, "0")}`;
+}
+
 export function identificarSemana(dataIso: string | undefined): number {
   if (!dataIso) return 1;
   const dia = parseInt(dataIso.slice(8, 10), 10);
@@ -58,6 +75,112 @@ export function identificarSemana(dataIso: string | undefined): number {
  *  determinou 3. O valor real vem da aba Parâmetros — isto é só o piso de
  *  segurança para quando a planilha não trouxer a coluna. */
 export const MINIMO_PADRAO = 3;
+
+/**
+ * Mínimo de evidências por turno que vale no recorte exibido.
+ *
+ * Com uma fração isolada vale a determinação daquela fração; no Batalhão vale a
+ * MAIOR determinação vigente — 3, a do policiamento, e não a do Estado-Maior
+ * (2), que é administrativa.
+ *
+ * Antes daqui saía `metas.find((m) => m.evidenciasPorTurno > 0)`, que devolvia a
+ * PRIMEIRA linha do array. Como o Estado-Maior abre a lista, o Batalhão inteiro
+ * passou a ser cobrado por 2 e a tela anunciava "CONFORMIDADE (≥2)" e "abaixo do
+ * mínimo de 2" — contra a determinação do Comando, em todas as superfícies ao
+ * mesmo tempo (painel, briefing e relatório executivo leem daqui).
+ */
+export function minimoDoRecorte(metas: MetaSubunidade[], fracao: string): number {
+  if (fracao && fracao !== "todas") {
+    const daFracao = metas.find((m) => m.subunidade === fracao)?.evidenciasPorTurno ?? 0;
+    if (daFracao > 0) return daFracao;
+  }
+  const maior = metas.reduce((s, m) => Math.max(s, m.evidenciasPorTurno || 0), 0);
+  return maior > 0 ? maior : MINIMO_PADRAO;
+}
+
+/**
+ * A JANELA do recorte — quantos dias ele tem, quantos já correram e quantos
+ * faltam. É a base única de turno e de ritmo do painel.
+ *
+ * Existe porque conviviam dois modelos de "turno" no mesmo produto:
+ *
+ * - o ANTIGO, de `MetaSubunidade.turnos` (15 turnos de 12x36 no mês), que
+ *   produzia "faltam 873 em 13 turnos — 68 por turno" e "meta de 65 por turno";
+ * - o NOVO, fixado com o Maj PM em 31/08/2026 em `cop2026-tendencia.ts`: a
+ *   unidade é o TURNO-FRAÇÃO (cada fração roda 2 turnos por dia, 60 num mês de
+ *   30 dias) e o ritmo do Batalhão é expresso POR DIA, nunca por turno.
+ *
+ * As duas contas respondiam à mesma pergunta com números diferentes na mesma
+ * tela. Aqui fica só a segunda.
+ *
+ * `decorridos` INCLUI o dia em curso. O modelo anterior contava só dias
+ * encerrados enquanto somava as evidências lançadas hoje: numerador de dois
+ * dias sobre denominador de um, que foi o que fez o painel anunciar
+ * "REAL 87,00/dia" e "ADIANTADA" no dia em que a auditoria estava em 9,1% da
+ * meta — e escrever "Dias com lançamento: 2 de 1".
+ */
+export type JanelaRecorte = {
+  de: string;
+  ate: string;
+  dias: number;
+  /** Dias corridos até hoje, contando o dia em curso. Zero antes de abrir. */
+  decorridos: number;
+  diasRestantes: number;
+  /** Turnos-fração do período inteiro: `dias` × 2. */
+  turnosFracao: number;
+  turnosFracaoDecorridos: number;
+  turnosFracaoRestantes: number;
+  encerrado: boolean;
+};
+
+export function janelaDoRecorte(f: Filtros, hoje: string = hojeBrt()): JanelaRecorte {
+  /* A janela é o MÊS em que o recorte cai, não o recorte em si.
+   *
+   * A meta de 960 é mensal e não encolhe quando o Comando dá zoom em dois dias
+   * para conferir um fim de semana: se a janela fosse o recorte, `metaDia`
+   * viraria 960 ÷ 2 = 480 e a linha de meta do gráfico diário saltaria para
+   * quinze vezes o valor certo. O período de cálculo do ritmo é sempre o do
+   * denominador da meta. */
+  const ancora = f.de || f.ate || hoje;
+  const mes = RELATORIOS_MENSAIS.find(
+    (m) => ancora >= m.periodo.de && ancora <= m.periodo.ate
+  ) ?? mesCorrente();
+  const de = mes?.periodo.de || "";
+  const ate = mes?.periodo.ate || "";
+
+  /* Sem janela conhecida (fora do ciclo de 2026, ou recorte aberto de um lado
+     só) o painel degrada para "sem base de calendário": nada de inventar 30
+     dias e cobrar ritmo em cima de um período que ninguém declarou. */
+  if (!de || !ate || ate < de) {
+    return {
+      de,
+      ate,
+      dias: 0,
+      decorridos: 0,
+      diasRestantes: 0,
+      turnosFracao: 0,
+      turnosFracaoDecorridos: 0,
+      turnosFracaoRestantes: 0,
+      encerrado: false,
+    };
+  }
+
+  const dias = diasEntre(de, ate) + 1;
+  const decorridos = hoje < de ? 0 : hoje > ate ? dias : diasEntre(de, hoje) + 1;
+  const diasRestantes = Math.max(0, dias - decorridos);
+
+  return {
+    de,
+    ate,
+    dias,
+    decorridos,
+    diasRestantes,
+    turnosFracao: dias * TURNOS_POR_DIA,
+    turnosFracaoDecorridos: decorridos * TURNOS_POR_DIA,
+    turnosFracaoRestantes: diasRestantes * TURNOS_POR_DIA,
+    encerrado: hoje > ate,
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Estatística descritiva
@@ -91,9 +214,10 @@ export type Filtros = {
   busca: string;
   /** Recorte de exceção: só quem não auditou, só quem ficou abaixo do mínimo,
    *  só quem não informou os IDs das mídias, só quem informou algo que não é
-   *  identificador da plataforma. Os dois últimos são casos DIFERENTES: um
-   *  precisa ser cobrado a informar, o outro a corrigir. */
-  excecao: "" | "naoauditou" | "abaixo" | "semids" | "idinvalido";
+   *  identificador da plataforma, só quem lançou um ID que já foi lançado.
+   *  São casos DIFERENTES: um precisa ser cobrado a informar, outro a corrigir,
+   *  o último a explicar por que a mesma mídia foi auditada duas vezes. */
+  excecao: "" | "naoauditou" | "abaixo" | "semids" | "idinvalido" | "duplicado";
 };
 
 export const FILTROS_VAZIOS: Filtros = {
@@ -149,7 +273,13 @@ export function lerFiltros(sp: Record<string, string | string[] | undefined>): F
     de: de || padrao?.de || "",
     ate: ate || padrao?.ate || "",
     busca: um("busca"),
-    excecao: (["naoauditou", "abaixo", "semids"] as const).includes(excecao as never)
+    /* A lista tem que trazer TODAS as exceções que `aplicarFiltros` entende.
+       `idinvalido` ficou de fora quando o cartão foi criado, então o cartão
+       "Informaram ID fora do formato" montava o link, o link chegava aqui e o
+       filtro era descartado em silêncio — clique que não filtra nada. */
+    excecao: (["naoauditou", "abaixo", "semids", "idinvalido", "duplicado"] as const).includes(
+      excecao as never
+    )
       ? (excecao as Filtros["excecao"])
       : "",
   };
@@ -170,10 +300,57 @@ export function escreverFiltros(f: Filtros): string {
   return q ? `?${q}` : "";
 }
 
+/**
+ * Identificadores lançados mais de uma vez — a mesma mídia contada como duas
+ * evidências.
+ *
+ * Apareceu em produção em 02/09/2026: `f2bd1c1f1f1d94f3140967cff034ff3b` foi
+ * lançado pelo Cap PM da 4ª Cia em 01/09 e de novo por outra auditora em 02/09.
+ * As duas somaram para a meta e nenhuma exceção do painel acusou.
+ *
+ * Só entra identificador VÁLIDO: repetir um número solto não diz nada, porque
+ * número solto não resolve para objeto nenhum da plataforma — esse caso já é
+ * cobrado como "ID fora do formato". A comparação é sobre o valor normalizado
+ * (`classificarIdentificador`), então maiúsculas e espaços colados não
+ * escondem a repetição.
+ */
+export function mapearDuplicados(lancamentos: LancamentoCop[]): Map<string, number> {
+  const vezes = new Map<string, number>();
+  for (const l of lancamentos) {
+    if (!l.auditou) continue;
+    /* Repetição DENTRO do mesmo lançamento é outro caso (o auditor colou duas
+       vezes a mesma linha) e não vira dupla contagem entre pessoas: conta uma
+       vez por lançamento. */
+    const noLancamento = new Set(
+      separarIdentificadores(l.idsMidia)
+        .filter(ehIdentificadorValido)
+        .map((b) => classificarIdentificador(b).valor)
+    );
+    for (const v of noLancamento) vezes.set(v, (vezes.get(v) ?? 0) + 1);
+  }
+  return new Map([...vezes].filter(([, n]) => n > 1));
+}
+
+/** Identificadores válidos deste lançamento que aparecem em outro também. */
+export function duplicadosDoLancamento(
+  l: LancamentoCop,
+  duplicados: Map<string, number>
+): string[] {
+  if (!l.auditou || !duplicados.size) return [];
+  const vistos = new Set<string>();
+  for (const bruto of separarIdentificadores(l.idsMidia)) {
+    if (!ehIdentificadorValido(bruto)) continue;
+    const v = classificarIdentificador(bruto).valor;
+    if (duplicados.has(v)) vistos.add(v);
+  }
+  return [...vistos];
+}
+
 export function aplicarFiltros(
   lancamentos: LancamentoCop[],
   f: Filtros,
-  minimo: number
+  minimo: number,
+  duplicados: Map<string, number> = new Map()
 ): LancamentoCop[] {
   return lancamentos.filter((l) => {
     if (f.fracao !== "todas" && l.subunidade !== f.fracao) return false;
@@ -196,6 +373,7 @@ export function aplicarFiltros(
     ) {
       return false;
     }
+    if (f.excecao === "duplicado" && !duplicadosDoLancamento(l, duplicados).length) return false;
     return true;
   });
 }
@@ -299,13 +477,25 @@ export type Painel = ReturnType<typeof calcularPainel>;
 export function calcularPainel(
   lancamentos: LancamentoCop[],
   metas: MetaSubunidade[],
-  f: Filtros
+  f: Filtros,
+  hoje: string = hojeBrt()
 ) {
-  const minimo =
-    metas.find((m) => m.evidenciasPorTurno > 0)?.evidenciasPorTurno ?? MINIMO_PADRAO;
+  const minimo = minimoDoRecorte(metas, f.fracao);
+  const janela = janelaDoRecorte(f, hoje);
+  const duplicados = mapearDuplicados(lancamentos);
 
-  const dados = aplicarFiltros(lancamentos, f, minimo);
-  
+  const dados = aplicarFiltros(lancamentos, f, minimo, duplicados);
+
+  /* Mesmo recorte do painel, menos o filtro de SEMANA — é a base de tudo que é
+     "semana a semana". Os cartões semanais SÃO o seletor de semana: aplicar
+     `f.semana` aqui zeraria os outros três e o clique deixaria de servir. */
+  const dadosSemFiltroDeSemana = aplicarFiltros(
+    lancamentos,
+    { ...f, semana: "todas" },
+    minimo,
+    duplicados
+  );
+
   // Normaliza as metas aplicando a Matriz Operacional Proporcional (960 evidências / 570 PMs)
   const metasNormalizadas = metas.map((m) => {
     const mat = MATRIZ_PROPORCIONAL_2026[m.subunidade];
@@ -332,7 +522,10 @@ export function calcularPainel(
 
   const meta = metasRecorte.reduce((s, m) => s + m.meta, 0);
   const auditores = metasRecorte.reduce((s, m) => s + m.efetivo, 0);
-  const turnosPrevistos = Math.max(...metasRecorte.map((m) => m.turnos), 15);
+  /* Turnos-FRAÇÃO do período (2 por dia), vindos do CALENDÁRIO — não mais de
+     `MetaSubunidade.turnos`, que ainda carrega os 15 turnos de 12x36 do modelo
+     anterior à Matriz Proporcional. Ver `janelaDoRecorte`. */
+  const turnosPrevistos = janela.turnosFracao;
 
   const videosPorLanc = dados.filter((l) => l.auditou).map((l) => l.videos);
   const total = videosPorLanc.reduce((a, b) => a + b, 0);
@@ -405,21 +598,48 @@ export function calcularPainel(
   const lsc = mediaDia + 3 * sigma;
   const lic = Math.max(0, mediaDia - 3 * sigma);
   const foraDeControle = porDia.filter((d) => sigma > 0 && (d.v > lsc || d.v < lic));
-  const metaDia = metasRecorte.reduce((s, m) => s + (m.turnos > 0 ? m.meta / m.turnos : 0), 0);
+  /* Meta DIÁRIA do recorte: 960 ÷ 30 = 32 em setembro.
+     Antes era `Σ meta ÷ m.turnos` com `turnos: 15`, o que dava 65 e ia para a
+     tela rotulado "meta/turno" — a linha do gráfico diário e o cartão "MÉDIA
+     POR TURNO · meta de 65 por turno" do briefing saíam os dois com o dobro do
+     valor certo, e por turno, quando o eixo é por dia. */
+  const metaDia = janela.dias > 0 ? meta / janela.dias : 0;
 
   /** Turnos já cobertos = dias distintos com lançamento. É a melhor
    *  aproximação disponível: a planilha registra data e turno, não um
    *  calendário de escala. */
-  const turnosCumpridos = porDia.length;
-  const turnosRestantes = Math.max(0, turnosPrevistos - turnosCumpridos);
-  const ritmoNecessario = turnosRestantes > 0 ? falta / turnosRestantes : falta;
+  /* Dias distintos em que ALGUÉM lançou. É medida de cobertura, não de tempo:
+     serve para dizer "houve lançamento em 2 dos 2 dias corridos", e nunca mais
+     para calcular quanto do período já correu — era daí que saía "faltam 873 em
+     13 turnos", com 13 = 15 turnos do modelo antigo menos 2 dias com lançamento,
+     somando maçã com laranja. */
+  const diasComLancamento = porDia.length;
+  const turnosCumpridos = janela.turnosFracaoDecorridos;
+  const turnosRestantes = janela.turnosFracaoRestantes;
+
+  /* RITMO NECESSÁRIO do Batalhão é POR DIA, nunca por turno — vocabulário
+     fixado com o Maj PM em 31/08/2026 (`cop2026-tendencia.ts`). Por turno-fração
+     é a medida da FRAÇÃO, e está em `LinhaFracao.ritmoNecessario`. */
+  const ritmoNecessario = janela.diasRestantes > 0 ? falta / janela.diasRestantes : falta;
 
   // ---- semanas consolidadas do Batalhão / Recorte --------------------------
-  const lancamentosSemanaisBase = lancamentos.filter((l) => {
-    if (f.fracao !== "todas" && l.subunidade !== f.fracao) return false;
-    if (f.turno !== "todos" && !(l.turno || "").toLowerCase().startsWith(f.turno)) return false;
-    return true;
-  });
+  /* A base é o RECORTE, não a planilha inteira.
+   *
+   * Antes daqui saía um filtro próprio, só por fração e turno, que ignorava o
+   * `de`/`ate` do mês. `identificarSemana` classifica pelo DIA DO MÊS, então
+   * 24/08 e 24/09 caem os dois na Semana 4: em 02/09/2026 o painel — e o
+   * briefing, que lê o mesmo Painel — anunciaram SEMANA 4 com 1.146/240 e
+   * "Meta semanal superada", somando agosto inteiro contra a cota de uma
+   * semana de setembro. As quatro semanas somavam 1.341 contra 87 do mês.
+   *
+   * É a mesma classe de erro que a meta mensal já tinha pago em 01/09 no quadro
+   * público (ver `filtrosDoMesCorrente`): meta de um mês contra lançamento de
+   * dois. Com a base recortada, a virada do mês zera as quatro sozinha. */
+  const lancamentosSemanaisBase = dadosSemFiltroDeSemana;
+
+  /* O rótulo da 4ª semana acompanha o mês do recorte: 22 a 30 em setembro e
+     novembro, 22 a 31 nos demais. */
+  const ultimoDiaDoRecorte = janela.ate ? Number(janela.ate.slice(8, 10)) : 31;
 
   const semanasBatalhao: ProgressoSemana[] = SEMANAS_ROTULOS.map((s) => {
     const daSemana = lancamentosSemanaisBase.filter(
@@ -434,7 +654,7 @@ export function calcularPainel(
     return {
       semana: s.semana,
       rotulo: s.rotulo,
-      diasRotulo: s.dias,
+      diasRotulo: diasDaSemana(s.semana, ultimoDiaDoRecorte),
       meta: metaSem,
       feito,
       pct: p,
@@ -453,10 +673,15 @@ export function calcularPainel(
       const metaReal = mat ? mat.meta : m.meta;
       const p = metaReal > 0 ? (feito / metaReal) * 100 : 0;
       const fa = Math.max(0, metaReal - feito);
-      const rest = Math.max(0, (m.turnos || 15) - turnosCumpridos);
+      /* Turnos-fração que ainda restam no período, do calendário. */
+      const rest = janela.turnosFracaoRestantes;
 
-      // Desempenho semana a semana da fração
-      const todosDaFracao = lancamentos.filter((l) => l.subunidade === m.subunidade && l.auditou);
+      /* Desempenho semana a semana da fração — do RECORTE, pelo mesmo motivo
+         de `semanasBatalhao`. Lendo a planilha inteira, a Força Tática exibia
+         "Sem 4: 486/36 · 1.350%" em 02/09 com 6 evidências no mês. */
+      const todosDaFracao = dadosSemFiltroDeSemana.filter(
+        (l) => l.subunidade === m.subunidade && l.auditou
+      );
       const semanasFracao: ProgressoSemana[] = SEMANAS_ROTULOS.map((s) => {
         const lancsSem = todosDaFracao.filter((l) => identificarSemana(l.data) === s.semana);
         const feitoSem = lancsSem.reduce((sum, l) => sum + l.videos, 0);
@@ -465,7 +690,7 @@ export function calcularPainel(
         return {
           semana: s.semana,
           rotulo: s.rotulo,
-          diasRotulo: s.dias,
+          diasRotulo: diasDaSemana(s.semana, ultimoDiaDoRecorte),
           meta: metaSem,
           feito: feitoSem,
           pct: pSem,
@@ -487,7 +712,13 @@ export function calcularPainel(
         ritmoNecessario: rest > 0 ? fa / rest : fa,
         turnosRestantes: rest,
         pctBatalhao: mat ? mat.pctMeta : meta > 0 ? (metaReal / meta) * 100 : 0,
-        ritmoProporcional: mat?.ritmoProporcional,
+        /* Ritmo-ALVO por turno-fração: a cota da fração dividida pelos turnos do
+           período (195 ÷ 60 = 3,25). Antes vinha de `mat.ritmoProporcional`, o
+           rateio inteiro da constante RITMO_GLOBAL_RESTANTE = 73, que punha
+           "RITMO 15/turno" no cartão da 1ª Cia — quase cinco vezes a cota real e
+           impossível de cumprir. */
+        ritmoProporcional:
+          janela.turnosFracao > 0 ? metaReal / janela.turnosFracao : mat?.ritmoProporcional,
         efetivoQuadro: mat ? mat.efetivo : m.efetivo,
         metaSemanalMedia: mat ? mat.metaSemanalMedia : metaReal / 4,
         semanas: semanasFracao,
@@ -499,6 +730,24 @@ export function calcularPainel(
       if (ia !== -1 && ib !== -1) return ia - ib;
       return a.chave.localeCompare(b.chave);
     });
+
+  /* ---- evidências órfãs ----------------------------------------------------
+   *
+   * Lançamento cuja fração o auditor não informou não casa com nenhuma linha de
+   * meta e SOME do ranking — mas continua somando no total do Batalhão. Em
+   * 02/09/2026 isso pôs dois totais na mesma tela: "EVIDÊNCIAS AUDITADAS 87" no
+   * topo e "Realizado 65" na Tendência por Fração, com 22 evidências de quatro
+   * auditores sem fração no meio.
+   *
+   * Não se resolve escondendo nem somando calado: o número aparece com nome,
+   * porque o conserto é o auditor declarar a fração na planilha. */
+  const chavesComMeta = new Set(metasRecorte.map((m) => m.subunidade));
+  const semFracaoDados = dados.filter((l) => l.auditou && !chavesComMeta.has(l.subunidade));
+  const semFracao = {
+    lancamentos: semFracaoDados.length,
+    videos: semFracaoDados.reduce((s, l) => s + l.videos, 0),
+    auditores: new Set(semFracaoDados.map((l) => l.re || l.nomeGuerra).filter(Boolean)).size,
+  };
 
   // ---- comparativos --------------------------------------------------------
   const porTurno = ["diurno", "noturno"].map((t) => ({
@@ -575,6 +824,20 @@ export function calcularPainel(
      leitura (lib/cop2026.ts), mas a planilha continua errada — quem conserta é
      o auditor, e só conserta se o painel disser o nome dele. */
   const quantidadeInvalidaLista = dados.filter((l) => l.quantidadeDescartada > 0).map(detalhar);
+  /* Mesma mídia lançada por mais de um auditor — dupla contagem contra a meta.
+     A lista traz os IDs repetidos junto, porque a cobrança é sobre o ID, não
+     sobre a pessoa: os dois lados podem estar de boa-fé e um dos dois tem de
+     ser retirado da planilha. */
+  const duplicadoLista = dados
+    .map((l) => ({ l, ids: duplicadosDoLancamento(l, duplicados) }))
+    .filter((x) => x.ids.length > 0)
+    .map((x) => ({ ...detalhar(x.l), ids: x.ids }));
+  const comIdDuplicado = duplicadoLista.length;
+  /* Quantos identificadores distintos estão repetidos e quantas evidências
+     isso representa a mais na soma — é o tamanho do problema, não o nº de
+     lançamentos envolvidos. */
+  const idsDuplicadosNoRecorte = new Set(duplicadoLista.flatMap((x) => x.ids)).size;
+  const semFracaoLista = semFracaoDados.map(detalhar);
 
   // ---- histograma ----------------------------------------------------------
   const histograma = [0, 1, 2, 3, 4, 5].map((n) => ({
@@ -718,6 +981,16 @@ export function calcularPainel(
     turnosCumpridos,
     turnosRestantes,
     ritmoNecessario,
+    /* Calendário do recorte — quem responde "quanto do mês já correu". */
+    janela,
+    diasComLancamento,
+    /* Evidências que não pertencem a fração nenhuma (ver acima). */
+    semFracao,
+    semFracaoLista,
+    /* Mesma mídia auditada duas vezes. */
+    comIdDuplicado,
+    idsDuplicadosNoRecorte,
+    duplicadoLista,
     fracoes,
     semanasBatalhao,
     porTurno,
@@ -758,14 +1031,19 @@ export function veredito(p: Painel): { titulo: string; detalhe: string; nivel: N
           nivel: "neutro",
         };
   }
+  /* O Batalhão se mede POR DIA — vocabulário fixado com o Maj PM em 31/08/2026.
+     Esta frase dizia "faltam 873 evidências em 13 turnos — 68 por turno", que
+     era o modelo antigo (15 turnos de 12x36 menos os dias com lançamento) e
+     contradizia o próprio painel, que já falava em dias na mesma tela. */
+  const dias = p.janela.diasRestantes;
   const ritmo =
-    p.turnosRestantes > 0
-      ? `Faltam ${FMT.format(p.falta)} evidências em ${FMT.format(p.turnosRestantes)} turno${
-          p.turnosRestantes === 1 ? "" : "s"
-        } — ${FMT.format(Math.ceil(p.ritmoNecessario))} por turno para fechar a meta.`
-      : `Faltam ${FMT.format(p.falta)} evidências e os ${FMT.format(
-          p.turnosPrevistos
-        )} turnos previstos já foram cumpridos.`;
+    dias > 0
+      ? `Faltam ${FMT.format(p.falta)} evidências em ${FMT.format(dias)} dia${
+          dias === 1 ? "" : "s"
+        } — ${FMT.format(Math.ceil(p.ritmoNecessario))} por dia para fechar a meta.`
+      : `Faltam ${FMT.format(p.falta)} evidências e o período de ${FMT.format(
+          p.janela.dias
+        )} dias já se encerrou.`;
 
   const TITULO_POR_NIVEL: Record<Nivel, string> = {
     superacao: "ACIMA da Métrica para Monitoramento e Controle de Vídeos (Evidências / Ocorrências)",

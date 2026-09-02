@@ -249,7 +249,7 @@ export function ProducaoDiaria({
             strokeDasharray="6 5"
             ifOverflow="extendDomain"
             label={{
-              value: `meta/turno ${FMT.format(Math.round(metaDia))}`,
+              value: `meta/dia ${FMT.format(Math.round(metaDia))}`,
               fill: OURO,
               fontSize: 10,
               position: "insideTopRight",
@@ -567,8 +567,11 @@ export function AgulhaoMetas({
             <span className="pulso-faixa-texto mt-1.5 text-5xl font-black leading-none tracking-tight sm:text-6xl" style={{ color: "var(--faixa)" }}>
               {FMT.format(ritmo)}
             </span>
-            <span className="mt-2 text-[10px] font-bold leading-tight text-slate-600">evidências/turno</span>
-            <span className="text-[10px] font-semibold leading-tight text-slate-500">· {FMT.format(turnosRestantes ?? 0)} turnos restantes</span>
+            {/* O Batalhão se mede POR DIA. Este cartão dizia "68 evidências/turno
+                · 13 turnos restantes", que era o modelo anterior à Matriz
+                Proporcional e não fechava com o resto da tela. */}
+            <span className="mt-2 text-[10px] font-bold leading-tight text-slate-600">evidências/dia</span>
+            <span className="text-[10px] font-semibold leading-tight text-slate-500">· {FMT.format(turnosRestantes ?? 0)} dias restantes</span>
           </div>
         )}
       </div>

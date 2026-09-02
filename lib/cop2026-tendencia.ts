@@ -89,7 +89,7 @@ export function turnosDoMes(ano: number, mes: number, turnosPorDia = TURNOS_POR_
 
 export interface ProgressoMes {
   diasMes: number;
-  /** Dias ENCERRADOS. O dia corrente não conta: ainda está sendo trabalhado. */
+  /** Dias CORRIDOS, contando o dia em curso. */
   diasDecorridos: number;
   turnosMes: number;
   turnosDecorridos: number;
@@ -98,8 +98,20 @@ export interface ProgressoMes {
 }
 
 /**
- * Posição do mês pelo calendário. Conta apenas dias encerrados — cobrar a cota
- * do dia corrente às 08h da manhã produziria déficit fantasma.
+ * Posição do mês pelo calendário.
+ *
+ * Conta o dia EM CURSO. A versão anterior contava só dias encerrados
+ * (`getUTCDate() - 1`) para não cobrar a cota do dia às 08h da manhã — mas o
+ * realizado que entra no numerador inclui o que foi lançado hoje. Numerador de
+ * dois dias sobre denominador de um foi o que pôs na tela, em 02/09/2026:
+ * "dia 1 de 30", "REAL 87,00/dia" (eram 87 em dois dias, 43,5/dia),
+ * "TRAJETÓRIA 271,9% · ADIANTADA" ao lado do selo "Crítica · ABAIXO DA META",
+ * e a linha impossível "Dias com lançamento: 2 de 1".
+ *
+ * O déficit no começo do dia é leitura verdadeira, e a régua de trajetória
+ * existe justamente para isso — é ortogonal à de cumprimento (§2 dos padrões do
+ * Comando). Antes do 1º dia do mês `diasDecorridos` é 0 e a trajetória sai como
+ * NÃO AFERÍVEL, que é o caso em que realmente não há base.
  */
 export function progressoDoMes(
   referencia: Date,
@@ -116,7 +128,7 @@ export function progressoDoMes(
   let diasDecorridos: number;
   if (agora < inicio) diasDecorridos = 0;
   else if (agora > fim) diasDecorridos = diasMes;
-  else diasDecorridos = referencia.getUTCDate() - 1;
+  else diasDecorridos = referencia.getUTCDate();
 
   const turnosDecorridos = diasDecorridos * turnosPorDia;
   return {

@@ -18,6 +18,7 @@ import {
   progressoDoMes,
   regularidadeProducao,
   turnosDoMes,
+  type ClasseEquilibrio,
   type Prioridade,
   type SituacaoTrajetoria,
   type Tendencia,
@@ -161,6 +162,15 @@ const COLUNAS: { rotulo: string; inicio?: boolean; ajuda?: string }[] = [
 /** Fronteira visual entre grupos de coluna. */
 const SEP = "border-l-2 border-slate-300";
 
+/** A classe vinha para a tela por `classe.replace(/_/g, " ").toLowerCase()`, que
+ *  devolvia "assimetria critica" — sem acento, numa frase que o Comando lê. */
+const ROTULO_EQUILIBRIO: Record<ClasseEquilibrio, string> = {
+  EQUILIBRADO: "produção equilibrada",
+  ASSIMETRIA_MODERADA: "assimetria moderada",
+  ASSIMETRIA_ELEVADA: "assimetria elevada",
+  ASSIMETRIA_CRITICA: "assimetria crítica",
+};
+
 const CORES_PRIORIDADE: Record<Prioridade, string> = {
   MAXIMA: "#ca0202",
   MUITO_ALTA: "#dc2626",
@@ -173,17 +183,27 @@ export function CaixaTendencia({
   fracoes,
   auditoresPorQuinzena,
   referencia,
+  semFracao,
 }: {
   fracoes: LinhaFracao[];
   /** Auditores distintos na 1a e na 2a quinzena, por fracao. */
   auditoresPorQuinzena?: Record<string, [number, number]>;
   referencia?: Date;
+  /** Evidências de lançamentos sem fração declarada — não têm cota e por isso
+   *  não aparecem em linha nenhuma da tabela. Ver abaixo. */
+  semFracao?: { lancamentos: number; videos: number; auditores: number };
 }) {
   const { ano, mes, referencia: agora } = hojeEmSaoPaulo();
   const p = progressoDoMes(referencia ?? agora, ano, mes);
 
   const metaGlobal = fracoes.reduce((s, f) => s + f.meta, 0);
-  const feitoGlobal = fracoes.reduce((s, f) => s + f.feito, 0);
+  /* O total do Batalhão soma TODAS as evidências do recorte, inclusive as de
+     quem não declarou a fração. Somando só as linhas da tabela, esta caixa
+     anunciava "Realizado 65" ao lado do KPI "EVIDÊNCIAS AUDITADAS 87" no topo
+     da mesma tela — 22 evidências de quatro auditores sem fração no meio, e
+     duas verdades no mesmo painel. */
+  const orfas = semFracao?.videos ?? 0;
+  const feitoGlobal = fracoes.reduce((s, f) => s + f.feito, 0) + orfas;
 
   const btl = calcularTendencia({
     meta: metaGlobal,
@@ -243,6 +263,17 @@ export function CaixaTendencia({
             Meta {N0.format(metaGlobal)} · Realizado {N0.format(feitoGlobal)} ·{" "}
             {N0.format(p.diasDecorridos)} de {N0.format(p.diasMes)} dias ·{" "}
             {N0.format(p.turnosMes)} turnos por fração
+            {orfas > 0 && (
+              <>
+                {" · "}
+                <strong
+                  className="font-black text-[#ca0202]"
+                  title="Evidências de lançamentos sem fração declarada. Somam para o Batalhão e não têm cota — o conserto é o auditor informar a fração na planilha."
+                >
+                  {N0.format(orfas)} sem fração
+                </strong>
+              </>
+            )}
           </span>
         </header>
 
@@ -503,7 +534,7 @@ export function CaixaTendencia({
                     {P1.format(equilibrio.cv * 100)}%
                   </strong>{" "}
                   entre as frações —{" "}
-                  {equilibrio.classe.replace(/_/g, " ").toLowerCase()}. Uma fração muito acima e
+                  {ROTULO_EQUILIBRIO[equilibrio.classe]}. Uma fração muito acima e
                   outras abaixo se anulam na média e somem do total do Batalhão.
                 </>
               )}

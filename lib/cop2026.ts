@@ -306,7 +306,31 @@ function ehSim(valor: string): boolean {
  * aquela célula está errada e mandando corrigir, sem que o CPF trafegue junto.
  */
 export function redigirCpf(texto: string): string {
-  return String(texto ?? "").replace(/(?<!\d)\d{11}(?!\d)/g, "[CPF removido]");
+  /* Token a token, e não sobre o texto inteiro.
+   *
+   * O último grupo de um UUID tem 12 caracteres hexadecimais. Quando 11 deles
+   * saem dígitos — e sai, é 1 em 16 —, o hífen antes e o hex depois formam a
+   * fronteira que a expressão procura, e a redação come o miolo de um
+   * identificador de gravação legítimo. Foi ao ar em 02/09/2026:
+   * `395ab763-49cc-4eb2-acef-[CPF removido]f` no painel, no lugar do UUID que
+   * o auditor lançou. Evidência boa apagada como se fosse dado pessoal.
+   *
+   * Identificador da plataforma nunca é CPF: se o token resolve para mídia,
+   * gravação ou página, ele passa inteiro. O resto — inclusive o número solto
+   * que o Comando precisa enxergar para cobrar a correção — continua sendo
+   * varrido pela mesma regra de 11 dígitos exatos de antes.
+   *
+   * A separação preserva os espaços originais: o texto volta com a mesma
+   * quebra de linha que veio da planilha, que é o que a tabela e o CSV exibem.
+   */
+  return String(texto ?? "")
+    .split(/(\s+)/)
+    .map((parte) => {
+      if (!parte.trim()) return parte;
+      if (classificarIdentificador(parte).tipo !== "desconhecido") return parte;
+      return parte.replace(/(?<!\d)\d{11}(?!\d)/g, "[CPF removido]");
+    })
+    .join("");
 }
 
 // ---------------------------------------------------------------------------
