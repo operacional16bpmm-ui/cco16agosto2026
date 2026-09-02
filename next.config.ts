@@ -8,6 +8,23 @@ const nextConfig: NextConfig = {
      navegador. Fora do bundle, a função os resolve de node_modules. */
   serverExternalPackages: ["puppeteer-core", "@sparticuz/chromium"],
 
+  /* ...e externalizar NÃO BASTA. O `serverExternalPackages` só impede que o
+     pacote seja reescrito pelo bundler; quem decide o que é COPIADO para dentro
+     da função na Vercel é o rastreador de arquivos, e ele segue o grafo de
+     `import`/`require`. Os binários do Chromium (`chromium.br`, `fonts.tar.br`,
+     `al2023.tar.br`, `swiftshader.tar.br`, ~70 MB) são lidos por caminho
+     montado em tempo de execução — o rastreador não tem como enxergá-los, e a
+     função subia sem eles:
+
+       The input directory "/var/task/node_modules/@sparticuz/chromium/bin"
+       does not exist.
+
+     O sintoma era cruel porque o build passa, a rota responde e só o PNG falha.
+     Esta lista é o que obriga a cópia. */
+  outputFileTracingIncludes: {
+    "/api/cop2026/briefing-png": ["./node_modules/@sparticuz/chromium/bin/**"],
+  },
+
   async redirects() {
     return [
       // /efetivo foi absorvida pela página de seção /p1 (dado real QSE
