@@ -32,7 +32,11 @@ import {
  * - **linha âmbar** — o realizado acumulado. Ela PARA no dia de hoje: dia que
  *   ainda não chegou não vale zero, vale nada;
  * - **barras cinza** — as evidências de cada dia, no eixo da direita. É o "dia
- *   a dia mensurado" que a coordenadoria cobrou.
+ *   a dia mensurado" que a coordenadoria cobrou;
+ * - **linha verde** — o ritmo-alvo do dia, sobre as barras. Duas perguntas
+ *   diferentes moram no mesmo gráfico: a azul responde "estou no prazo do mês?"
+ *   e a verde responde "o dia de ontem fechou a cota?". Sem ela, a barra de um
+ *   dia não tinha contra o que ser lida.
  *
  * O vão entre as duas linhas é a DÍVIDA — "a somatória do que se vai deixando
  * de fazer, que vai caindo à medida que começam a sanear". Ela tem número no
@@ -52,6 +56,7 @@ const AZUL = "#2563eb";
 const AMBAR = "#d97706";
 const VERM = "#ca0202";
 const CINZA = "#cbd5e1";
+const VERDE = "#16a34a";
 const EIXO = { fontSize: 10, fill: "#55535e" };
 const GRID = "#1d1d1d1f";
 
@@ -102,6 +107,8 @@ function Cartao({
     turnosDecorridos: diasDecorridos,
   });
   const semBase = diasDecorridos === 0;
+  /** Cota de um dia — é o ritmo-alvo diário, e vira linha sobre as barras. */
+  const amanhaCota = amanha.cota;
 
   return (
     <div className="flex min-w-0 flex-col rounded-xl border-2 border-slate-200 bg-white p-3 shadow-xs">
@@ -195,6 +202,27 @@ function Cartao({
           )}
 
           <Bar yAxisId="dia" dataKey="feito" name="Evidências do dia" fill={CINZA} barSize={7} />
+          {/* RITMO-ALVO por dia, na régua das barras. A azul tracejada é o alvo
+              ACUMULADO — responde "estou no prazo?"; esta responde "o dia de
+              hoje fechou?", que é outra pergunta e não tinha resposta na tela.
+              Verde é a cor de EM TRAJETÓRIA na régua do Comando: a barra que
+              encosta nela é o dia que cumpriu a cota. `extendDomain` porque em
+              fração de cota baixa o alvo fica acima da maior barra do mês e a
+              linha sairia do gráfico. */}
+          <ReferenceLine
+            yAxisId="dia"
+            y={amanhaCota}
+            stroke={VERDE}
+            strokeWidth={1.5}
+            ifOverflow="extendDomain"
+            label={{
+              value: `alvo ${N2.format(amanhaCota)}/dia`,
+              fill: VERDE,
+              fontSize: 9,
+              fontWeight: 700,
+              position: "insideBottomRight",
+            }}
+          />
           {/* Empilhadas: feito + dívida = previsto, por construção. A faixa
               vermelha É o vão entre as duas linhas — o gráfico deixa de ter um
               buraco branco onde mora o indicador mais importante. */}
@@ -295,6 +323,10 @@ export function CurvaPlanoRealizado({
         <span className="flex items-center gap-1.5">
           <span className="inline-block h-2.5 w-2" style={{ background: CINZA }} />
           evidências do dia (eixo da direita)
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-0.5 w-6" style={{ background: VERDE }} />
+          ritmo-alvo do dia — a barra tem que encostar nela
         </span>
         <span className="flex items-center gap-1.5">
           <span className="inline-block h-2.5 w-4" style={{ background: VERM, opacity: 0.16 }} />

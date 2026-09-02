@@ -245,6 +245,13 @@ abrem a dívida e sumiriam se a série da planilha fosse desenhada como veio.
 A curva é do **mês**, e ignora a aba de semana de propósito: com "Sem 2" ligada,
 desenhar 23 dias zerados diria que a fração não produziu nada neles.
 
+**Duas linhas de alvo, e não é redundância.** A azul tracejada é o alvo
+ACUMULADO ("estou no prazo do mês?"); a verde, sobre as barras, é o **ritmo-alvo
+do dia** ("o dia fechou a cota?"). São perguntas diferentes e réguas diferentes —
+a acumulada no eixo da esquerda, a diária no da direita. Verde porque é a cor de
+EM TRAJETÓRIA na régua do Comando (§2): barra que encosta na linha é dia
+cumprido.
+
 O motivo declarado pela coordenadoria — *"é sempre na terceira para a quarta
 semana que o pessoal olha, vê que não vai atingir e aí começa a fazer"* — é o que
 justifica a leitura acumulada: esse padrão não aparece em barra de dia nenhuma
