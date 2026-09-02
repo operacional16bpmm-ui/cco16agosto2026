@@ -110,12 +110,25 @@ function ListaExcecao({
   vazio,
   semJustificativa,
   comParte,
+  emCurso,
+  diasDecorridos,
+  janelaDias,
+  totalNoRecorte,
 }: {
   titulo: string;
   itens: Excecao[];
   vazio: string;
   semJustificativa: string;
   comParte?: boolean;
+  /** Janela para virar padrão de atenção ainda não fechou — mostra "em curso"
+   *  em vez de listar quem teve um único desvio no dia 2 do período mínimo. */
+  emCurso?: boolean;
+  diasDecorridos?: number;
+  janelaDias?: number;
+  /** Quantos lançamentos do desvio existem no RECORTE, mesmo antes de virarem
+   *  ponto de atenção. Fica visível como cinza para o Comando saber que o dado
+   *  existe, mesmo com a lista contida. */
+  totalNoRecorte?: number;
 }) {
   return (
     <div>
@@ -124,13 +137,24 @@ function ListaExcecao({
         <span
           className={cn(
             "dados-destaque text-lg",
-            itens.length ? "text-sinal-critico" : "text-sinal-conforme"
+            emCurso ? "text-texto-suave" : itens.length ? "text-sinal-critico" : "text-sinal-conforme"
           )}
         >
-          {FMT.format(itens.length)}
+          {emCurso ? "—" : FMT.format(itens.length)}
         </span>
       </p>
-      {itens.length ? (
+      {emCurso ? (
+        <div className="rounded-lg border border-dashed border-borda px-3 py-4 text-center text-[12.5px] leading-relaxed text-texto-suave">
+          Em curso — padrão só se caracteriza a partir de {janelaDias} dia
+          {janelaDias === 1 ? "" : "s"} de auditoria.
+          <br />
+          <span className="dados text-[11.5px]">
+            {FMT.format(diasDecorridos ?? 0)} de {FMT.format(janelaDias ?? 0)} decorrido
+            {(diasDecorridos ?? 0) === 1 ? "" : "s"}
+            {totalNoRecorte ? ` · ${FMT.format(totalNoRecorte)} caso(s) no recorte` : ""}
+          </span>
+        </div>
+      ) : itens.length ? (
         <ul className="space-y-2">
           {itens.map((i) => (
             <li key={`${i.id}-${i.parte}`} className="rounded-lg border border-borda px-3 py-2.5">
@@ -555,6 +579,7 @@ export function DashboardCop({
   erro,
   filtrosIniciais,
   tendencia,
+  janelaAtencaoDias,
   modoBriefing,
 }: {
   lancamentos: LancamentoCop[];
@@ -565,6 +590,9 @@ export function DashboardCop({
   /** Liga a caixa TENDENCIA. Nasceu como diferenca da V3; hoje o painel unico
    *  em /cop2026/dashboard sempre envia. Ausente = painel sem tendencia. */
   tendencia?: boolean;
+  /** Janela para virar "ponto de atencao" — configurada pelo Comando no admin
+   *  (cookie), padrao 7 dias. Ver lib/cop2026-config-atencao.ts. */
+  janelaAtencaoDias?: number;
   /** Pagina aberta pelo Chromium de /api/cop2026/briefing-png para virar PNG.
    *  Some com a moldura interativa e congela o painel; ver MODO_BRIEFING_CSS. */
   modoBriefing?: boolean;
@@ -630,7 +658,10 @@ export function DashboardCop({
     return () => window.clearInterval(t);
   }, [atualizar, modoBriefing]);
 
-  const p = useMemo(() => calcularPainel(lancamentos, metas, f), [lancamentos, metas, f]);
+  const p = useMemo(
+    () => calcularPainel(lancamentos, metas, f, { janelaAtencaoDias }),
+    [lancamentos, metas, f, janelaAtencaoDias]
+  );
   const vBase = veredito(p);
 
   /* Na V3 o prazo vem do CALENDARIO. O `veredito` de producao mede o que resta
@@ -1899,24 +1930,49 @@ export function DashboardCop({
         <div className="grid gap-5 md:grid-cols-3">
           <ListaExcecao
             titulo="Respondeu NÃO auditei"
-            itens={p.naoAuditouLista}
-            vazio="Ninguém deixou de auditar no recorte."
+            itens={p.atencao.naoAuditou}
+            vazio={`Ninguém deixou de auditar nos últimos ${p.atencao.janelaDias} dia${p.atencao.janelaDias === 1 ? "" : "s"}.`}
             semJustificativa="Sem justificativa registrada."
+            emCurso={p.atencao.emCurso}
+            diasDecorridos={p.atencao.diasDecorridos}
+            janelaDias={p.atencao.janelaDias}
+            totalNoRecorte={p.naoAuditou}
           />
           <ListaExcecao
             titulo={`Abaixo do mínimo de ${p.minimo}`}
-            itens={p.abaixoLista}
-            vazio="Todos cumpriram o mínimo no recorte."
+            itens={p.atencao.abaixo}
+            vazio={`Todos cumpriram o mínimo nos últimos ${p.atencao.janelaDias} dia${p.atencao.janelaDias === 1 ? "" : "s"}.`}
             semJustificativa={`Auditou abaixo do mínimo de ${p.minimo} por turno.`}
+            emCurso={p.atencao.emCurso}
+            diasDecorridos={p.atencao.diasDecorridos}
+            janelaDias={p.atencao.janelaDias}
+            totalNoRecorte={p.abaixo}
           />
           <ListaExcecao
             titulo="Partes confeccionadas"
-            itens={p.partesLista}
-            vazio="Nenhuma parte confeccionada no recorte."
+            itens={p.atencao.partes}
+            vazio={`Nenhuma parte confeccionada nos últimos ${p.atencao.janelaDias} dia${p.atencao.janelaDias === 1 ? "" : "s"}.`}
             semJustificativa="Sem observação registrada."
             comParte
+            emCurso={p.atencao.emCurso}
+            diasDecorridos={p.atencao.diasDecorridos}
+            janelaDias={p.atencao.janelaDias}
+            totalNoRecorte={p.partes}
           />
         </div>
+        <p className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-borda pt-3 text-[11.5px] leading-relaxed text-texto-suave">
+          <span>
+            <strong className="text-branco/85">Janela do padrão:</strong>{" "}
+            {p.atencao.janelaDias} dia{p.atencao.janelaDias === 1 ? "" : "s"} · lançamento fora
+            dela some da lista aqui, mas segue contando nos cartões acima.
+          </span>
+          <a
+            href="/cop2026/admin/parametros"
+            className="text-[11px] font-bold uppercase tracking-wide text-vermelho hover:underline"
+          >
+            Ajustar em Metas
+          </a>
+        </p>
 
         {/* Só aparece quando existe — em dia normal a planilha está limpa e um
             cartão vazio a mais só tiraria atenção do que importa. */}

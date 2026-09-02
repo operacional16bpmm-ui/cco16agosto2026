@@ -5,6 +5,7 @@ import { FaixaCreditos } from "@/components/publico16/creditos";
 import { exigirAdminCop } from "@/lib/db/cop2026-autorizados";
 import { lerParametros, periodoDe } from "@/lib/db/cop2026-parametros";
 import { fonteCop2026 } from "@/lib/cop2026-leitura";
+import { janelaAtencaoDias } from "@/lib/cop2026-config-atencao";
 import { hojeBrt } from "@/lib/cop2026-ciclo";
 import { AbasAdmin, CabecalhoAdmin } from "../cabecalho-admin";
 import { PainelParametros } from "./painel-parametros";
@@ -26,7 +27,10 @@ export default async function AdminParametrosPage({
   const bruto = Array.isArray(sp.periodo) ? sp.periodo[0] : sp.periodo;
   const periodo = bruto && /^\d{4}-\d{2}$/.test(bruto) ? bruto : periodoDe(hojeBrt());
 
-  const parametros = await lerParametros(periodo);
+  const [parametros, janela] = await Promise.all([
+    lerParametros(periodo),
+    janelaAtencaoDias(),
+  ]);
 
   return (
     <div className="tema-institucional min-h-screen bg-tatico-fundo text-[15px] text-branco">
@@ -39,6 +43,7 @@ export default async function AdminParametrosPage({
           periodo={periodo}
           itens={parametros}
           fonte={fonteCop2026()}
+          janelaAtencaoDias={janela}
         />
       </main>
 

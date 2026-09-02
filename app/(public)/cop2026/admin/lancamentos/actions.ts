@@ -7,6 +7,8 @@ import { exigirAdminCop } from "@/lib/db/cop2026-autorizados";
 import { excluirLancamento, reclassificarSubunidade } from "@/lib/db/cop2026-lancamentos";
 import { confirmarVinculo, bloquearVinculo } from "@/lib/db/cop2026-auditor";
 import { salvarParametro } from "@/lib/db/cop2026-parametros";
+import { gravarJanelaAtencaoDias } from "@/lib/cop2026-config-atencao";
+import { JANELA_ATENCAO_MAX_DIAS, JANELA_ATENCAO_MIN_DIAS } from "@/lib/cop2026-metricas";
 
 /**
  * Manejo dos lançamentos, da fila de vínculos e das metas.
@@ -165,5 +167,40 @@ export async function salvarParametroAction(
   } catch (e) {
     console.error("[cop2026-admin] salvar parâmetro:", e);
     return falha("Não foi possível gravar a meta.");
+  }
+}
+
+/**
+ * Janela em DIAS para caracterizar padrão de desvio na caixa "Pontos de
+ * atenção". Determinação do Comando em 02/09/2026: um lançamento isolado não é
+ * padrão, e a janela mínima para virar ponto de atenção é uma semana. Guardado
+ * em cookie — ver `lib/cop2026-config-atencao.ts`.
+ */
+export async function salvarJanelaAtencaoAction(
+  _prev: ManejoState,
+  formData: FormData
+): Promise<ManejoState> {
+  await exigirAdminCop();
+  const dias = Number.parseInt(String(formData.get("janelaAtencaoDias") ?? "0"), 10);
+  if (
+    !Number.isInteger(dias) ||
+    dias < JANELA_ATENCAO_MIN_DIAS ||
+    dias > JANELA_ATENCAO_MAX_DIAS
+  ) {
+    return falha(
+      `Informe um número entre ${JANELA_ATENCAO_MIN_DIAS} e ${JANELA_ATENCAO_MAX_DIAS} dias.`
+    );
+  }
+  try {
+    const gravado = await gravarJanelaAtencaoDias(dias);
+    revalidarPaineis();
+    return {
+      ok: true,
+      error: null,
+      aviso: `Janela do padrão de atenção passa a ser ${gravado} dia${gravado === 1 ? "" : "s"}.`,
+    };
+  } catch (e) {
+    console.error("[cop2026-admin] salvar janela de atenção:", e);
+    return falha("Não foi possível gravar a janela.");
   }
 }

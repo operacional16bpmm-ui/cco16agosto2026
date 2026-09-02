@@ -77,6 +77,36 @@ export function identificarSemana(dataIso: string | undefined): number {
 export const MINIMO_PADRAO = 3;
 
 /**
+ * Janela em DIAS para um desvio virar "ponto de atenção".
+ *
+ * Determinação do Maj PM em 02/09/2026: um lançamento isolado abaixo do mínimo
+ * não é padrão — é acidente. A janela mínima para caracterizar padrão é uma
+ * semana, e o corte pode ser ajustado pelo Comando na tela admin de parâmetros.
+ *
+ * Enquanto a janela não fecha (ou seja, `janela.decorridos < JANELA_ATENCAO`),
+ * os cartões da seção "Pontos de atenção" mostram "Sem base ainda — em curso"
+ * em vez de listar nomes que ainda não tiveram semana inteira para se
+ * comportarem.
+ */
+export const JANELA_ATENCAO_PADRAO_DIAS = 7;
+export const JANELA_ATENCAO_MIN_DIAS = 7;
+export const JANELA_ATENCAO_MAX_DIAS = 31;
+
+/** Um lançamento (não-auditou, abaixo do mínimo, parte) só entra em ponto de
+ *  atenção se estiver DENTRO dos últimos `dias` corridos, contando a partir de
+ *  `hoje` inclusive. Recorte curto (mês recém-aberto) apenas vazia a lista;
+ *  não invalida os dados nem esconde as exceções — elas continuam somando nos
+ *  cartões-contador acima da caixa. */
+export function dentroDaJanelaAtencao(
+  dataIso: string,
+  hoje: string,
+  dias: number
+): boolean {
+  if (!dataIso) return false;
+  return diasEntre(dataIso, hoje) < dias;
+}
+
+/**
  * Mínimo de evidências por turno que vale no recorte exibido.
  *
  * Com uma fração isolada vale a determinação daquela fração; no Batalhão vale a
@@ -474,12 +504,32 @@ export type LinhaAuditor = {
 
 export type Painel = ReturnType<typeof calcularPainel>;
 
+export type OpcoesPainel = {
+  hoje?: string;
+  /** Janela em dias para desvios virarem "ponto de atenção" — ver
+   *  `JANELA_ATENCAO_PADRAO_DIAS`. Aceita valor inteiro entre
+   *  MIN e MAX; fora disso, cai no padrão. */
+  janelaAtencaoDias?: number;
+};
+
 export function calcularPainel(
   lancamentos: LancamentoCop[],
   metas: MetaSubunidade[],
   f: Filtros,
-  hoje: string = hojeBrt()
+  hojeOuOpcoes: string | OpcoesPainel = hojeBrt()
 ) {
+  /* Retrocompatível: as chamadas antigas passam `hoje: string` como quarto
+     argumento; as novas passam um objeto de opções. */
+  const opcoes: OpcoesPainel =
+    typeof hojeOuOpcoes === "string" ? { hoje: hojeOuOpcoes } : hojeOuOpcoes;
+  const hoje = opcoes.hoje ?? hojeBrt();
+  const janelaAtencaoDias =
+    Number.isInteger(opcoes.janelaAtencaoDias) &&
+    (opcoes.janelaAtencaoDias as number) >= JANELA_ATENCAO_MIN_DIAS &&
+    (opcoes.janelaAtencaoDias as number) <= JANELA_ATENCAO_MAX_DIAS
+      ? (opcoes.janelaAtencaoDias as number)
+      : JANELA_ATENCAO_PADRAO_DIAS;
+
   const minimo = minimoDoRecorte(metas, f.fracao);
   const janela = janelaDoRecorte(f, hoje);
   const duplicados = mapearDuplicados(lancamentos);
@@ -839,6 +889,33 @@ export function calcularPainel(
   const idsDuplicadosNoRecorte = new Set(duplicadoLista.flatMap((x) => x.ids)).size;
   const semFracaoLista = semFracaoDados.map(detalhar);
 
+  /* ---- listas de PONTO DE ATENÇÃO ----------------------------------------
+   *
+   * Contadores acima (naoAuditou, abaixo, semIds, comIdInvalido) continuam
+   * somando TUDO no recorte — é a régua bruta que precisa aparecer no topo.
+   * As LISTAS abaixo, que a caixa "Pontos de atenção" exibe com nome, RE e
+   * justificativa, são o gatilho de intervenção — e um lançamento isolado no
+   * dia não caracteriza padrão. Por isso são recortadas pela janela do
+   * Comando (`janelaAtencaoDias`, padrão 7).
+   *
+   * O `atencao.emCurso` sinaliza para a UI que a janela ainda não fechou: o
+   * cartão mostra "em curso: dia X/Y do período mínimo" em vez de listar
+   * gente que ainda não teve semana inteira para se comportar.
+   */
+  const decorridosNaJanela = janela.decorridos;
+  const janelaEmCurso = decorridosNaJanela < janelaAtencaoDias;
+  const dentroDaJanela = (dataIso: string) =>
+    dentroDaJanelaAtencao(dataIso, hoje, janelaAtencaoDias);
+
+  const atencao = {
+    janelaDias: janelaAtencaoDias,
+    diasDecorridos: decorridosNaJanela,
+    emCurso: janelaEmCurso,
+    naoAuditou: janelaEmCurso ? [] : naoAuditouLista.filter((l) => dentroDaJanela(l.data)),
+    abaixo: janelaEmCurso ? [] : abaixoLista.filter((l) => dentroDaJanela(l.data)),
+    partes: janelaEmCurso ? [] : partesLista.filter((l) => dentroDaJanela(l.data)),
+  };
+
   /* Auditores DISTINTOS por quinzena e por fração — a coluna QUINZENA da
    * tabela Tendência. Fica AQUI, e não em quem monta a página, porque cada
    * consumidor que tocasse em `lancamentos` direto era uma chance nova de
@@ -1015,6 +1092,8 @@ export function calcularPainel(
     idsDuplicadosNoRecorte,
     duplicadoLista,
     auditoresPorQuinzena,
+    /* Ponto de atenção — recorte de tempo ver acima. */
+    atencao,
     fracoes,
     semanasBatalhao,
     porTurno,

@@ -4,6 +4,7 @@ import { NavegacaoCop } from "@/components/publico16/cop/navegacao-cop";
 import { RodapeCop } from "@/components/publico16/cop/rodape-cop";
 import { lerAuditoriaCop2026 } from "@/lib/cop2026-leitura";
 import { lerFiltros } from "@/lib/cop2026-metricas";
+import { janelaAtencaoDias } from "@/lib/cop2026-config-atencao";
 import { mesCorrente } from "@/lib/cop2026-relatorios";
 import { ehAdminCop } from "@/lib/cop2026-acesso";
 import { exigirAcessoCop } from "@/lib/db/cop2026-autorizados";
@@ -49,10 +50,11 @@ export default async function DashboardPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const [{ lancamentos, metas, erro, lidoEm }, sp, acesso] = await Promise.all([
+  const [{ lancamentos, metas, erro, lidoEm }, sp, acesso, janelaAtencao] = await Promise.all([
     lerAuditoriaCop2026(),
     searchParams,
     exigirAcessoCop("/cop2026/dashboard"),
+    janelaAtencaoDias(),
   ]);
 
   /* `auditoresPorQuinzena` já vem calculado dentro do `Painel`, sobre o
@@ -88,6 +90,7 @@ export default async function DashboardPage({
           erro={erro}
           filtrosIniciais={filtros}
           tendencia
+          janelaAtencaoDias={janelaAtencao}
           modoBriefing={modoBriefing}
         />
       </main>

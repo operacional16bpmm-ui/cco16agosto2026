@@ -4,7 +4,15 @@ import { useActionState } from "react";
 import { AlertTriangle, Check, Info } from "lucide-react";
 
 import { ROTULO_SUBUNIDADE } from "@/lib/cop2026";
-import { salvarParametroAction, type ManejoState } from "../lancamentos/actions";
+import {
+  JANELA_ATENCAO_MAX_DIAS,
+  JANELA_ATENCAO_MIN_DIAS,
+} from "@/lib/cop2026-metricas";
+import {
+  salvarJanelaAtencaoAction,
+  salvarParametroAction,
+  type ManejoState,
+} from "../lancamentos/actions";
 
 /**
  * Metas por fração e período.
@@ -33,12 +41,15 @@ export function PainelParametros({
   periodo,
   itens,
   fonte,
+  janelaAtencaoDias,
 }: {
   periodo: string;
   itens: LinhaParametro[];
   fonte: "planilha" | "uniao" | "banco";
+  janelaAtencaoDias: number;
 }) {
   const [estado, acao] = useActionState(salvarParametroAction, vazio);
+  const [estadoAtencao, acaoAtencao] = useActionState(salvarJanelaAtencaoAction, vazio);
   const total = itens.reduce((s, i) => s + i.meta, 0);
   const efetivo = itens.reduce((s, i) => s + i.efetivo, 0);
 
@@ -136,6 +147,67 @@ export function PainelParametros({
           </tbody>
         </table>
       </div>
+
+      {/* -------------------------------------------------------------------
+       * JANELA DA CAIXA "PONTOS DE ATENÇÃO".
+       *
+       * Não é meta, é decisão de UI do painel — por isso mora fora da tabela
+       * de metas e num cookie, não em migration nova (ver
+       * `lib/cop2026-config-atencao.ts`). Determinação do Maj PM em 02/09:
+       * um lançamento isolado no dia 2 não é padrão, então a janela mínima
+       * para caracterizar padrão é uma semana, e o corte fica editável aqui.
+       * ---------------------------------------------------------------- */}
+      <section className="space-y-3 rounded-xl border border-borda bg-tatico-super p-5">
+        <header>
+          <h2 className="font-serif text-lg font-bold uppercase tracking-wide text-branco">
+            Janela do padrão de atenção
+          </h2>
+          <p className="mt-1 text-[13px] leading-relaxed text-texto-suave">
+            Dias corridos que a caixa <strong>Pontos de atenção</strong> do painel usa para
+            listar quem NÃO auditou, quem ficou <em>abaixo do mínimo</em> e quem confeccionou
+            parte. Enquanto o período em curso for menor que essa janela, os cartões mostram
+            &quot;em curso&quot; em vez de nomes — um lançamento isolado no primeiro dia do mês
+            não é padrão de conduta.
+          </p>
+          <p className="mt-1 text-[12px] text-texto-suave">
+            Vale entre {JANELA_ATENCAO_MIN_DIAS} e {JANELA_ATENCAO_MAX_DIAS} dias · atual:{" "}
+            <strong className="dados text-branco">{janelaAtencaoDias}</strong>
+          </p>
+        </header>
+
+        {estadoAtencao.error && (
+          <p className="flex items-start gap-2 rounded-lg border border-sinal-critico/40 bg-sinal-critico-suave px-3 py-2 text-[12.5px] text-sinal-critico">
+            <AlertTriangle size={14} className="mt-0.5 shrink-0" aria-hidden />{" "}
+            {estadoAtencao.error}
+          </p>
+        )}
+        {estadoAtencao.aviso && (
+          <p className="flex items-start gap-2 rounded-lg border border-sinal-conforme/40 bg-sinal-conforme-suave px-3 py-2 text-[12.5px] text-sinal-conforme">
+            <Check size={14} className="mt-0.5 shrink-0" aria-hidden /> {estadoAtencao.aviso}
+          </p>
+        )}
+
+        <form action={acaoAtencao} className="flex flex-wrap items-center gap-2">
+          <label className="text-[12px] font-bold uppercase tracking-wide text-texto-suave">
+            Janela (dias)
+          </label>
+          <input
+            name="janelaAtencaoDias"
+            type="number"
+            min={JANELA_ATENCAO_MIN_DIAS}
+            max={JANELA_ATENCAO_MAX_DIAS}
+            defaultValue={janelaAtencaoDias}
+            required
+            className="min-h-10 w-24 rounded border border-borda bg-transparent px-2 py-1 text-right dados text-branco"
+          />
+          <button
+            type="submit"
+            className="min-h-10 rounded-md border border-vermelho bg-vermelho/10 px-4 py-2 text-[12.5px] font-bold uppercase tracking-wide text-vermelho hover:bg-vermelho/15"
+          >
+            Salvar janela
+          </button>
+        </form>
+      </section>
     </div>
   );
 }
