@@ -45,6 +45,7 @@ import { domToPng } from "modern-screenshot";
 import { CartaoTrajetoria } from "@/components/publico16/cop/ciclo/cartao-trajetoria";
 import { FaixaRitmos } from "@/components/publico16/cop/ciclo/faixa-ritmos";
 import { CaixaTendencia } from "@/components/publico16/cop/ciclo/caixa-tendencia";
+import { CurvaPlanoRealizado } from "@/components/publico16/cop/ciclo/curva-plano";
 import { progressoDoMes } from "@/lib/cop2026-tendencia";
 import {
   ROTULO_SUBUNIDADE,
@@ -1874,6 +1875,38 @@ export function DashboardCop({
         </Cartao>
 
       </section>
+
+      {/* ---------------- Camada 2b: Plano × realizado, dia a dia ----------------
+          Pedido da Coordenadoria Operacional em 02/09/2026: "dia a dia tudo
+          mensurado", com a linha do previsto ao lado da linha do feito, uma
+          curva por fração. Fica DEPOIS do ranking porque responde a pergunta
+          seguinte — não "quem está atrás", e sim "desde quando, e quanto isso
+          já custou em dívida acumulada". */}
+      {tendencia && p.fracoes.length > 0 && (
+        <section aria-label="Plano contra realizado" className="mb-6">
+          <Cartao
+            titulo="Plano × realizado · dia a dia"
+            nota={`mês inteiro (${FMT.format(p.janela.dias)} dias) · independe da semana selecionada`}
+            ajuda={
+              <p>
+                A linha azul é a meta acumulada dia a dia; a âmbar é o que foi auditado, e ela para
+                no dia de hoje. O vão entre as duas é a dívida — o que se deixou de fazer, somado —
+                e ela diminui sozinha assim que a fração produz acima da cota. As barras cinza são
+                as evidências de cada dia, no eixo da direita.
+              </p>
+            }
+          >
+            <CurvaPlanoRealizado
+              fracoes={p.fracoes}
+              metaGlobal={p.fracoes.reduce((s, x) => s + x.meta, 0)}
+              porDiaBatalhao={p.porDiaMes}
+              diasMes={p.janela.dias}
+              diasDecorridos={p.janela.decorridos}
+              prefixo={p.janela.de.slice(0, 7)}
+            />
+          </Cartao>
+        </section>
+      )}
 
       {/* ---------------- Faixa horizontal: Exceções ---------------- */}
       <Cartao

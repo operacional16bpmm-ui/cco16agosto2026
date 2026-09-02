@@ -486,6 +486,10 @@ export type LinhaFracao = {
   metaSemanalMedia: number;
   /** Desempenho semana a semana (S1, S2, S3, S4). */
   semanas: ProgressoSemana[];
+  /** Série DIÁRIA do mês inteiro — base da curva plano × realizado pedida pela
+   *  Coordenadoria Operacional em 02/09/2026. Esparsa: só tem entrada em dia
+   *  com lançamento, e é `curvaPlanoRealizado` que completa o calendário. */
+  porDia?: { data: string; v: number }[];
 };
 
 export type LinhaAuditor = {
@@ -672,6 +676,19 @@ export function calcularPainel(
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map(([data, v]) => ({ data, rotulo: `${data.slice(8, 10)}/${data.slice(5, 7)}`, v }));
   })();
+  /* A mesma série, do MÊS inteiro: é a do Batalhão na curva plano × realizado,
+     e precisa ignorar a aba de semana pelo mesmo motivo da série por fração.
+     Inclui as evidências sem fração declarada — o total do Batalhão soma tudo. */
+  const porDiaMes = (() => {
+    const m = new Map<string, number>();
+    for (const l of dadosSemFiltroDeSemana) {
+      if (!l.auditou || !l.data) continue;
+      m.set(l.data, (m.get(l.data) ?? 0) + l.videos);
+    }
+    return [...m.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([data, v]) => ({ data, v }));
+  })();
   const serie = porDia.map((d) => d.v);
   const mediaDia = media(serie);
   const sigma = desvio(serie);
@@ -762,6 +779,22 @@ export function calcularPainel(
       const todosDaFracao = dadosSemFiltroDeSemana.filter(
         (l) => l.subunidade === m.subunidade && l.auditou
       );
+      /* Série diária da fração, do MÊS inteiro — mesma base das semanas, para
+         a soma dos dias fechar com a soma das semanas. Fica fora do filtro de
+         semana de propósito: a curva plano × realizado é do mês, e com a aba
+         "Sem 2" ligada ela desenharia 23 dias zerados como se a fração não
+         tivesse produzido nada neles. */
+      const porDiaFracao = (() => {
+        const porData = new Map<string, number>();
+        for (const l of todosDaFracao) {
+          if (!l.data) continue;
+          porData.set(l.data, (porData.get(l.data) ?? 0) + l.videos);
+        }
+        return [...porData.entries()]
+          .sort((a, b) => a[0].localeCompare(b[0]))
+          .map(([data, v]) => ({ data, v }));
+      })();
+
       const semanasFracao: ProgressoSemana[] = SEMANAS_ROTULOS.map((s) => {
         const lancsSem = todosDaFracao.filter((l) => identificarSemana(l.data) === s.semana);
         const feitoSem = lancsSem.reduce((sum, l) => sum + l.videos, 0);
@@ -802,6 +835,7 @@ export function calcularPainel(
         efetivoQuadro: mat ? mat.efetivo : m.efetivo,
         metaSemanalMedia: mat ? mat.metaSemanalMedia : metaReal / 4,
         semanas: semanasFracao,
+        porDia: porDiaFracao,
       };
     })
     .sort((a, b) => {
@@ -1120,6 +1154,7 @@ export function calcularPainel(
     mediana,
     p90,
     porDia,
+    porDiaMes,
     mediaDia,
     sigma,
     lsc,

@@ -171,6 +171,18 @@ atual"):
 | **Batalhão** | por **DIA** | `960 ÷ 30 = 32/dia`; recuperação = `falta ÷ dias restantes` |
 | **Fração** | por **TURNO-FRAÇÃO** | 2 turnos por dia, 60 num mês de 30 dias. `195 ÷ 60 = 3,25/turno` |
 
+**Modelo de turnos confirmado pelo Maj PM em 02/09/2026**, palavra por palavra:
+"no batalhão são 12 turnos por dia — 2 para o EM, 2 para cada Cia, 2 para a FT",
+"360 turnos no mês para o batalhão", "60 turnos por mês para cada um", "no mês de
+31, são 62 por mês". O painel não guarda esses números como constante: sai de
+`fracoes.length × TURNOS_POR_DIA` e do calendário, então fração que entrar ou sair
+da Matriz muda a conta sozinha.
+
+Isso corrige de passagem um erro dos próprios padrões: o denominador vetado era
+`960 ÷ 300`, quando o total de turnos-fração de setembro é **360** — o número
+certo do cálculo errado é `2,67`, e continua vetado pelo mesmo motivo (mistura
+turnos de frações distintas num denominador só).
+
 Fonte única: `janelaDoRecorte` em `cop2026-metricas.ts` — dias e turnos vêm do
 **calendário**, nunca do histórico de lançamentos.
 
@@ -195,6 +207,50 @@ encerrados enquanto o realizado já incluía o que foi lançado hoje — numerad
 dois dias sobre denominador de um. Foi o que pôs "dia 1 de 30", "REAL 87,00/dia"
 (eram 43,5), "TRAJETÓRIA 271,9% · ADIANTADA" ao lado do selo "Crítica · ABAIXO
 DA META" e a linha impossível **"Dias com lançamento: 2 de 1"**.
+
+### Recuperação é sempre do DIA SEGUINTE
+
+Pedido da Coordenadoria Operacional em 02/09/2026, via Maj PM: *"aqui pediram
+para ser 1,39 / dia seguinte — sempre a recuperação dia seguinte, para facilitar
+o entendimento"*.
+
+O ritmo de recuperação (`falta ÷ dias restantes`) responde "se eu diluir o que
+falta pelo resto do mês". Ninguém trabalha diluído, e o número muda todo dia sem
+que nada tenha acontecido. O alvo do dia seguinte responde a pergunta que a
+fração faz de fato:
+
+    alvo(amanhã) = previsto(d+1) − realizado = cota − saldo
+
+Um número só, e ele já embute a dívida. Está em `metaDeAmanha`
+(`lib/cop2026-tendencia.ts`) e aparece no cartão TENDÊNCIA como **AMANHÃ
+· /dia seguinte**, ao lado — nunca no lugar — do ritmo de recuperação, que
+continua respondendo pelo fechamento do mês.
+
+### Dívida acumulada e a curva plano × realizado
+
+Os outros dois pedidos do mesmo despacho:
+
+> *"se não fizerem no dia seguinte, ter um esquema da somatória do que se vai
+> deixando de fazer em forma acumulada, mas que quando começarem a sanear isso
+> vai caindo à medida que comecem a fazer"*
+
+> *"um gráfico para cada Cia, por dia, com quanto fizeram, com essa linha do que
+> deveria ser feito como uma linha a ser comparada"*
+
+São a mesma coisa vista de dois jeitos: a **dívida** é a distância entre a linha
+do previsto acumulado e a do feito acumulado. `curvaPlanoRealizado` monta a série
+do mês inteiro — inclusive os dias sem lançamento, que são justamente os que
+abrem a dívida e sumiriam se a série da planilha fosse desenhada como veio.
+
+A curva é do **mês**, e ignora a aba de semana de propósito: com "Sem 2" ligada,
+desenhar 23 dias zerados diria que a fração não produziu nada neles.
+
+O motivo declarado pela coordenadoria — *"é sempre na terceira para a quarta
+semana que o pessoal olha, vê que não vai atingir e aí começa a fazer"* — é o que
+justifica a leitura acumulada: esse padrão não aparece em barra de dia nenhuma
+isolada, aparece na linha do feito descolando da linha do previsto por vinte dias.
+É o mesmo fenômeno que `alertaLote` e a coluna REGULARIDADE já classificam; a
+curva é a prova visual dele enquanto o mês ainda corre.
 
 ### Mínimo por turno é 3, e é do Batalhão
 

@@ -20,6 +20,7 @@ import {
   regularidadeProducao,
   semanasIniciadas,
   turnosDoMes,
+  TURNOS_POR_DIA,
   type ClasseEquilibrio,
   type Prioridade,
   type SituacaoTrajetoria,
@@ -43,7 +44,8 @@ import type { LinhaFracao } from "@/lib/cop2026-metricas";
  *
  * Unidades: fração por TURNO (2/dia, inclusive o EM, que cobre dia e tarde por
  * DEJEM); Batalhão por DIA — somar turnos de frações distintas num denominador
- * só é o que o Major vetou em 960 ÷ 300 = 3,20.
+ * só é o que o Major vetou: 12 turnos-fração por dia no Batalhão, 360 no mês,
+ * e 960 ÷ 360 = 2,67 não se compara com a cota de fração nenhuma.
  */
 
 const COR = {
@@ -242,6 +244,13 @@ export function CaixaTendencia({
       marcos: marcosMetaAcumulada(f.meta, p.turnosMes),
     };
   });
+
+  /* Modelo de turnos confirmado pelo Maj PM em 02/09/2026: cada fração roda 2
+     turnos por dia — o Batalhão, portanto, roda 2 × o número de frações. Sai do
+     dado, não de constante: fração que entrar ou sair da Matriz muda o número
+     sozinha. */
+  const turnosDiaBatalhao = fracoes.length * TURNOS_POR_DIA;
+  const turnosMesBatalhao = turnosDiaBatalhao * p.diasMes;
 
   const equilibrio = indiceEquilibrio(linhas.map((l) => l.t.aderencia));
   const soma = conferirSomaCotas(fracoes.map((x) => x.meta), 960);
@@ -795,8 +804,12 @@ export function CaixaTendencia({
             <span style={{ color: COR.real }}>real</span> é o praticado;{" "}
             <span style={{ color: COR.recuperacao }}>recuperação</span> é o que resta fazer no tempo
             que sobra, e <strong>pressão</strong> mostra quantas vezes isso está acima do normal. A
-            fração mede por turno de serviço — 2 por dia, inclusive o Estado-Maior, que cobre dia e
-            tarde por DEJEM; o Batalhão mede por dia.
+            fração mede por turno de serviço — 2 por dia, {N0.format(p.turnosMes)} no mês, inclusive
+            o Estado-Maior, que cobre dia e tarde por DEJEM. O Batalhão roda{" "}
+            {N0.format(turnosDiaBatalhao)} turnos-fração por dia ({N0.format(turnosMesBatalhao)} no
+            mês) e por isso se mede por DIA: dividir a meta global pelo total de turnos misturaria
+            turnos de frações distintas num denominador só, e o resultado não se compara com a cota
+            de fração nenhuma.
           </p>
           <p>
             <strong className="font-black uppercase tracking-wide text-slate-700">Trajetória</strong>{" "}

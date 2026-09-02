@@ -10,7 +10,8 @@
  * - a unidade de ritmo é o TURNO-FRAÇÃO: cada fração roda 2 turnos por dia;
  * - o ritmo do Batalhão é expresso POR DIA, nunca por turno, para não misturar
  *   o agregado do Btl com o turno efetivamente realizado por cada fração
- *   (é por isso que 960 ÷ 300 = 3,20 não pode aparecer em tela);
+ *   (é por isso que a meta global dividida pelo total de turnos-fração —
+ *   960 ÷ 360 = 2,67 — não pode aparecer em tela);
  * - turno DECORRIDO vem do calendário, não do histórico de lançamentos.
  */
 
@@ -542,4 +543,121 @@ export function conferirSomaCotas(
 ): { fecha: boolean; soma: number; diferenca: number } {
   const soma = cotas.reduce((s, v) => s + (Number.isFinite(v) ? v : 0), 0);
   return { fecha: soma === metaGlobal, soma, diferenca: soma - metaGlobal };
+}
+
+// ---------------------------------------------------------------------------
+// Plano × Realizado, dia a dia
+// ---------------------------------------------------------------------------
+/**
+ * Pedidos da Coordenadoria Operacional em 02/09/2026, por três vias no mesmo
+ * despacho:
+ *
+ * - **"a recuperação sempre no dia seguinte"** — o ritmo médio até o fim do mês
+ *   responde "se eu diluir o que falta pelos dias que sobram", e ninguém
+ *   trabalha diluído. A fração quer saber o que precisa entrar AMANHÃ.
+ * - **"uma somatória do que se vai deixando de fazer, acumulada, que vai caindo
+ *   à medida que começam a sanear"** — é a DÍVIDA: a distância entre a linha do
+ *   previsto e a linha do feito. Cresce em dia parado e cai em dia produtivo.
+ * - **"um gráfico para cada fração, por dia, com quanto fizeram contra a linha
+ *   do que deveria ser feito"** — é a curva montada por `curvaPlanoRealizado`.
+ *
+ * O motivo declarado: "é sempre na terceira para a quarta semana que o pessoal
+ * olha, vê que não vai atingir e aí começa a fazer". A curva acumulada é o
+ * desenho que denuncia isso enquanto o mês ainda corre — e não no fechamento,
+ * quando não há mais o que fazer a respeito.
+ */
+export interface MetaDeAmanha {
+  /** Cota de um período (dia, para o Batalhão; turno, para a fração). */
+  cota: number;
+  /** O que já deveria estar feito e não está, acumulado até aqui. */
+  divida: number;
+  /** Crédito acumulado — o inverso da dívida. */
+  agio: number;
+  /** Quanto precisa entrar até o fim do PRÓXIMO período para o acumulado
+   *  reencontrar a linha do previsto. Zero quando o ágio já cobre a cota. */
+  alvo: number;
+  /** Não há período seguinte dentro do mês. */
+  ultimo: boolean;
+}
+
+/**
+ * Alvo do dia seguinte: `previsto(d+1) − realizado`, que é o mesmo que
+ * `cota − saldo`. Um número só, e ele já embute a dívida — é por isso que serve
+ * de ordem do dia e o ritmo de recuperação não serve.
+ */
+export function metaDeAmanha(e: EntradaTendencia): MetaDeAmanha {
+  const t = calcularTendencia(e);
+  const ultimo = t.turnosRestantes <= 0;
+  return {
+    cota: t.ritmoAlvo,
+    divida: Math.max(0, -t.saldoTrajetoria),
+    agio: Math.max(0, t.saldoTrajetoria),
+    alvo: ultimo ? 0 : Math.max(0, t.ritmoAlvo - t.saldoTrajetoria),
+    ultimo,
+  };
+}
+
+export interface PontoCurva {
+  dia: number;
+  /** Dia do mês com dois dígitos — rótulo do eixo. */
+  rotulo: string;
+  /** Evidências lançadas NESTE dia. */
+  feito: number;
+  /** Realizado acumulado. `null` no futuro, para a linha parar em hoje em vez
+   *  de despencar para zero no resto do mês. */
+  acumulado: number | null;
+  /** Linha do plano: cota diária acumulada. Vai até o último dia do mês. */
+  previsto: number;
+  /** Distância entre as duas linhas — a somatória do que se deixou de fazer. */
+  divida: number | null;
+  decorrido: boolean;
+}
+
+/**
+ * Curva do mês para uma fração (ou para o Batalhão). Puro: mesma entrada,
+ * mesma saída.
+ *
+ * A série de entrada é ESPARSA — a planilha só tem linha em dia com
+ * lançamento. Dia sem lançamento não pode faltar no eixo: é exatamente ele que
+ * abre a dívida, e some do gráfico se a série for desenhada como veio.
+ */
+export function curvaPlanoRealizado(e: {
+  meta: number;
+  diasMes: number;
+  diasDecorridos: number;
+  porDia: { data: string; v: number }[];
+  /** "AAAA-MM" do recorte — descarta data de outro mês que tenha vazado. */
+  prefixo?: string;
+}): PontoCurva[] {
+  const diasMes = Math.max(0, Math.trunc(e.diasMes));
+  const decorridos = Math.min(Math.max(0, Math.trunc(e.diasDecorridos)), diasMes);
+  const cota = diasMes > 0 ? Math.max(0, e.meta) / diasMes : 0;
+
+  const doDia = new Map<number, number>();
+  for (const d of e.porDia) {
+    if (!d?.data) continue;
+    if (e.prefixo && d.data.slice(0, 7) !== e.prefixo) continue;
+    const dia = Number(d.data.slice(8, 10));
+    if (!Number.isInteger(dia) || dia < 1 || dia > diasMes) continue;
+    doDia.set(dia, (doDia.get(dia) ?? 0) + (Number.isFinite(d.v) ? d.v : 0));
+  }
+
+  const pontos: PontoCurva[] = [];
+  let acumulado = 0;
+  for (let dia = 1; dia <= diasMes; dia++) {
+    const decorrido = dia <= decorridos;
+    const feito = decorrido ? (doDia.get(dia) ?? 0) : 0;
+    if (decorrido) acumulado += feito;
+    const previsto = cota * dia;
+    pontos.push({
+      dia,
+      rotulo: String(dia).padStart(2, "0"),
+      feito,
+      acumulado: decorrido ? acumulado : null,
+      previsto,
+      divida: decorrido ? Math.max(0, previsto - acumulado) : null,
+      decorrido,
+    });
+  }
+  return pontos;
 }

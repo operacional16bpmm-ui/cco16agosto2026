@@ -30,7 +30,7 @@ import {
  *
  * Unidade: o Batalhão mede POR DIA. Somar turnos de frações diferentes num só
  * denominador mistura o agregado com o turno que a fração realiza — é o motivo
- * do veto a 960 ÷ 300 = 3,20.
+ * do veto a 960 ÷ 360 = 2,67.
  */
 
 const N0 = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 0 });

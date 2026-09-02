@@ -115,7 +115,7 @@ com **16 verificações automatizadas** (`scripts/verificar-*.mjs`, rodam com
 **Unidades** (decisão de 31/08): fração mede por **turno** — 2 por dia,
 inclusive o Estado-Maior, que cobre dia e tarde por **DEJEM**; o Batalhão mede
 por **dia**. Somar turnos de frações distintas num denominador só foi vetado
-pelo Major (`960 ÷ 300 = 3,20`).
+pelo Major (`960 ÷ 360 = 2,67`).
 
 **Calendário**: automático. 60 turnos por fração em mês de 30 dias, 62 em mês de
 31 — fevereiro bissexto sai certo sem ninguém tocar.

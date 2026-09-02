@@ -1,6 +1,6 @@
 "use client";
 
-import { calcularTendencia, progressoDoMes } from "@/lib/cop2026-tendencia";
+import { calcularTendencia, metaDeAmanha, progressoDoMes } from "@/lib/cop2026-tendencia";
 import { cn } from "@/lib/utils";
 
 /**
@@ -133,6 +133,16 @@ export function FaixaRitmos({
     turnosDecorridos: p.diasDecorridos,
   });
 
+  /* "Sempre a recuperação dia seguinte" — Coordenadoria Operacional, 02/09/2026.
+     O ritmo de recuperação responde "se eu diluir o que falta pelos dias que
+     sobram"; a ordem do dia é outra pergunta, e é esta. */
+  const amanha = metaDeAmanha({
+    meta,
+    realizado: total,
+    turnosMes: p.diasMes,
+    turnosDecorridos: p.diasDecorridos,
+  });
+
   const alvo = t.ritmoAlvo;
   const real = t.ritmoReal;
   const pctReal = real === null || alvo <= 0 ? 0 : (real / alvo) * 100;
@@ -194,6 +204,30 @@ export function FaixaRitmos({
         </span>{" "}
         do alvo — mesma régua, mesma unidade.
       </p>
+
+      {!amanha.ultimo && p.diasDecorridos > 0 && (
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 rounded-lg border-2 border-slate-300 bg-slate-50 px-2.5 py-1.5">
+          <span className="flex flex-col leading-tight">
+            <span className="text-[9.5px] font-black uppercase tracking-[0.1em] text-slate-800">
+              Amanhã
+            </span>
+            <span className="text-[9px] font-semibold text-slate-500">
+              {amanha.divida > 0
+                ? `cota ${N2.format(amanha.cota)} + dívida ${N0.format(Math.round(amanha.divida))}`
+                : `cota ${N2.format(amanha.cota)} − crédito ${N0.format(Math.round(amanha.agio))}`}
+            </span>
+          </span>
+          <span className="flex items-baseline gap-1">
+            <span
+              className="dados text-[17px] font-black leading-none tabular-nums"
+              style={{ color: amanha.alvo > amanha.cota ? COR_RECUP : COR_ALVO }}
+            >
+              {N2.format(amanha.alvo)}
+            </span>
+            <span className="text-[8.5px] font-bold text-slate-500">/dia seguinte</span>
+          </span>
+        </div>
+      )}
 
       {t.deficit > 0 && (
         <div

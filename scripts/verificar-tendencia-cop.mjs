@@ -18,6 +18,8 @@ import {
   progressoDoMes,
   ratearMeta,
   turnosDoMes,
+  metaDeAmanha,
+  curvaPlanoRealizado,
 } from "../lib/cop2026-tendencia.ts";
 
 const perto = (a, b, tol = 0.01) =>
@@ -35,11 +37,16 @@ test("calendário: setembro tem 30 dias e 60 turnos-fração", () => {
   assert.equal(diasDoMes(2028, 2), 29); // bissexto
 });
 
-test("progresso conta dias ENCERRADOS, não o dia corrente", () => {
+/* O contrato mudou em 02/09/2026 e este teste tinha ficado para trás: contar só
+   dia ENCERRADO punha numerador de dois dias sobre denominador de um — "dia 1 de
+   30" com "REAL 87,00/dia" e "Dias com lançamento: 2 de 1" na tela. O dia em
+   curso conta; o déficit no começo da manhã é leitura verdadeira, e é para isso
+   que existe a régua de trajetória. */
+test("progresso conta o dia EM CURSO", () => {
   const p = progressoDoMes(new Date("2026-09-15T09:00:00Z"), 2026, 9);
-  assert.equal(p.diasDecorridos, 14);
-  assert.equal(p.turnosDecorridos, 28);
-  assert.equal(p.turnosRestantes, 32);
+  assert.equal(p.diasDecorridos, 15);
+  assert.equal(p.turnosDecorridos, 30);
+  assert.equal(p.turnosRestantes, 30);
   assert.equal(p.encerrado, false);
 });
 
@@ -141,4 +148,85 @@ test("gini separa produção regular de compliance de última hora", () => {
   assert.equal(gini([25, 25, 25, 25]), 0);
   perto(gini([0, 0, 0, 100]), 0.75);
   assert.equal(gini([0, 0, 0, 0]), 0); // sem produção não é irregularidade
+});
+
+// ---------------------------------------------------------------------------
+// Pedidos da Coordenadoria Operacional — 02/09/2026
+// ---------------------------------------------------------------------------
+
+test("alvo do dia seguinte embute a dívida, e não a média do que falta", () => {
+  // 2ª Cia zerada no dia 2: cota 6/dia, dois dias de dívida = 12.
+  const a = metaDeAmanha({ meta: 180, realizado: 0, turnosMes: 30, turnosDecorridos: 2 });
+  perto(a.cota, 6);
+  perto(a.divida, 12);
+  perto(a.alvo, 18); // 6 do dia + 12 atrasados — não é 180 ÷ 28 = 6,43
+  assert.equal(a.ultimo, false);
+});
+
+test("quem está adiantado não recebe cobrança inventada", () => {
+  // Batalhão em 02/09/2026: 97 evidências contra 64 previstas.
+  const a = metaDeAmanha({ meta: 960, realizado: 97, turnosMes: 30, turnosDecorridos: 2 });
+  perto(a.cota, 32);
+  perto(a.agio, 33);
+  perto(a.divida, 0);
+  perto(a.alvo, 0); // o crédito já cobre a cota de amanhã
+});
+
+test("mês encerrado não tem dia seguinte", () => {
+  const a = metaDeAmanha({ meta: 960, realizado: 700, turnosMes: 30, turnosDecorridos: 30 });
+  assert.equal(a.ultimo, true);
+  assert.equal(a.alvo, 0);
+});
+
+test("curva plano × realizado cobre o mês inteiro, inclusive dia parado", () => {
+  const c = curvaPlanoRealizado({
+    meta: 960,
+    diasMes: 30,
+    diasDecorridos: 2,
+    porDia: [
+      { data: "2026-09-01", v: 40 },
+      { data: "2026-09-02", v: 57 },
+    ],
+    prefixo: "2026-09",
+  });
+
+  assert.equal(c.length, 30);
+  perto(c[0].previsto, 32);
+  assert.equal(c[0].acumulado, 40);
+  perto(c[1].previsto, 64);
+  assert.equal(c[1].acumulado, 97); // fecha com o realizado do painel
+  perto(c[29].previsto, 960); // a linha do plano vai até o fim do mês
+
+  // Dia que ainda não chegou não vale zero: vale nada, e a linha para.
+  assert.equal(c[2].acumulado, null);
+  assert.equal(c[2].divida, null);
+  assert.equal(c[2].decorrido, false);
+});
+
+test("dívida cresce em dia parado e cai quando a fração saneia", () => {
+  const c = curvaPlanoRealizado({
+    meta: 300,
+    diasMes: 30,
+    diasDecorridos: 10,
+    porDia: [{ data: "2026-09-10", v: 100 }],
+  });
+
+  perto(c[4].divida, 50); // dia 5: dez por dia, nada lançado
+  perto(c[8].divida, 90); // véspera: a dívida só cresce
+  perto(c[9].divida, 0); // dia 10: 100 de uma vez zera o atraso
+  assert.equal(c[9].feito, 100);
+});
+
+test("curva descarta data de outro mês que tenha vazado na série", () => {
+  const c = curvaPlanoRealizado({
+    meta: 960,
+    diasMes: 30,
+    diasDecorridos: 2,
+    porDia: [
+      { data: "2026-08-31", v: 500 },
+      { data: "2026-09-01", v: 40 },
+    ],
+    prefixo: "2026-09",
+  });
+  assert.equal(c[0].acumulado, 40);
 });
