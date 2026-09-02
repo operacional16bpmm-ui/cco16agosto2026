@@ -81,10 +81,23 @@ async function abrirNavegador(): Promise<Browser> {
   }
 
   const chromium = (await import("@sparticuz/chromium")).default;
+
+  /* WebGL desligado: o painel é SVG e CSS, não usa canvas 3D. Ligado, o pacote
+     descompacta o swiftshader junto — memória e espaço em /tmp gastos à toa numa
+     função que tem pouco dos dois. */
+  chromium.setGraphicsMode = false;
+
   navegador = await puppeteer.launch({
-    args: chromium.args,
+    /* `"shell"`, e NÃO `true`. Este binário é compilado com `headless.gn`: é o
+       headless *shell*, sem GUI, e não entende o `--headless=new` que o
+       Puppeteer manda quando recebe `headless: true`. O processo subia e morria
+       na hora, e o erro chegava disfarçado três camadas acima, como
+       `Protocol error (Target.createTarget): Target closed` — nada que aponte
+       para a flag culpada. Os args passam pelo `defaultArgs` com o mesmo modo,
+       senão a lista sai coerente com o headless errado. */
+    args: await puppeteer.defaultArgs({ args: chromium.args, headless: "shell" }),
     executablePath: await chromium.executablePath(),
-    headless: true,
+    headless: "shell",
     timeout: ESPERA_LANCAMENTO_MS,
     protocolTimeout: ESPERA_PROTOCOLO_MS,
   });
