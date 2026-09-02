@@ -13,3 +13,20 @@ faixa (crítica / atenção / conformidade / superação) tem fonte única em
 `lib/cop2026-metricas.ts` e nenhum componente deve reclassificar por conta própria.
 
 Requisitos e o porquê de cada um: **`docs/cop2026-padroes-comando.md`**.
+
+# Deploy é automático — não pergunte, não deixe pendente
+
+Este repo **não tem remote git** (`git remote -v` é vazio): nada de push dispara build.
+Toda alteração termina em produção, sem perguntar e sem devolver o comando para o Fabricio
+copiar. Fluxo obrigatório ao fechar qualquer mudança:
+
+```bash
+npx tsc --noEmit && git add -A && git commit -m "<msg>" && npx vercel --prod --yes
+```
+
+`npx vercel --prod --yes` já sai com `target: production` e move os aliases
+(`portal-cco16.vercel.app`). Conferir com `npx vercel inspect <url-do-deploy>` — o
+"Promote to production" que a CLI imprime no fim é ruído, não é sinal de que ficou preview.
+
+O `npm run build` local **não fecha no pc1** (memória) e não é pré-requisito: quem compila é a
+Vercel. Se o build quebrar lá, o erro sai em `npx vercel inspect --logs <url>`.
