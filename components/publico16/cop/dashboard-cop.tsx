@@ -911,9 +911,11 @@ export function DashboardCop({
       icone: <Users size={18} aria-hidden />,
     },
     {
+      /* Unidade é TURNO, não lançamento — o auditor que fez 2 envios no
+         mesmo turno soma contra o mínimo. Ver `chaveDoTurno`. */
       rotulo: `Conformidade (≥${p.minimo})`,
       valor: `${PCT.format(p.taxaConf)}%`,
-      nota: `${FMT.format(p.conformes)} de ${FMT.format(p.dados.length)} lançamentos`,
+      nota: `${FMT.format(p.turnosConformes)} de ${FMT.format(p.turnosAuditados)} turno${p.turnosAuditados === 1 ? "" : "s"}`,
       foto: "/media/foto-rua.jpg",
       icone: <CheckCircle2 size={18} aria-hidden />,
     },

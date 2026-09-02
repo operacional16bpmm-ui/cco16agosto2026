@@ -583,10 +583,40 @@ export function calcularPainel(
   const falta = Math.max(0, meta - total);
 
   const ativos = new Set(dados.map((l) => l.re || l.nomeGuerra).filter(Boolean)).size;
-  const conformes = dados.filter((l) => l.auditou && l.videos >= minimo).length;
-  const taxaConf = dados.length ? (conformes / dados.length) * 100 : 0;
+  /* ---- unidade da conformidade: TURNO, não LANÇAMENTO -------------------
+   *
+   * Queixa do Comando em 02/09/2026: "Maj Vinícus fez 2 envios no mesmo dia,
+   * se somar dá mais de 3, e ele apareceu como abaixo do mínimo." Estava
+   * apareceu porque a régua era por LANÇAMENTO — cada envio de formulário
+   * contava separado, um com 2, o outro com 1, ambos abaixo de 3.
+   *
+   * A régua institucional é POR TURNO: o mínimo de 3 evidências vale para o
+   * turno de serviço. Dois lançamentos do mesmo auditor no mesmo dia e turno
+   * são o MESMO turno; somam. O mesmo auditor com dois dias diferentes conta
+   * como dois turnos.
+   *
+   * Chave: RE (ou nome de guerra quando faltar RE) + data + turno. Um
+   * lançamento sem `auditou` (declarou "não auditei") continua sendo evento
+   * do turno — não vira "auditor no turno" para não puxar a taxa para baixo
+   * indevidamente, mas continua contando em `naoAuditou`.
+   */
+  type ChaveTurno = string;
+  const chaveDoTurno = (l: LancamentoCop): ChaveTurno =>
+    `${l.re || l.nomeGuerra || "?"}|${l.data}|${(l.turno || "").toLowerCase()}`;
+
+  const somaPorTurno = new Map<ChaveTurno, number>();
+  for (const l of dados) {
+    if (!l.auditou) continue;
+    somaPorTurno.set(chaveDoTurno(l), (somaPorTurno.get(chaveDoTurno(l)) ?? 0) + l.videos);
+  }
+  const turnosAuditados = somaPorTurno.size;
+  const turnosConformes = [...somaPorTurno.values()].filter((v) => v >= minimo).length;
+  const turnosAbaixo = turnosAuditados - turnosConformes;
+
+  const conformes = turnosConformes;
+  const taxaConf = turnosAuditados ? (turnosConformes / turnosAuditados) * 100 : 0;
   const naoAuditou = dados.filter((l) => !l.auditou).length;
-  const abaixo = dados.filter((l) => l.auditou && l.videos < minimo).length;
+  const abaixo = turnosAbaixo;
   const semIds = dados.filter((l) => l.auditou && !l.idsMidia.trim()).length;
 
   /* ---- qualidade da evidência --------------------------------------------
@@ -854,7 +884,23 @@ export function calcularPainel(
     descartado: l.quantidadeDescartada,
   });
   const naoAuditouLista = dados.filter((l) => !l.auditou).map(detalhar);
-  const abaixoLista = dados.filter((l) => l.auditou && l.videos < minimo).map(detalhar);
+  /* Turnos abaixo do mínimo — agrupa por (RE, data, turno) e usa o PRIMEIRO
+   * lançamento do turno como cara do item, com a SOMA do turno no `videos`.
+   * Se a soma dos lançamentos do turno ≥ mínimo, o turno cumpriu e sai da
+   * lista. Isto casa com o novo `abaixo` (contador) — as duas leituras andam
+   * juntas por construção. */
+  const primeiroDoTurno = new Map<ChaveTurno, LancamentoCop>();
+  for (const l of dados) {
+    if (!l.auditou) continue;
+    const k = chaveDoTurno(l);
+    if (!primeiroDoTurno.has(k)) primeiroDoTurno.set(k, l);
+  }
+  const abaixoLista = [...somaPorTurno.entries()]
+    .filter(([, soma]) => soma < minimo)
+    .map(([k, soma]) => {
+      const l = primeiroDoTurno.get(k)!;
+      return { ...detalhar(l), videos: soma };
+    });
   const partesLista = dados.filter((l) => l.numeroParte).map(detalhar);
   const semIdsLista = dados.filter((l) => l.auditou && !l.idsMidia.trim()).map(detalhar);
   /* Informou alguma coisa e nada daquilo resolve para a plataforma. É a lista
@@ -998,7 +1044,10 @@ export function calcularPainel(
   const funil = [
     { etapa: "Lançamentos recebidos", v: dados.length },
     { etapa: "Auditaram no turno", v: dados.filter((l) => l.auditou).length },
-    { etapa: `Cumpriram o mínimo de ${minimo}`, v: conformes },
+    /* Aqui a unidade muda de LANÇAMENTO para TURNO (RE+data+turno) porque o
+       mínimo de 3 vale por turno: dois envios do mesmo auditor no mesmo turno
+       somam. Ver `chaveDoTurno` acima. */
+    { etapa: `Turnos com ≥ ${minimo} evidências`, v: turnosConformes },
     { etapa: "Com identificador em formato válido", v: comIdRastreavel },
     { etapa: "Conferidos na plataforma", v: 0 },
   ];
@@ -1092,6 +1141,11 @@ export function calcularPainel(
     idsDuplicadosNoRecorte,
     duplicadoLista,
     auditoresPorQuinzena,
+    /* Unidade da conformidade agora é o TURNO — dois lançamentos do mesmo
+     * auditor no mesmo turno somam contra o mínimo. */
+    turnosAuditados,
+    turnosConformes,
+    turnosAbaixo,
     /* Ponto de atenção — recorte de tempo ver acima. */
     atencao,
     fracoes,
