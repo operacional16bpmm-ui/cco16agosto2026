@@ -74,6 +74,12 @@ const ROTAS_PUBLICAS = [
   // oráculo sobre o efetivo nominal — decisão de Comando, e o conserto (mover
   // esta linha para ROTAS_RESTRITAS_COP) está descrito no próprio route.ts.
   "/api/cop2026/efetivo",
+  /* Saúde do painel para o vigia externo (pc2). Não é rota aberta: ela tem
+     gate PRÓPRIO por `Authorization: Bearer CCO16_SAUDE_TOKEN` e responde 503
+     se a variável não existir. Fica aqui porque o vigia é uma máquina — não
+     tem conta Google para atravessar o gate do Dashboard. Só devolve
+     contadores e nomes de invariante; nada que identifique policial. */
+  "/api/cop2026/saude",
   // A Diretriz da COP é norma aberta à tropa e fica embutida na /cop2026;
   // sem esta exceção o leitor de PDF cairia no login.
   "/documentos/diretriz-pm3-001-02-25.pdf",
