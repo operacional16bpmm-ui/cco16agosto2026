@@ -312,7 +312,11 @@ function Cartao({
   const dividaTexto = dividaInteira === 0 ? "menos de 1" : N0.format(dividaInteira);
 
   const hoje = [...pontos].reverse().find((p) => p.decorrido && p.acumulado !== null);
-  const parados = pontos.filter((p) => p.decorrido && p.feito === 0).length;
+  /* Mesma régua da coluna do gráfico: só dia FECHADO conta. Contar o dia em
+     curso aqui escreveria "1 dia sem lançamento" embaixo de um gráfico sem
+     coluna nenhuma — o texto e o desenho discordando na mesma caixa. */
+  const parados = pontos.filter((p) => p.decorrido && p.dia < diasDecorridos && p.feito === 0)
+    .length;
 
   /* DIA PARADO é o caso que a barra colorida não alcança: produção zero não
      desenha barra nenhuma, então o dia em que ninguém auditou — justamente o
