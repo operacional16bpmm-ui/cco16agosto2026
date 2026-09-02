@@ -1559,7 +1559,10 @@ export function DashboardCop({
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#050c1a]/92 via-[#071225]/80 to-[#071225]/88" />
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-[#ca0202]/20" />
 
-            <div className="relative z-10 flex w-full flex-col items-start gap-2.5 pr-14 sm:ml-[18%] sm:w-[82%] sm:flex-row sm:flex-wrap sm:items-center sm:gap-3.5 sm:pr-4 md:ml-[24%] md:w-[76%] lg:ml-[22%] lg:w-[76%]">
+            {/* `pr-28` no celular reserva a largura dos DOIS botões de
+                exportação (56px cada + folga); com o `pr-14` de quando havia só
+                um, o texto do diagnóstico passava por baixo do botão de PDF. */}
+            <div className="relative z-10 flex w-full flex-col items-start gap-2.5 pr-28 sm:ml-[18%] sm:w-[82%] sm:flex-row sm:flex-wrap sm:items-center sm:gap-3.5 sm:pr-4 md:ml-[24%] md:w-[76%] lg:ml-[22%] lg:w-[76%]">
               <Selo nivel={v.nivel} />
               <div className="min-w-0 flex-1 px-1 py-1 text-white">
                 <p className="font-serif text-lg font-black leading-snug text-white drop-shadow-[0_2px_5px_rgba(0,0,0,0.65)] sm:text-xl">{v.titulo}</p>
@@ -1657,10 +1660,15 @@ export function DashboardCop({
               uma tira para quem abre no celular, porque imagem não pagina. O PDF
               é o mesmo painel em A4 deitado, colorido, com os quadros inteiros e
               numeração de página: é o que se leva para a reunião e o que se
-              imprime. Empilhados porque a faixa ao lado é estreita. */}
+              imprime.
+
+              LADO A LADO, e não empilhados: empilhado, o botão de cima cai atrás
+              da barra de recorte, que é `sticky` com z-index maior — some
+              justamente quando a pessoa rolou para ver o painel. Na horizontal
+              os dois dividem a mesma altura livre. */}
           <div
             data-no-briefing="true"
-            className="absolute right-[-14px] top-3 z-20 flex flex-col gap-2 sm:right-[-20px] lg:top-5 min-[1560px]:right-[-70px]"
+            className="absolute right-[-14px] top-3 z-20 flex flex-row gap-2 sm:right-[-20px] lg:top-5 min-[1560px]:right-[-70px]"
           >
             <BotaoExportar
               href={urlBriefingPng}
