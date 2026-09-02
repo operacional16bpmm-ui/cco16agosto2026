@@ -653,11 +653,7 @@ export function DashboardCop({
     }
 
     try {
-      const resultado = await entregarArquivo(blob, nomeDoArquivo(), {
-        title: "16º BPM/M — Auditoria COP 2026",
-        text: `Painel da auditoria: ${PCT.format(p.pct)}% da meta (${FMT.format(p.total)} de ${FMT.format(p.meta)} evidências).`,
-      });
-      if (resultado === "cancelado") return;
+      await entregarArquivo(blob, nomeDoArquivo());
       toast.success(
         peloServidor
           ? "Painel completo exportado em PNG."
@@ -666,15 +662,7 @@ export function DashboardCop({
     } finally {
       setExportandoBriefing(false);
     }
-  }, [
-    exportandoBriefing,
-    exportarPeloServidor,
-    exportarNoNavegador,
-    nomeDoArquivo,
-    p.pct,
-    p.total,
-    p.meta,
-  ]);
+  }, [exportandoBriefing, exportarPeloServidor, exportarNoNavegador, nomeDoArquivo]);
 
   /**
    * O CELULAR NÃO PASSA PELO JAVASCRIPT — e é isto que conserta o iPhone.

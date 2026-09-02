@@ -117,11 +117,23 @@ export async function proxy(request: NextRequest) {
        lib/db/cop2026-autorizados.ts. */
     const acesso = await verificarAssinaturaAcesso(request.cookies.get(COOKIE_ACESSO_COP)?.value);
     if (acesso) return NextResponse.next();
-    /* Rota de API não pode levar redirect para tela de login: o fetch seguiria
-       o 307 e o cliente receberia HTML no lugar do arquivo, com status 200 —
-       falha que se parece com sucesso. 401 seco deixa o botão saber que a
-       sessão caiu. */
-    if (pathname.startsWith("/api/")) {
+    /* Rota de API chamada por FETCH não pode levar redirect para a tela de
+       login: o fetch seguiria o 307 e o cliente receberia HTML no lugar do
+       arquivo, com status 200 — falha que se parece com sucesso. 401 seco
+       deixa o botão saber que a sessão caiu.
+
+       Mas a mesma rota também é aberta por NAVEGAÇÃO: o botão de exportar o
+       painel é um <a href> justamente para o celular baixar o PNG sem passar
+       pelo JavaScript. Aí o 401 vira uma tela de JSON cru no Safari — a pessoa
+       toca em "exportar" e recebe `{"erro":"..."}` no lugar do arquivo. Com a
+       sessão da COP durando 12h, esse é o caso comum de segunda-feira de manhã,
+       não a exceção. Navegação segue para a tela de acesso e volta ao PNG
+       depois do login, pelo `?redirect=`. */
+    const ehNavegacao =
+      request.headers.get("sec-fetch-mode") === "navigate" ||
+      (!request.headers.get("sec-fetch-mode") &&
+        (request.headers.get("accept") ?? "").includes("text/html"));
+    if (pathname.startsWith("/api/") && !ehNavegacao) {
       return NextResponse.json({ erro: "Sessão da COP expirada." }, { status: 401 });
     }
     const url = request.nextUrl.clone();
