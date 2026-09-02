@@ -78,7 +78,16 @@ const ROTAS_PUBLICAS = [
      gate PRÓPRIO por `Authorization: Bearer CCO16_SAUDE_TOKEN` e responde 503
      se a variável não existir. Fica aqui porque o vigia é uma máquina — não
      tem conta Google para atravessar o gate do Dashboard. Só devolve
-     contadores e nomes de invariante; nada que identifique policial. */
+     contadores e nomes de invariante; nada que identifique policial.
+
+     ATENÇÃO — esta lista casa por PREFIXO (`pathname.startsWith(rota + "/")`),
+     então as subrotas herdam o "aberto" daqui. As duas que existem hoje têm
+     gate próprio de ADMIN, não de bearer:
+       /api/cop2026/saude/painel     → exigirAdminCop()
+       /api/cop2026/saude/perguntar  → exigirAdminCop() + custa dinheiro por chamada
+     Subrota nova sob /api/cop2026/saude NASCE ABERTA. Quem criar a próxima
+     põe o gate na primeira linha do handler, ou move a entrada para a lista
+     restrita. */
   "/api/cop2026/saude",
   // A Diretriz da COP é norma aberta à tropa e fica embutida na /cop2026;
   // sem esta exceção o leitor de PDF cairia no login.
