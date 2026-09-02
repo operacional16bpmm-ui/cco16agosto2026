@@ -246,11 +246,18 @@ A curva é do **mês**, e ignora a aba de semana de propósito: com "Sem 2" liga
 desenhar 23 dias zerados diria que a fração não produziu nada neles.
 
 **Duas linhas de alvo, e não é redundância.** A azul tracejada é o alvo
-ACUMULADO ("estou no prazo do mês?"); a verde, sobre as barras, é o **ritmo-alvo
-do dia** ("o dia fechou a cota?"). São perguntas diferentes e réguas diferentes —
-a acumulada no eixo da esquerda, a diária no da direita. Verde porque é a cor de
-EM TRAJETÓRIA na régua do Comando (§2): barra que encosta na linha é dia
-cumprido.
+ACUMULADO ("estou no prazo do mês?"); a pontilhada escura, sobre as barras, é o
+**ritmo-alvo do dia** ("o dia fechou a cota?"). São perguntas diferentes e réguas
+diferentes — a acumulada no eixo da esquerda, a diária no da direita. A linha do
+dia é neutra de propósito: a cor, ali, é da barra.
+
+**A barra do dia é classificada pela régua de faixas.** Pedido de 02/09/2026:
+"a barra quando não cumprir a meta seja vermelha, quando cumprir seja verde,
+quando superar seja azul". Implementado com `nivelPorCumprimento(feito ÷ cota)` e
+`COR_FAIXA` — as fontes únicas do §2, sem reclassificação local. A régua tem uma
+faixa a mais que as três pedidas, **âmbar de 50% a 79%**, e ela fica: é a mesma
+escala do ranking, do quadro semanal e do velocímetro, e suprimi-la só aqui
+criaria duas linguagens de cor no mesmo painel.
 
 O motivo declarado pela coordenadoria — *"é sempre na terceira para a quarta
 semana que o pessoal olha, vê que não vai atingir e aí começa a fazer"* — é o que

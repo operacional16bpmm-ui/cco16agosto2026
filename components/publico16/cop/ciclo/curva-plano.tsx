@@ -3,6 +3,7 @@
 import {
   Area,
   CartesianGrid,
+  Cell,
   ComposedChart,
   Bar,
   Line,
@@ -12,6 +13,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { nivelPorCumprimento } from "@/lib/cop2026-metricas";
+import { COR_FAIXA } from "@/components/publico16/cop/graficos";
 import {
   TURNOS_POR_DIA,
   curvaPlanoRealizado,
@@ -33,10 +36,18 @@ import {
  *   ainda não chegou não vale zero, vale nada;
  * - **barras cinza** — as evidências de cada dia, no eixo da direita. É o "dia
  *   a dia mensurado" que a coordenadoria cobrou;
- * - **linha verde** — o ritmo-alvo do dia, sobre as barras. Duas perguntas
- *   diferentes moram no mesmo gráfico: a azul responde "estou no prazo do mês?"
- *   e a verde responde "o dia de ontem fechou a cota?". Sem ela, a barra de um
- *   dia não tinha contra o que ser lida.
+ * - **linha pontilhada escura** — o ritmo-alvo do dia, sobre as barras. Duas
+ *   perguntas diferentes moram no mesmo gráfico: a azul responde "estou no prazo
+ *   do mês?" e esta responde "o dia de ontem fechou a cota?".
+ *
+ * A BARRA É COLORIDA PELA RÉGUA DE FAIXAS DO COMANDO — pedido do Fabricio em
+ * 02/09/2026: "a barra quando não cumprir a meta seja vermelha, quando cumprir
+ * seja verde, quando superar seja azul". A classificação sai de
+ * `nivelPorCumprimento` e a cor de `COR_FAIXA`, as duas fontes únicas do painel
+ * (docs/cop2026-padroes-comando.md §2): nenhum componente reclassifica por conta
+ * própria. A régua tem uma faixa a mais que as três pedidas — ÂMBAR, de 50% a
+ * 79% da cota — e ela fica: é a mesma escala do ranking, do quadro semanal e do
+ * velocímetro, e some do painel inteiro se for suprimida só aqui.
  *
  * O vão entre as duas linhas é a DÍVIDA — "a somatória do que se vai deixando
  * de fazer, que vai caindo à medida que começam a sanear". Ela tem número no
@@ -55,8 +66,7 @@ import {
 const AZUL = "#2563eb";
 const AMBAR = "#d97706";
 const VERM = "#ca0202";
-const CINZA = "#cbd5e1";
-const VERDE = "#16a34a";
+const NEUTRO = "#475569";
 const EIXO = { fontSize: 10, fill: "#55535e" };
 const GRID = "#1d1d1d1f";
 
@@ -73,6 +83,16 @@ const TOOLTIP = {
   },
   labelStyle: { color: "#1d1d1d", fontWeight: 700 },
 } as const;
+
+/**
+ * Cor da barra do dia pela régua oficial: <50% da cota crítico (vermelho),
+ * 50–79% atenção (âmbar), 80–100% conforme (verde), >100% superação (azul).
+ * Dia que ainda não chegou não é classificado — não existe barra nele.
+ */
+function corDaBarra(ponto: PontoCurva, cota: number): string {
+  if (!ponto.decorrido || cota <= 0) return COR_FAIXA.neutro;
+  return COR_FAIXA[nivelPorCumprimento((ponto.feito / cota) * 100, true)];
+}
 
 export interface CurvaFracao {
   chave: string;
@@ -201,23 +221,30 @@ function Cartao({
             />
           )}
 
-          <Bar yAxisId="dia" dataKey="feito" name="Evidências do dia" fill={CINZA} barSize={7} />
+          <Bar yAxisId="dia" dataKey="feito" name="Evidências do dia" barSize={7}>
+            {pontos.map((pt) => (
+              <Cell key={pt.dia} fill={corDaBarra(pt, amanhaCota)} />
+            ))}
+          </Bar>
           {/* RITMO-ALVO por dia, na régua das barras. A azul tracejada é o alvo
               ACUMULADO — responde "estou no prazo?"; esta responde "o dia de
               hoje fechou?", que é outra pergunta e não tinha resposta na tela.
-              Verde é a cor de EM TRAJETÓRIA na régua do Comando: a barra que
-              encosta nela é o dia que cumpriu a cota. `extendDomain` porque em
-              fração de cota baixa o alvo fica acima da maior barra do mês e a
-              linha sairia do gráfico. */}
+              Deliberadamente NEUTRA e pontilhada, no padrão da linha "meta/dia"
+              do gráfico de produção diária: verde aqui passou a significar
+              "barra que cumpriu a cota", e duas coisas verdes na mesma figura
+              seriam duas mensagens diferentes na mesma cor. `extendDomain`
+              porque em fração de cota baixa o alvo fica acima da maior barra do
+              mês e a linha sairia do gráfico. */}
           <ReferenceLine
             yAxisId="dia"
             y={amanhaCota}
-            stroke={VERDE}
+            stroke={NEUTRO}
             strokeWidth={1.5}
+            strokeDasharray="5 4"
             ifOverflow="extendDomain"
             label={{
               value: `alvo ${N2.format(amanhaCota)}/dia`,
-              fill: VERDE,
+              fill: NEUTRO,
               fontSize: 9,
               fontWeight: 700,
               position: "insideBottomRight",
@@ -276,7 +303,16 @@ function Cartao({
           <Tooltip
             {...TOOLTIP}
             cursor={{ fill: "#1d1d1d0a" }}
-            formatter={(v, n) => [N0.format(Math.round(Number(v ?? 0))), String(n)]}
+            formatter={(v, n) => {
+              const valor = Number(v ?? 0);
+              if (n === "Evidências do dia" && amanhaCota > 0) {
+                return [
+                  `${N0.format(Math.round(valor))} · ${N0.format((valor / amanhaCota) * 100)}% da cota`,
+                  String(n),
+                ];
+              }
+              return [N0.format(Math.round(valor)), String(n)];
+            }}
             labelFormatter={(l) => `Dia ${l}`}
           />
         </ComposedChart>
@@ -321,11 +357,19 @@ export function CurvaPlanoRealizado({
           feito acumulado
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="inline-block h-2.5 w-2" style={{ background: CINZA }} />
-          evidências do dia (eixo da direita)
+          <span className="flex gap-px">
+            <span className="inline-block h-2.5 w-2" style={{ background: COR_FAIXA.critico }} />
+            <span className="inline-block h-2.5 w-2" style={{ background: COR_FAIXA.atencao }} />
+            <span className="inline-block h-2.5 w-2" style={{ background: COR_FAIXA.conforme }} />
+            <span className="inline-block h-2.5 w-2" style={{ background: COR_FAIXA.superacao }} />
+          </span>
+          evidências do dia — não fechou a cota · fechou · superou
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="inline-block h-0.5 w-6" style={{ background: VERDE }} />
+          <span
+            className="inline-block h-0 w-6 border-t-2 border-dashed"
+            style={{ borderColor: NEUTRO }}
+          />
           ritmo-alvo do dia — a barra tem que encostar nela
         </span>
         <span className="flex items-center gap-1.5">
