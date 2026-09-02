@@ -32,6 +32,7 @@ export const ROTAS_RESTRITAS_COP = [
      fail-closed geral do proxy e exigiria a credencial única da Sala de
      Comando, que quem usa a COP não tem — o gate correto é a conta Google. */
   "/api/cop2026/briefing-png",
+  "/api/cop2026/briefing-pdf",
   /* O LANÇAMENTO é aberto por padrão e entra aqui só se o Comando mandar.
    *
    * O gate escolhido para quem lança nunca foi login: é o padrão do

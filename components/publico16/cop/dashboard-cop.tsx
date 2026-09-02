@@ -196,8 +196,8 @@ function formatarData(iso: string) {
   return d ? `${d}/${m}/${a}` : iso;
 }
 
-/* Regras do modo briefing (`?briefing=1`). Duas linhas, e as duas existem para
-   que o PNG contenha só o painel:
+/* Regras do modo briefing (`?briefing=1`) — o que faz o arquivo conter só o
+   painel, e conter o painel INTEIRO:
    1. tudo que é irmão do bloco exportado — hero, barra de recorte, abas,
       tabelas analíticas — sai da árvore visual. Fora reduzir o arquivo, isso
       corta o tempo de render do headless e evita que a barra `sticky` de
@@ -210,13 +210,119 @@ function formatarData(iso: string) {
       não existe e as últimas colunas — QUINZENA e AÇÃO — sumiam cortadas na
       borda direita. Soltar o recorte é o que faz o arquivo conter a tabela
       inteira; a largura de captura (BRIEFING_LARGURA) é escolhida para
-      caber nelas. */
+      caber nelas;
+   4. no PDF o mesmo bloco é PAGINADO, e o que na tela é uma rolagem contínua no
+      papel vira corte. Sem estas regras a folha 2 começava no meio do
+      velocímetro e a tabela de frações partia entre a linha da 3ª Cia e a da
+      4ª — o leitor perde a referência da coluna. `break-inside: avoid` mantém
+      cada quadro inteiro, e a folha de impressão do globals.css já faz o mesmo
+      por `.cartao-painel`; aqui a regra alcança as seções e as linhas de tabela,
+      que ela não cobre. */
 const MODO_BRIEFING_CSS = `
 .modo-briefing > *:not([data-briefing="painel"]) { display: none !important; }
 .modo-briefing [data-no-briefing="true"] { display: none !important; }
 .modo-briefing .overflow-x-auto,
 .modo-briefing .overflow-auto { overflow: visible !important; }
+
+@media print {
+  /* A4 DEITADO, declarado aqui e não só na chamada do Puppeteer: o globals.css
+     traz um @page com size A4 portrait para o Ctrl+P do navegador, e essa
+     declaracao VENCE a flag landscape do gerador — o PDF saia em pe, com a
+     tabela de fracoes espremida. Em modo briefing a ultima palavra e esta.
+     (Sem acento grave neste bloco: ele vive dentro de um template literal.) */
+  @page { size: A4 landscape; }
+
+  /* O mapa do site mora no layout do grupo publico, FORA desta arvore, entao a
+     regra de irmaos ali em cima nao o alcanca. No PNG ele nunca apareceu porque
+     a captura recorta no elemento; o PDF imprime a pagina inteira, e a folha 4
+     terminava com a barra azul-noite de navegacao no meio do documento. Layout
+     nao recebe searchParams no Next, entao o corte e por CSS mesmo. */
+  [aria-label="Mapa do site"] { display: none !important; }
+
+  .modo-briefing [data-briefing="painel"] > section,
+  .modo-briefing [data-briefing="painel"] table,
+  .modo-briefing [data-briefing="painel"] tr,
+  /* Marca explicita nos cartoes de KPI. Sem ela o "Conformidade" nascia partido
+     entre a folha 1 e a 2, com o numero de um lado e o rotulo do outro.
+     Proteger todo filho de grid, em vez destes, custava duas folhas a mais: os
+     envoltorios de 12 colunas viravam blocos indivisiveis e o navegador parava
+     de preencher a pagina. */
+  .modo-briefing .cartao-kpi { break-inside: avoid; page-break-inside: avoid; }
+  /* Cabeçalho de tabela se repete em toda folha: tabela longa sem cabeçalho na
+     página seguinte é coluna de números sem nome. */
+  .modo-briefing [data-briefing="painel"] thead { display: table-header-group; }
+  /* O fundo do bloco é claro por definição (#edf2f7); no papel ele só gastaria
+     tinta na borda de cada folha. */
+  .modo-briefing [data-briefing="painel"] { background: #fff !important; }
+}
 `;
+
+/**
+ * Botão redondo de exportação.
+ *
+ * `<a>` e não `<button>`: no celular o toque tem de virar NAVEGAÇÃO, não
+ * JavaScript — é o que faz o Safari abrir o download nativo em vez de esperar
+ * uma folha de compartilhamento que a ativação do toque já não autoriza (ver
+ * `aoTocarExportar` e lib/entregar-arquivo.ts). O `href` de verdade também
+ * deixa o endereço copiável pelo menu de contexto, para colar no WhatsApp.
+ *
+ * O rótulo fica ESCRITO no botão, e não só no `title`: dois círculos vermelhos
+ * com ícone de documento seriam indistinguíveis, e num painel de Comando quem
+ * erra o botão baixa 4 MB pelo 4G à toa.
+ */
+function BotaoExportar({
+  href,
+  onClick,
+  ocupado,
+  rotulo,
+  titulo,
+  className,
+}: {
+  href: string;
+  onClick: (evento: React.MouseEvent<HTMLAnchorElement>) => void;
+  ocupado: boolean;
+  rotulo: string;
+  titulo: string;
+  className: string;
+}) {
+  return (
+    <a
+      href={href}
+      download
+      onClick={onClick}
+      aria-disabled={ocupado || undefined}
+      aria-label={titulo}
+      title={titulo}
+      className={cn(
+        "group flex h-14 w-14 flex-col items-center justify-center gap-0.5 rounded-full border-2 text-white transition-all duration-300 hover:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 aria-disabled:cursor-wait aria-disabled:opacity-80",
+        className
+      )}
+    >
+      {ocupado ? (
+        <Loader2 size={20} className="animate-spin" aria-hidden="true" />
+      ) : (
+        <>
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.9"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-5 w-5 transition-transform duration-300 group-hover:-translate-y-0.5"
+            aria-hidden="true"
+          >
+            <path d="M6.5 3.5h7l4 4v13h-11z" />
+            <path d="M13.5 3.5v4h4" />
+            <path d="M12 10.5v5" />
+            <path d="m9.8 13.3 2.2 2.2 2.2-2.2" />
+          </svg>
+          <span className="dados text-[9px] font-black leading-none tracking-wider">{rotulo}</span>
+        </>
+      )}
+    </a>
+  );
+}
 
 function Grupo({ ativo, children }: { ativo: boolean; children: React.ReactNode }) {
   return (
@@ -489,7 +595,11 @@ export function DashboardCop({
   const [aba, setAba] = useState<Aba>("ritmo");
   const [ordem, setOrdem] = useState<{ col: Coluna; desc: boolean }>({ col: "videos", desc: true });
   const [atualizando, setAtualizando] = useState(false);
-  const [exportandoBriefing, setExportandoBriefing] = useState(false);
+  /* Qual formato está sendo gerado, e não um booleano: com dois botões, um
+     booleano faria os DOIS girarem quando só um foi tocado. Serve de trava
+     também — a geração é cara e uma de cada vez basta. */
+  const [formatoEmCurso, setFormatoEmCurso] = useState<"png" | "pdf" | null>(null);
+  const exportandoBriefing = formatoEmCurso !== null;
   const primeiroRender = useRef(true);
   const painelBriefingRef = useRef<HTMLDivElement>(null);
 
@@ -568,6 +678,7 @@ export function DashboardCop({
      para cá como navegação, e no desktop o fetch abaixo o consome. Carrega o
      recorte da tela para o arquivo sair com o mesmo filtro. */
   const urlBriefingPng = `/api/cop2026/briefing-png${escreverFiltros(f)}`;
+  const urlBriefingPdf = `/api/cop2026/briefing-pdf${escreverFiltros(f)}`;
 
   /* CAMINHO DO DESKTOP — o PNG vem pronto do servidor, por fetch.
      O navegador não desenha nada: a rota abre esta mesma página num Chromium
@@ -633,7 +744,7 @@ export function DashboardCop({
 
   const exportarBriefingPng = useCallback(async () => {
     if (exportandoBriefing) return;
-    setExportandoBriefing(true);
+    setFormatoEmCurso("png");
 
     let blob: Blob;
     let peloServidor = true;
@@ -647,7 +758,7 @@ export function DashboardCop({
       } catch (erroLocal) {
         console.error("[briefing] o plano B tambem falhou:", erroLocal);
         toast.error("Nao foi possivel gerar o painel em PNG. Tente novamente em instantes.");
-        setExportandoBriefing(false);
+        setFormatoEmCurso(null);
         return;
       }
     }
@@ -660,7 +771,7 @@ export function DashboardCop({
           : "Painel exportado pelo modo antigo — o gerador do servidor não respondeu."
       );
     } finally {
-      setExportandoBriefing(false);
+      setFormatoEmCurso(null);
     }
   }, [exportandoBriefing, exportarPeloServidor, exportarNoNavegador, nomeDoArquivo]);
 
@@ -675,25 +786,33 @@ export function DashboardCop({
    * `navigator.share` quanto o clique programático de `<a download>` são
    * recusados — 30 segundos de giro e nenhum arquivo.
    *
-   * No desktop a interceptação vale a pena: lá a espera não custa ativação
-   * nenhuma, e é ela que dá o giro no botão, o aviso de erro e a queda para o
-   * rasterizador local quando a função do servidor não responde.
+   * No desktop a interceptação vale a pena PARA O PNG: lá a espera não custa
+   * ativação nenhuma, e é ela que dá o giro no botão, o aviso de erro e a queda
+   * para o rasterizador local quando a função do servidor não responde. O PDF
+   * não tem plano B no navegador — só o Chromium do servidor pagina —, então
+   * interceptá-lo não traria nada além de atraso.
    */
   const aoTocarExportar = useCallback(
-    (evento: React.MouseEvent<HTMLAnchorElement>) => {
-      if (suportaEntregaNativa()) {
+    (formato: "png" | "pdf") => (evento: React.MouseEvent<HTMLAnchorElement>) => {
+      if (exportandoBriefing) {
+        evento.preventDefault();
+        return;
+      }
+      if (formato === "pdf" || suportaEntregaNativa()) {
         /* Sem `preventDefault`: a navegação É o caminho. O giro fica alguns
            segundos só para o toque ter resposta — quem mostra o progresso de
            verdade daqui em diante é o próprio navegador. */
-        setExportandoBriefing(true);
-        toast.message("Gerando o painel no servidor — o download começa em instantes.");
-        window.setTimeout(() => setExportandoBriefing(false), 8000);
+        setFormatoEmCurso(formato);
+        toast.message(
+          `Gerando o painel em ${formato.toUpperCase()} no servidor — o download começa em instantes.`
+        );
+        window.setTimeout(() => setFormatoEmCurso(null), 8000);
         return;
       }
       evento.preventDefault();
       void exportarBriefingPng();
     },
-    [exportarBriefingPng]
+    [exportandoBriefing, exportarBriefingPng]
   );
 
   const definir = (patch: Partial<Filtros>) => setF((a) => ({ ...a, ...patch }));
@@ -789,7 +908,9 @@ export function DashboardCop({
     <div
       key={k.rotulo}
       className={cn(
-        "group relative overflow-hidden rounded-2xl border-2 border-slate-300/85 bg-white shadow-[0_4px_16px_rgba(15,23,42,0.06)] transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_12px_28px_rgba(202,2,2,0.22)] hover:border-vermelho",
+        /* `cartao-kpi` não é estilo: é a marca que o PDF usa para não partir o
+           cartão entre duas folhas (ver MODO_BRIEFING_CSS). */
+        "cartao-kpi group relative overflow-hidden rounded-2xl border-2 border-slate-300/85 bg-white shadow-[0_4px_16px_rgba(15,23,42,0.06)] transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_12px_28px_rgba(202,2,2,0.22)] hover:border-vermelho",
         principal
           ? "min-h-[220px] border-[#ca0202]/45 p-6 shadow-[0_10px_26px_rgba(202,2,2,0.12)] sm:min-h-[250px] sm:p-7"
           : "min-h-[148px] p-4 sm:min-h-[164px] sm:p-5",
@@ -1531,34 +1652,33 @@ export function DashboardCop({
             </div>
           )}
 
-          {/* <a> e não <button>: no celular o toque tem de virar NAVEGAÇÃO, não
-              JavaScript — é o que faz o Safari abrir o download nativo em vez
-              de esperar uma folha de compartilhamento que a ativação já não
-              autoriza. Ver `aoTocarExportar`. O `href` também deixa o endereço
-              do PNG copiável pelo menu de contexto, para colar no WhatsApp. */}
-          <a
-            href={urlBriefingPng}
-            download
-            onClick={aoTocarExportar}
-            aria-disabled={exportandoBriefing || undefined}
+          {/* DOIS formatos, e a diferença entre eles não é capricho: o PNG é uma
+              imagem só — cola no WhatsApp, mas passa de 6.000px de altura e vira
+              uma tira para quem abre no celular, porque imagem não pagina. O PDF
+              é o mesmo painel em A4 deitado, colorido, com os quadros inteiros e
+              numeração de página: é o que se leva para a reunião e o que se
+              imprime. Empilhados porque a faixa ao lado é estreita. */}
+          <div
             data-no-briefing="true"
-            aria-label="Exportar painel completo (situação + semanal) em PNG"
-            title="Exportar painel completo em PNG"
-            className="group absolute right-[-14px] top-3 z-20 flex h-14 w-14 sm:right-[-20px] items-center justify-center rounded-full border-2 border-white bg-[#ca0202] text-white shadow-[0_10px_24px_rgba(202,2,2,0.38)] transition-all duration-300 hover:scale-110 hover:bg-[#a80000] hover:shadow-[0_14px_30px_rgba(202,2,2,0.48)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ca0202] aria-disabled:cursor-wait aria-disabled:opacity-80 lg:top-5 min-[1560px]:right-[-70px]"
+            className="absolute right-[-14px] top-3 z-20 flex flex-col gap-2 sm:right-[-20px] lg:top-5 min-[1560px]:right-[-70px]"
           >
-            {exportandoBriefing ? (
-              <Loader2 size={20} className="animate-spin" aria-hidden="true" />
-            ) : (
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 transition-transform duration-300 group-hover:-translate-y-0.5" aria-hidden="true">
-                <path d="M6.5 3.5h7l4 4v13h-11z" />
-                <path d="M13.5 3.5v4h4" />
-                <path d="M8.5 15.5h7" />
-                <path d="M12 10.5v5" />
-                <path d="m9.8 13.3 2.2 2.2 2.2-2.2" />
-              </svg>
-            )}
-            <span className="sr-only">Exportar briefing PNG</span>
-          </a>
+            <BotaoExportar
+              href={urlBriefingPng}
+              onClick={aoTocarExportar("png")}
+              ocupado={formatoEmCurso === "png"}
+              rotulo="PNG"
+              titulo="Baixar o painel completo como imagem (PNG) — bom para colar no WhatsApp"
+              className="border-white bg-[#ca0202] shadow-[0_10px_24px_rgba(202,2,2,0.38)] hover:bg-[#a80000] hover:shadow-[0_14px_30px_rgba(202,2,2,0.48)] focus-visible:outline-[#ca0202]"
+            />
+            <BotaoExportar
+              href={urlBriefingPdf}
+              onClick={aoTocarExportar("pdf")}
+              ocupado={formatoEmCurso === "pdf"}
+              rotulo="PDF"
+              titulo="Baixar o painel completo em PDF paginado e colorido — para ler e imprimir"
+              className="border-white bg-[#22406b] shadow-[0_10px_24px_rgba(34,64,107,0.38)] hover:bg-[#16294a] hover:shadow-[0_14px_30px_rgba(34,64,107,0.48)] focus-visible:outline-[#22406b]"
+            />
+          </div>
         </div>
       </section>
 

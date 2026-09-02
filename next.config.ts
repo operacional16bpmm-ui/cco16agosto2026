@@ -22,7 +22,9 @@ const nextConfig: NextConfig = {
      O sintoma era cruel porque o build passa, a rota responde e só o PNG falha.
      Esta lista é o que obriga a cópia. */
   outputFileTracingIncludes: {
-    "/api/cop2026/briefing-png": ["./node_modules/@sparticuz/chromium/bin/**"],
+    /* Glob, e não os dois caminhos escritos à mão: rota de exportação nova
+       nasce com o Chromium dentro em vez de falhar só na primeira geração. */
+    "/api/cop2026/briefing-*": ["./node_modules/@sparticuz/chromium/bin/**"],
   },
 
   async redirects() {

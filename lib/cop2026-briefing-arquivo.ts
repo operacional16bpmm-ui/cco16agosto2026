@@ -121,16 +121,20 @@ function escalaSegura(largura: number, altura: number) {
   return Math.max(1, Number(limite.toFixed(2)));
 }
 
+export type CookieDeAcesso = { nome: string; valor: string; dominio: string };
+
 /**
- * Abre a página em modo briefing e devolve o PNG do bloco `[data-briefing]`.
- *
- * @param url    endereço absoluto da própria aplicação, já com `?briefing=1`
- * @param cookie sessão de acesso à COP, emitida pela rota que chama esta função
+ * Abre a página em modo briefing, entrega a aba pronta a `render` e limpa tudo
+ * depois. Existe para que PNG e PDF compartilhem exatamente a mesma preparação
+ * — mesma sessão, mesmo viewport, mesma espera de rede e de fonte — e difiram
+ * só no último passo. Quando os dois formatos divergem na preparação, um deles
+ * envelhece em silêncio.
  */
-export async function capturarPainel(
+async function comPaginaDoPainel<T>(
   url: string,
-  cookie: { nome: string; valor: string; dominio: string }
-): Promise<Buffer> {
+  cookie: CookieDeAcesso,
+  render: (pagina: Page) => Promise<T>
+): Promise<T> {
   const biscoito = {
     name: cookie.nome,
     value: cookie.valor,
@@ -186,27 +190,12 @@ export async function capturarPainel(
     const alvo = await pagina.waitForSelector(SELETOR_PAINEL, { timeout: 20_000 });
     if (!alvo) throw new Error("o bloco do briefing não apareceu na página");
 
-    /* As fontes são do next/font, auto-hospedadas. Sem esta espera o PNG sai na
-       fonte de fallback e os números mudam de largura entre uma exportação e
+    /* As fontes são do next/font, auto-hospedadas. Sem esta espera o arquivo sai
+       na fonte de fallback e os números mudam de largura entre uma exportação e
        outra. */
     await pagina.evaluate(() => document.fonts.ready);
 
-    const caixa = await alvo.boundingBox();
-    if (!caixa || caixa.height < 200) {
-      throw new Error(`o bloco do briefing mediu ${caixa?.height ?? 0}px de altura`);
-    }
-
-    const escala = escalaSegura(caixa.width, caixa.height);
-    if (escala !== BRIEFING_ESCALA) {
-      await pagina.setViewport({
-        width: BRIEFING_LARGURA,
-        height: BRIEFING_ALTURA,
-        deviceScaleFactor: escala,
-      });
-    }
-
-    const png = await alvo.screenshot({ type: "png", captureBeyondViewport: true });
-    return Buffer.from(png);
+    return await render(pagina);
   } catch (erro) {
     await descartarNavegador();
     throw erro;
@@ -224,4 +213,111 @@ export async function capturarPainel(
     }
     await pagina?.close().catch(() => {});
   }
+}
+
+/**
+ * PNG do bloco `[data-briefing]` — uma imagem só, para colar no WhatsApp.
+ *
+ * O arquivo sai alto (o painel passa de 3.000px de altura a 1440 de largura),
+ * e essa é a natureza do formato: imagem não pagina. Quem precisa LER o
+ * conteúdo com calma, ou imprimir, usa o PDF.
+ */
+export async function capturarPainel(url: string, cookie: CookieDeAcesso): Promise<Buffer> {
+  return comPaginaDoPainel(url, cookie, async (pagina) => {
+    const alvo = await pagina.$(SELETOR_PAINEL);
+    if (!alvo) throw new Error("o bloco do briefing sumiu antes da captura");
+
+    const caixa = await alvo.boundingBox();
+    if (!caixa || caixa.height < 200) {
+      throw new Error(`o bloco do briefing mediu ${caixa?.height ?? 0}px de altura`);
+    }
+
+    const escala = escalaSegura(caixa.width, caixa.height);
+    if (escala !== BRIEFING_ESCALA) {
+      await pagina.setViewport({
+        width: BRIEFING_LARGURA,
+        height: BRIEFING_ALTURA,
+        deviceScaleFactor: escala,
+      });
+    }
+
+    const png = await alvo.screenshot({ type: "png", captureBeyondViewport: true });
+    return Buffer.from(png);
+  });
+}
+
+/* ------------------------------------------------------------------ PDF */
+
+/* A4 DEITADO, e não em pé. Em pé o papel tem 794px de largura útil a 96dpi —
+   abaixo do breakpoint `lg` (1024px), então o painel cairia no layout de
+   celular e a tabela de Tendência por Fração, que pede ~1.250px de colunas,
+   estouraria a margem. Deitado o papel dá 1.123px, e o `escala` abaixo abre
+   ainda mais espaço. */
+const PDF_ESCALA = 0.78;
+/* Margem lateral curta porque o conteúdo é tabela larga; a de cima e a de baixo
+   precisam caber o cabeçalho e o rodapé institucionais. */
+const PDF_MARGEM = { top: "13mm", bottom: "13mm", left: "8mm", right: "8mm" };
+
+/** Cabeçalho e rodapé são HTML próprio do Chromium: não herdam a folha de
+ *  estilo da página, então tudo aqui é inline e em `pt`. */
+function moldura(titulo: string) {
+  const base =
+    "font-family:Georgia,'Times New Roman',serif;font-size:8pt;color:#55535e;width:100%;padding:0 9mm;";
+  return {
+    cabecalho: `<div style="${base}display:flex;justify-content:space-between;align-items:center;border-bottom:0.5pt solid #ca0202;padding-bottom:2mm;">
+        <span style="font-weight:bold;color:#ca0202;letter-spacing:0.08em;text-transform:uppercase;">16º BPM/M — Auditoria de COP 2026</span>
+        <span>${titulo}</span>
+      </div>`,
+    /* "Página X de Y" com as classes que o Chromium substitui sozinho. Num
+       documento que circula impresso, folha sem número é folha que se perde. */
+    rodape: `<div style="${base}display:flex;justify-content:space-between;align-items:center;padding-top:2mm;">
+        <span style="font-style:italic;">Documento operacional — não distribuir fora do Batalhão.</span>
+        <span>Página <span class="pageNumber"></span> de <span class="totalPages"></span></span>
+      </div>`,
+  };
+}
+
+/**
+ * PDF paginado do mesmo painel — a resposta para o PNG que ficou alto demais.
+ *
+ * Roda em mídia `print`, e não `screen`: a folha de impressão do globals.css já
+ * resolve o que o papel precisa — `break-inside: avoid` nos cartões para nenhum
+ * quadro nascer partido entre duas páginas, sombras removidas, fundo branco.
+ * Reaproveitar essa folha em vez de inventar outra é o que mantém o PDF
+ * coerente com o botão "Imprimir" que já existia na tela.
+ *
+ * `printBackground: true` é obrigatório: sem ele o Chromium descarta TODA cor
+ * de fundo, e o semáforo operacional — que é o que o Comando lê primeiro —
+ * sairia em cinza. Faixa sem cor num painel de faixa é papel em branco.
+ */
+export async function gerarPainelPdf(
+  url: string,
+  cookie: CookieDeAcesso,
+  titulo: string
+): Promise<Buffer> {
+  return comPaginaDoPainel(url, cookie, async (pagina) => {
+    await pagina.emulateMediaType("print");
+    /* Trocar de mídia refaz o layout: sem um quadro de folga a medição e a
+       paginação saem do estado anterior. */
+    await pagina.evaluate(
+      () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(null))))
+    );
+
+    const { cabecalho, rodape } = moldura(titulo);
+    const pdf = await pagina.pdf({
+      format: "A4",
+      landscape: true,
+      printBackground: true,
+      scale: PDF_ESCALA,
+      margin: PDF_MARGEM,
+      displayHeaderFooter: true,
+      headerTemplate: cabecalho,
+      footerTemplate: rodape,
+      /* O `@page { size: A4 portrait }` do globals.css serve ao Ctrl+P do
+         navegador. Aqui quem manda é o `format`/`landscape` acima — daí o
+         `preferCSSPageSize` ficar falso, que é o padrão, dito em voz alta. */
+      preferCSSPageSize: false,
+    });
+    return Buffer.from(pdf);
+  });
 }
