@@ -13,7 +13,8 @@
     "verificar:lancamento": "node --experimental-strip-types --no-warnings --import ./scripts/alias-loader.mjs --test scripts/verificar-lancamento-cop.mjs",
     "verificar:paridade": "node --experimental-strip-types --no-warnings --import ./scripts/alias-loader.mjs scripts/verificar-paridade-cop.mjs",
     "backfill": "node --experimental-strip-types --no-warnings --import ./scripts/alias-loader.mjs scripts/backfill-planilha.mjs",
-    "conferir:painel": "node --experimental-strip-types --no-warnings --import ./scripts/alias-loader.mjs scripts/conferir-painel-cop.mjs"
+    "conferir:painel": "node --experimental-strip-types --no-warnings --import ./scripts/alias-loader.mjs scripts/conferir-painel-cop.mjs",
+    "verificar:painel": "node --experimental-strip-types --no-warnings --import ./scripts/alias-loader.mjs --test scripts/verificar-painel-cop.mjs"
   },
   "dependencies": {
     "@sparticuz/chromium": "^149.0.0",

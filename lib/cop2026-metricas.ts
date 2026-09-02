@@ -839,6 +839,29 @@ export function calcularPainel(
   const idsDuplicadosNoRecorte = new Set(duplicadoLista.flatMap((x) => x.ids)).size;
   const semFracaoLista = semFracaoDados.map(detalhar);
 
+  /* Auditores DISTINTOS por quinzena e por fração — a coluna QUINZENA da
+   * tabela Tendência. Fica AQUI, e não em quem monta a página, porque cada
+   * consumidor que tocasse em `lancamentos` direto era uma chance nova de
+   * esquecer o `de`/`ate` — foi o que pôs "2% · 4%" de participação na 2ª
+   * quinzena de setembro no dia 2 do mês, somando os auditores de agosto.
+   * Como sai de `dados` (já recortado por `aplicarFiltros`), a mesma classe de
+   * bug não pode voltar sem reintroduzir uma leitura de fora do portão. */
+  const auditoresPorQuinzena: Record<string, [number, number]> = {};
+  const setsPorQuinzena = new Map<string, [Set<string>, Set<string>]>();
+  for (const l of dados) {
+    if (!l.auditou) continue;
+    const identidade = (l.re || l.nomeGuerra || "").trim();
+    if (!identidade) continue;
+    const quinzena = identificarSemana(l.data) <= 2 ? 0 : 1;
+    if (!setsPorQuinzena.has(l.subunidade)) {
+      setsPorQuinzena.set(l.subunidade, [new Set(), new Set()]);
+    }
+    setsPorQuinzena.get(l.subunidade)![quinzena].add(identidade);
+  }
+  for (const [chave, [q1, q2]] of setsPorQuinzena) {
+    auditoresPorQuinzena[chave] = [q1.size, q2.size];
+  }
+
   // ---- histograma ----------------------------------------------------------
   const histograma = [0, 1, 2, 3, 4, 5].map((n) => ({
     faixa: n === 5 ? "5+" : String(n),
@@ -991,6 +1014,7 @@ export function calcularPainel(
     comIdDuplicado,
     idsDuplicadosNoRecorte,
     duplicadoLista,
+    auditoresPorQuinzena,
     fracoes,
     semanasBatalhao,
     porTurno,

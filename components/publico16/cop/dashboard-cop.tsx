@@ -555,7 +555,6 @@ export function DashboardCop({
   erro,
   filtrosIniciais,
   tendencia,
-  auditoresPorQuinzena,
   modoBriefing,
 }: {
   lancamentos: LancamentoCop[];
@@ -566,8 +565,6 @@ export function DashboardCop({
   /** Liga a caixa TENDENCIA. Nasceu como diferenca da V3; hoje o painel unico
    *  em /cop2026/dashboard sempre envia. Ausente = painel sem tendencia. */
   tendencia?: boolean;
-  /** Auditores distintos na 1a e na 2a quinzena, por fracao. */
-  auditoresPorQuinzena?: Record<string, [number, number]>;
   /** Pagina aberta pelo Chromium de /api/cop2026/briefing-png para virar PNG.
    *  Some com a moldura interativa e congela o painel; ver MODO_BRIEFING_CSS. */
   modoBriefing?: boolean;
@@ -1664,7 +1661,7 @@ export function DashboardCop({
             <div className="min-w-0 lg:col-span-12">
               <CaixaTendencia
                 fracoes={p.fracoes}
-                auditoresPorQuinzena={auditoresPorQuinzena}
+                auditoresPorQuinzena={p.auditoresPorQuinzena}
                 semFracao={p.semFracao}
               />
             </div>

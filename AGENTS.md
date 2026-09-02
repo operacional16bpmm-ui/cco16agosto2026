@@ -21,8 +21,22 @@ Toda alteração termina em produção, sem perguntar e sem devolver o comando p
 copiar. Fluxo obrigatório ao fechar qualquer mudança:
 
 ```bash
-npx tsc --noEmit && git add -A && git commit -m "<msg>" && npx vercel --prod --yes
+npx tsc --noEmit \
+  && npm run verificar:vocabulario \
+  && npm run verificar:dado-pessoal \
+  && npm run verificar:periodo \
+  && npm run verificar:lancamento \
+  && npm run verificar:painel \
+  && git add -A && git commit -m "<msg>" && npx vercel --prod --yes
 ```
+
+**`verificar:painel` é obrigatório** — é a rede que impede o bug de recorte que
+o Comando apontou em 02/09/2026 (semanas somando o mês anterior, quinzena com
+"4% de participação" no dia 2). Ele acrescenta agosto inteiro à base de
+setembro e afirma que **nenhum contador do painel muda**. Se falhar, procure em
+`calcularPainel` (ou em quem monta o Painel fora dele) um laço sobre
+`lancamentos` que não usa `dados`/`dadosSemFiltroDeSemana` — a leitura tem que
+entrar pelo portão `aplicarFiltros`, sempre.
 
 `npx vercel --prod --yes` já sai com `target: production` e move os aliases
 (`portal-cco16.vercel.app`). Conferir com `npx vercel inspect <url-do-deploy>` — o

@@ -103,6 +103,39 @@ exatamente as cinco linhas acima.
 
 ---
 
+## 3-Z. Regra sistêmica: o painel fecha SEMPRE dentro do mês
+
+Toda leitura do painel entra por um portão único, `calcularPainel`, que já
+aplica `aplicarFiltros(lancamentos, f, minimo, duplicados)`. Depois dele, os
+dois nomes autorizados são `dados` (recortado, com o filtro de semana) e
+`dadosSemFiltroDeSemana` (recortado, sem esse filtro específico — porque os
+cartões semanais SÃO o seletor). **Ninguém varre `lancamentos` fora daí.**
+
+A regra existe porque cada consumidor que tocasse na base bruta era uma chance
+de esquecer o `de`/`ate` e carregar o mês anterior. Foi assim que sobraram, e
+foram encontrados um a um em 02/09/2026: cartões semanais, mini-cards por
+fração, quinzena montada na `page.tsx`.
+
+**Rede de proteção**: `npm run verificar:painel` roda `calcularPainel` duas
+vezes sobre o mesmo recorte de setembro — uma com a base limpa, outra com
+agosto inteiro em cima — e afirma que **nenhum contador muda**. Qualquer
+diferença é a assinatura dessa classe de bug. O script está no fluxo
+obrigatório do `AGENTS.md`.
+
+Superfícies de agregação centralizadas dentro do Painel — não recriar em quem
+consome:
+
+- `dados`, `dadosSemFiltroDeSemana` — bases já recortadas.
+- `semanasBatalhao`, `semanasFracao` — sobre `dadosSemFiltroDeSemana`.
+- `auditoresPorQuinzena` — sobre `dados`, e `SEM_BASE` para a quinzena que
+  ainda não abriu (`quinzenasIniciadas`).
+- `regularidadeProducao(semanas, semanasIniciadas)` — Gini sobre as semanas já
+  abertas; com menos de duas, devolve `SEM_BASE`.
+- `janelaDoRecorte(f, hoje)` — dia/turno/restantes vindos do calendário do
+  MÊS que ancora o recorte, nunca do histórico de lançamentos.
+
+---
+
 ## 3-A. Semana operacional — zera na virada do mês (02/09/2026)
 
 Determinação do Major, por WhatsApp, em 02/09/2026 às 07:40 e 07:48 ("ajustar no
