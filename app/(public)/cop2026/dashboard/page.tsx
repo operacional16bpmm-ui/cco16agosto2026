@@ -59,8 +59,18 @@ export default async function DashboardPage({
      participação mínima do efetivo a cada quinzena, e esse recorte só existe
      nos lançamentos brutos: `LinhaFracao` guarda o total do mês. Semanas 1–2
      formam a 1ª quinzena; 3–4, a 2ª. */
+  /* Só o RECORTE. Este laço varria a planilha inteira e carregava agosto para
+     dentro da coluna QUINZENA de setembro — o mesmo bug das semanas que o
+     Comando apontou em 02/09/2026, na última superfície onde ele tinha
+     sobrado. Sintoma: "2% · 4%" de participação na 2ª quinzena no dia 2 do
+     mês, quando a 2ª quinzena só abre no dia 15. */
+  const filtros = lerFiltros(sp);
+  const doRecorte = lancamentos.filter(
+    (l) => (!filtros.de || l.data >= filtros.de) && (!filtros.ate || l.data <= filtros.ate)
+  );
+
   const distintos = new Map<string, [Set<string>, Set<string>]>();
-  for (const l of lancamentos) {
+  for (const l of doRecorte) {
     if (!l.auditou) continue;
     const identidade = (l.re || l.nomeGuerra || "").trim();
     if (!identidade) continue;
@@ -97,7 +107,7 @@ export default async function DashboardPage({
           metas={metas}
           lidoEm={lidoEm}
           erro={erro}
-          filtrosIniciais={lerFiltros(sp)}
+          filtrosIniciais={filtros}
           tendencia
           auditoresPorQuinzena={auditoresPorQuinzena}
           modoBriefing={modoBriefing}

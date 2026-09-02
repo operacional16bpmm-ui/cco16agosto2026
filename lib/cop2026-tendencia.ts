@@ -351,13 +351,46 @@ export type ClasseRegularidade = "REGULAR" | "IRREGULAR" | "CONCENTRADA" | "SEM_
  * governanca nao sao a mesma coisa — a segunda anula o efeito preventivo e
  * formativo da auditoria continua, que e o que a Diretriz pede.
  */
-export function regularidadeProducao(semanas: number[]): {
+/** Quantas semanas operacionais já COMEÇARAM, pelo dia corrido do mês. */
+export function semanasIniciadas(diaDoMes: number): number {
+  if (diaDoMes <= 0) return 0;
+  if (diaDoMes <= 7) return 1;
+  if (diaDoMes <= 14) return 2;
+  if (diaDoMes <= 21) return 3;
+  return 4;
+}
+
+/** Quinzenas já começadas — a 2ª abre no dia 15. */
+export function quinzenasIniciadas(diaDoMes: number): number {
+  if (diaDoMes <= 0) return 0;
+  return diaDoMes <= 14 ? 1 : 2;
+}
+
+export function regularidadeProducao(
+  semanas: number[],
+  /** Semanas já começadas. Só elas entram na conta — ver abaixo. */
+  iniciadas: number = semanas.length
+): {
   gini: number | null;
   classe: ClasseRegularidade;
 } {
   const total = semanas.reduce((s, x) => s + (Number.isFinite(x) ? x : 0), 0);
   if (total <= 0) return { gini: null, classe: "SEM_BASE" };
-  const g = gini(semanas);
+
+  /* Regularidade mede DISTRIBUIÇÃO NO TEMPO, e não há tempo para distribuir
+   * antes de a segunda semana abrir.
+   *
+   * Com uma semana só, o vetor é sempre [x, 0, 0, 0] e o Gini dá 0,75 QUALQUER
+   * que seja x — a coluna acusava "EM LOTE" nas SEIS frações no dia 2 de
+   * setembro, com o mesmo "Concentração 75%" em todas, ao lado da caixa que
+   * dizia "Nenhuma fração concentrou produção acima de 300% da cota semanal".
+   * Duas leituras opostas do mesmo dado, e a que aparecia na linha era a que
+   * não media nada.
+   */
+  const abertas = Math.max(0, Math.min(iniciadas, semanas.length));
+  if (abertas < 2) return { gini: null, classe: "SEM_BASE" };
+
+  const g = gini(semanas.slice(0, abertas));
   const classe: ClasseRegularidade =
     g < 0.25 ? "REGULAR" : g < 0.5 ? "IRREGULAR" : "CONCENTRADA";
   return { gini: g, classe };
@@ -472,12 +505,18 @@ export function marcosMetaAcumulada(
  */
 export function dispersaoQuinzenal(
   auditoresPorQuinzena: [number, number],
-  efetivo: number
+  efetivo: number,
+  /** Quinzenas já começadas. A que não abriu não é zero: é sem base. */
+  iniciadas = 2
 ): {
   quinzenas: Array<{ quinzena: number; pct: number | null; classe: ClasseDispersao }>;
   pior: ClasseDispersao;
 } {
   const quinzenas = auditoresPorQuinzena.map((n, i) => {
+    /* Cobrar participação de uma quinzena que só abre no dia 15 produz "0% do
+       efetivo" no dia 2 e põe a fração na fila de intervenção por um período
+       que ainda não existe. */
+    if (i + 1 > iniciadas) return { quinzena: i + 1, pct: null, classe: "SEM_BASE" as const };
     const r = indiceDispersao(n, efetivo);
     return { quinzena: i + 1, pct: r.pct, classe: r.classe };
   });

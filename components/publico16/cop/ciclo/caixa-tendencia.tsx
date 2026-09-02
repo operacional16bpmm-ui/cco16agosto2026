@@ -16,7 +16,9 @@ import {
   marcosMetaAcumulada,
   prioridadeAcao,
   progressoDoMes,
+  quinzenasIniciadas,
   regularidadeProducao,
+  semanasIniciadas,
   turnosDoMes,
   type ClasseEquilibrio,
   type Prioridade,
@@ -224,9 +226,16 @@ export function CaixaTendencia({
       f,
       t,
       peso: MATRIZ_PROPORCIONAL_2026[f.chave]?.pctMeta,
-      regularidade: regularidadeProducao(semanas.map((s) => s.feito)),
+      regularidade: regularidadeProducao(
+        semanas.map((s) => s.feito),
+        semanasIniciadas(p.diasDecorridos)
+      ),
       dispersao: indiceDispersao(f.lancaram, f.efetivo),
-      quinzenal: dispersaoQuinzenal(auditoresPorQuinzena?.[f.chave] ?? [0, 0], f.efetivo),
+      quinzenal: dispersaoQuinzenal(
+        auditoresPorQuinzena?.[f.chave] ?? [0, 0],
+        f.efetivo,
+        quinzenasIniciadas(p.diasDecorridos)
+      ),
       lote: alertaLote(semanas.map((s) => ({ semana: s.semana, meta: s.meta, feito: s.feito }))),
       prioridade: prioridadeAcao(t),
       excedente: capacidadeExcedente(t),
