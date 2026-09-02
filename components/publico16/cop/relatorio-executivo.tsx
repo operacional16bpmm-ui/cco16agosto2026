@@ -248,7 +248,7 @@ export function RelatorioExecutivo({
           <SecaoDoc
             n="02"
             titulo="Ritmo Necessário e Saldo"
-            nota="Quanto ainda falta e em que ritmo por turno para fechar a meta do período."
+            nota="Quanto ainda falta e em que ritmo diário para fechar a meta do período."
           >
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <Kpi rotulo="Dias com lançamento" valor={`${FMT.format(p.diasComLancamento)}/${FMT.format(p.janela.decorridos)}`} />

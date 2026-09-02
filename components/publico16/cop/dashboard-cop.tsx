@@ -1266,7 +1266,10 @@ export function DashboardCop({
               <option value="1">Semana 1 (01 a 07)</option>
               <option value="2">Semana 2 (08 a 14)</option>
               <option value="3">Semana 3 (15 a 21)</option>
-              <option value="4">Semana 4 (22 a 31)</option>
+              {/* Acompanha o mês: 22 a 30 em setembro e novembro. */}
+              <option value="4">
+                Semana 4 ({diasDaSemana(4, p.janela.ate ? Number(p.janela.ate.slice(8, 10)) : 31)})
+              </option>
             </select>
 
             <select
@@ -2005,7 +2008,7 @@ export function DashboardCop({
           <Grupo ativo={aba === "ritmo"}>
             <Cartao
               titulo="Produção por dia"
-              nota="com a meta por turno e a faixa de variação normal (±3σ)"
+              nota="com a meta por dia e a faixa de variação normal (±3σ)"
               className="lg:col-span-2"
               conclusao={conclusaoRitmo(p)}
               ajuda={
@@ -2015,7 +2018,7 @@ export function DashboardCop({
                   </p>
                   <p className="mt-1.5">
                     Ponto fora da faixa não é automaticamente ruim — é atípico, e atípico se verifica.
-                    A linha tracejada vermelha é a meta por turno.
+                    A linha tracejada vermelha é a meta por dia.
                   </p>
                 </>
               }

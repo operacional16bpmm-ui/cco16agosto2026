@@ -342,7 +342,7 @@ const EIXO_ESCURO = "rgba(255,255,255,0.45)";
 const GRADE_ESCURA = "rgba(255,255,255,0.09)";
 
 /** Produção diária: área + linha + faixa de variação normal (±3σ) e linha de
- *  meta/turno. Os dias fora de controle piscam como ponto ao vivo. */
+ *  meta/dia. Os dias fora de controle piscam como ponto ao vivo. */
 export function AreaDiaria({
   dados,
   mediaDia,
@@ -420,7 +420,7 @@ export function AreaDiaria({
         />
       )}
 
-      {/* Linha de meta por turno */}
+      {/* Linha de meta por dia */}
       {metaDia > 0 && (
         <line
           x1={pad.l}
