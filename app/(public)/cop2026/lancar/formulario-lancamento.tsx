@@ -159,6 +159,23 @@ export function FormularioLancamento({ identificado }: { identificado: string | 
   const [motivo, setMotivo] = useState("");
   const [avisoColagem, setAvisoColagem] = useState<string | null>(null);
   const [rascunhoRestaurado, setRascunhoRestaurado] = useState(false);
+  /**
+   * Tela intermediária de conferência.
+   *
+   * Antes daqui, o botão "Enviar lançamento" mandava direto: a tela do
+   * formulário sumia e reaparecia a tela de sucesso, sem eco do que foi
+   * gravado. O auditor não sabia se acertou a fração ou trocou um dígito do
+   * identificador antes de o Comando cobrar. Agora: um passo de revisão que
+   * mostra tudo, e só o botão dentro dele envia de verdade (`type="submit"`).
+   */
+  const [revisando, setRevisando] = useState(false);
+
+  /* Se o servidor recusou o envio, sai da revisão para o auditor VER os erros
+     acima do formulário e corrigir. Sem isto o cartão de revisão continuaria
+     na frente e o `<div role="alert">` ficaria escondido no topo. */
+  useEffect(() => {
+    if (estado.erros.length > 0) setRevisando(false);
+  }, [estado.erros]);
   /** Ficha do roster para o RE digitado — só para confirmar na tela quem é. */
   const [fichaRoster, setFichaRoster] = useState<{
     nome: string;
@@ -386,41 +403,23 @@ export function FormularioLancamento({ identificado }: { identificado: string | 
 
   if (estado.ok) {
     return (
-      <div className="rounded-xl border border-sinal-conforme/40 bg-sinal-conforme-suave p-6 text-center">
-        <Check size={34} className="mx-auto text-sinal-conforme" aria-hidden />
-        <h2 className="mt-3 font-serif text-xl font-bold uppercase tracking-wide text-branco">
-          {estado.duplicado ? "Lançamento já registrado" : "Lançamento registrado"}
-        </h2>
-        <p className="mt-2 text-[14px] text-texto-suave">
-          Protocolo <span className="dados-destaque text-[17px]">{estado.protocolo}</span>
-        </p>
-        <p className="mx-auto mt-2 max-w-md text-[13px] leading-relaxed text-texto-suave">
-          {estado.duplicado
-            ? "Este envio já havia chegado — o registro é o mesmo, não foi duplicado."
-            : "Guarde o protocolo. Ele identifica este lançamento na conferência do Comando."}
-        </p>
-
-        {estado.avisos.length > 0 && (
-          <ul className="mx-auto mt-4 max-w-md space-y-2 text-left">
-            {estado.avisos.map((aviso) => (
-              <li
-                key={aviso}
-                className="flex items-start gap-2 rounded-lg border border-borda px-3 py-2 text-[12.5px] text-texto-suave"
-              >
-                <Info size={14} className="mt-0.5 shrink-0" aria-hidden /> {aviso}
-              </li>
-            ))}
-          </ul>
-        )}
-
-        <button
-          type="button"
-          onClick={() => window.location.reload()}
-          className="mt-6 min-h-12 rounded-md border border-borda px-5 py-3 text-[13px] font-bold uppercase tracking-wide text-branco hover:border-vermelho/40"
-        >
-          Fazer outro lançamento
-        </button>
-      </div>
+      <ComprovanteProtocolo
+        protocolo={estado.protocolo ?? ""}
+        duplicado={estado.duplicado}
+        avisos={estado.avisos}
+        data={data}
+        turno={turno}
+        re={re}
+        nomeGuerra={nomeGuerra}
+        posto={posto}
+        fracao={fichaRoster?.cia}
+        auditou={auditou}
+        quantidadeEfetiva={quantidadeEfetiva}
+        identificadores={leitura.evidencias.map((e) => e.bruto)}
+        motivo={precisaDeMotivo ? motivo : ""}
+        justificativa={justificativa}
+        numeroParte={numeroParte}
+      />
     );
   }
 
@@ -792,24 +791,40 @@ export function FormularioLancamento({ identificado }: { identificado: string | 
 
       {/* ------------------------------------------------------- enviar */}
 
-      <div className="flex flex-wrap items-center gap-3">
-        <button
-          type="submit"
-          disabled={!podeEnviar}
-          className="inline-flex min-h-14 flex-1 items-center justify-center gap-2 rounded-md border border-vermelho bg-vermelho/10 px-6 py-4 text-[14px] font-bold uppercase tracking-wide text-vermelho transition-colors hover:bg-vermelho/15 disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none"
-        >
-          {enviando ? (
-            <>
-              <Loader2 size={16} className="animate-spin" aria-hidden /> Enviando…
-            </>
-          ) : (
-            "Enviar lançamento"
-          )}
-        </button>
-        <p className="text-[12px] text-texto-suave">
-          O rascunho fica guardado neste aparelho até o envio.
-        </p>
-      </div>
+      {revisando ? (
+        <CartaoRevisao
+          data={data}
+          turno={turno}
+          re={re}
+          nomeGuerra={nomeGuerra}
+          posto={posto}
+          funcao={funcao}
+          fracao={fichaRoster?.cia}
+          auditou={auditou}
+          quantidadeEfetiva={quantidadeEfetiva}
+          identificadores={leitura.evidencias.map((e) => e.bruto)}
+          motivo={precisaDeMotivo ? motivo : ""}
+          justificativa={justificativa}
+          numeroParte={numeroParte}
+          enviando={enviando}
+          onCorrigir={() => setRevisando(false)}
+        />
+      ) : (
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            disabled={!podeEnviar}
+            onClick={() => setRevisando(true)}
+            className="inline-flex min-h-14 flex-1 items-center justify-center gap-2 rounded-md border border-vermelho bg-vermelho/10 px-6 py-4 text-[14px] font-bold uppercase tracking-wide text-vermelho transition-colors hover:bg-vermelho/15 disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none"
+          >
+            Revisar antes de enviar
+          </button>
+          <p className="text-[12px] text-texto-suave">
+            Você verá tudo o que vai gravar antes de confirmar. O rascunho fica
+            guardado neste aparelho até o envio.
+          </p>
+        </div>
+      )}
     </form>
   );
 }
@@ -827,6 +842,306 @@ function Campo({ rotulo, children }: { rotulo: string; children: React.ReactNode
       </span>
       <div className="mt-1">{children}</div>
     </label>
+  );
+}
+
+/**
+ * Formata data ISO como dd/mm/aaaa — usado nas duas telas de eco (revisão e
+ * comprovante). Só duas superfícies precisam disso e não vale importar `Intl`
+ * inteiro; é conversão de posição.
+ */
+function dataBr(iso: string): string {
+  const m = iso?.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : iso;
+}
+
+function LinhaEco({ rotulo, valor }: { rotulo: string; valor: React.ReactNode }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3 border-b border-borda py-1.5 last:border-0">
+      <span className="shrink-0 text-[11px] font-bold uppercase tracking-[0.14em] text-texto-suave">
+        {rotulo}
+      </span>
+      <span className="min-w-0 flex-1 break-words text-right text-[14px] text-branco">{valor}</span>
+    </div>
+  );
+}
+
+/**
+ * Passo intermediário — mostra tudo que vai gravar, com os mesmos rótulos do
+ * formulário. Só o botão daqui é o `submit` de verdade; o botão do formulário
+ * passou a ser `type="button"` e só troca este flag.
+ *
+ * Existe porque a tela do formulário sumia ao submeter e reaparecia a tela de
+ * sucesso — o auditor não sabia se digitou certo antes de o Comando cobrar.
+ */
+function CartaoRevisao({
+  data,
+  turno,
+  re,
+  nomeGuerra,
+  posto,
+  funcao,
+  fracao,
+  auditou,
+  quantidadeEfetiva,
+  identificadores,
+  motivo,
+  justificativa,
+  numeroParte,
+  enviando,
+  onCorrigir,
+}: {
+  data: string;
+  turno: string;
+  re: string;
+  nomeGuerra: string;
+  posto: string;
+  funcao: string;
+  fracao?: string;
+  auditou: boolean | null;
+  quantidadeEfetiva: number;
+  identificadores: string[];
+  motivo: string;
+  justificativa: string;
+  numeroParte: string;
+  enviando: boolean;
+  onCorrigir: () => void;
+}) {
+  return (
+    <div className="space-y-4 rounded-xl border-2 border-vermelho/40 bg-tatico-super p-5 shadow-[0_10px_28px_rgba(202,2,2,0.12)]">
+      <header className="border-b-2 border-vermelho/40 pb-3">
+        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-vermelho">
+          Confira antes de enviar
+        </p>
+        <h2 className="mt-1 font-serif text-lg font-bold uppercase tracking-wide text-branco">
+          Revisão do lançamento
+        </h2>
+        <p className="mt-1 text-[12.5px] text-texto-suave">
+          O envio só acontece quando você tocar em <strong>Confirmar e enviar</strong> abaixo.
+        </p>
+      </header>
+
+      <section>
+        <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.14em] text-texto-suave">
+          Serviço
+        </p>
+        <LinhaEco rotulo="Data" valor={dataBr(data)} />
+        <LinhaEco rotulo="Turno" valor={turno || "—"} />
+      </section>
+
+      <section>
+        <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.14em] text-texto-suave">
+          Auditor
+        </p>
+        <LinhaEco rotulo="RE" valor={re || "—"} />
+        <LinhaEco
+          rotulo="Nome"
+          valor={[posto, nomeGuerra].filter(Boolean).join(" ") || "—"}
+        />
+        <LinhaEco rotulo="Função" valor={funcao || "—"} />
+        {fracao && <LinhaEco rotulo="Fração" valor={fracao} />}
+      </section>
+
+      <section>
+        <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.14em] text-texto-suave">
+          Auditoria
+        </p>
+        <LinhaEco
+          rotulo="Auditou?"
+          valor={auditou === true ? "Sim" : auditou === false ? "Não" : "—"}
+        />
+        {auditou === true && (
+          <>
+            <LinhaEco
+              rotulo="Quantidade"
+              valor={<strong className="dados-destaque">{quantidadeEfetiva}</strong>}
+            />
+            <LinhaEco
+              rotulo={`Identificadores (${identificadores.length})`}
+              valor={
+                identificadores.length ? (
+                  <span className="dados block text-right text-[12.5px] leading-relaxed">
+                    {identificadores.join(" · ")}
+                  </span>
+                ) : (
+                  "—"
+                )
+              }
+            />
+          </>
+        )}
+        {motivo && <LinhaEco rotulo="Motivo" valor={motivo} />}
+        {justificativa && <LinhaEco rotulo="Detalhe" valor={justificativa} />}
+        {numeroParte && <LinhaEco rotulo="Nº da parte" valor={numeroParte} />}
+      </section>
+
+      <div className="flex flex-col-reverse gap-2 border-t border-borda pt-4 sm:flex-row">
+        <button
+          type="button"
+          onClick={onCorrigir}
+          disabled={enviando}
+          className="min-h-14 flex-1 rounded-md border border-borda px-5 py-4 text-[13px] font-bold uppercase tracking-wide text-branco transition-colors hover:border-vermelho/40 disabled:opacity-40"
+        >
+          Voltar e corrigir
+        </button>
+        <button
+          type="submit"
+          disabled={enviando}
+          className="inline-flex min-h-14 flex-1 items-center justify-center gap-2 rounded-md border border-vermelho bg-vermelho px-5 py-4 text-[14px] font-bold uppercase tracking-wide text-white transition-colors hover:bg-vermelho/90 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {enviando ? (
+            <>
+              <Loader2 size={16} className="animate-spin" aria-hidden /> Enviando…
+            </>
+          ) : (
+            "Confirmar e enviar"
+          )}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Tela de sucesso — desenhada para caber num print de celular.
+ *
+ * Antes: só o protocolo aparecia. O auditor tinha o número, mas não a prova do
+ * QUE ficou gravado; conferência no Comando dependia de abrir a planilha. Aqui
+ * o protocolo é destaque, o carimbo tem data e hora, e o eco dos campos vem
+ * junto — um print resolve.
+ */
+function ComprovanteProtocolo({
+  protocolo,
+  duplicado,
+  avisos,
+  data,
+  turno,
+  re,
+  nomeGuerra,
+  posto,
+  fracao,
+  auditou,
+  quantidadeEfetiva,
+  identificadores,
+  motivo,
+  justificativa,
+  numeroParte,
+}: {
+  protocolo: string;
+  duplicado: boolean;
+  avisos: string[];
+  data: string;
+  turno: string;
+  re: string;
+  nomeGuerra: string;
+  posto: string;
+  fracao?: string;
+  auditou: boolean | null;
+  quantidadeEfetiva: number;
+  identificadores: string[];
+  motivo: string;
+  justificativa: string;
+  numeroParte: string;
+}) {
+  /* Carimbo do momento em que a tela apareceu — o mesmo que o print vai
+     mostrar. `useState` no init evita re-renderizações trocarem a hora se o
+     React remontar o componente. */
+  const [carimbo] = useState(() =>
+    new Intl.DateTimeFormat("pt-BR", {
+      timeZone: "America/Sao_Paulo",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(new Date())
+  );
+
+  return (
+    <div className="rounded-xl border-2 border-sinal-conforme/50 bg-sinal-conforme-suave p-6 shadow-[0_10px_28px_rgba(22,163,74,0.14)]">
+      <div className="text-center">
+        <Check size={38} className="mx-auto text-sinal-conforme" aria-hidden />
+        <h2 className="mt-3 font-serif text-xl font-bold uppercase tracking-wide text-branco">
+          {duplicado ? "Lançamento já registrado" : "Lançamento registrado"}
+        </h2>
+        <div className="mt-3 inline-flex flex-col items-center rounded-lg border-2 border-sinal-conforme/40 bg-tatico-super px-5 py-3">
+          <span className="text-[10.5px] font-bold uppercase tracking-[0.18em] text-texto-suave">
+            Protocolo
+          </span>
+          <span className="dados-destaque mt-1 select-all text-[22px] leading-none">
+            {protocolo || "—"}
+          </span>
+          <span className="mt-2 text-[11px] text-texto-suave">Emitido em {carimbo}</span>
+        </div>
+        <p className="mx-auto mt-3 max-w-md text-[13px] leading-relaxed text-texto-suave">
+          {duplicado
+            ? "Este envio já havia chegado — o registro é o mesmo, não foi duplicado."
+            : "Tire um print desta tela — protocolo, carimbo e resumo estão nele. O Comando confere por esse número."}
+        </p>
+      </div>
+
+      <div className="mt-5 rounded-lg border border-borda bg-tatico-super/60 p-4">
+        <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-texto-suave">
+          O que ficou gravado
+        </p>
+        <LinhaEco rotulo="Data / Turno" valor={`${dataBr(data)} · ${turno}`} />
+        <LinhaEco
+          rotulo="Auditor"
+          valor={`${[posto, nomeGuerra].filter(Boolean).join(" ")} · RE ${re}${fracao ? ` · ${fracao}` : ""}`}
+        />
+        <LinhaEco
+          rotulo="Auditou?"
+          valor={auditou === true ? "Sim" : auditou === false ? "Não" : "—"}
+        />
+        {auditou === true && (
+          <>
+            <LinhaEco rotulo="Quantidade" valor={quantidadeEfetiva} />
+            {identificadores.length > 0 && (
+              <LinhaEco
+                rotulo={`Identificadores (${identificadores.length})`}
+                valor={
+                  <span className="dados block text-right text-[12px] leading-relaxed">
+                    {identificadores.join(" · ")}
+                  </span>
+                }
+              />
+            )}
+          </>
+        )}
+        {motivo && <LinhaEco rotulo="Motivo" valor={motivo} />}
+        {justificativa && <LinhaEco rotulo="Detalhe" valor={justificativa} />}
+        {numeroParte && <LinhaEco rotulo="Nº da parte" valor={numeroParte} />}
+      </div>
+
+      {avisos.length > 0 && (
+        <ul className="mt-4 space-y-2">
+          {avisos.map((aviso) => (
+            <li
+              key={aviso}
+              className="flex items-start gap-2 rounded-lg border border-borda px-3 py-2 text-[12.5px] text-texto-suave"
+            >
+              <Info size={14} className="mt-0.5 shrink-0" aria-hidden /> {aviso}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row">
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="min-h-12 flex-1 rounded-md border border-borda px-5 py-3 text-[13px] font-bold uppercase tracking-wide text-branco transition-colors hover:border-vermelho/40"
+        >
+          Fazer outro lançamento
+        </button>
+        <a
+          href="/cop2026/dashboard"
+          className="inline-flex min-h-12 flex-1 items-center justify-center rounded-md border border-vermelho/40 bg-vermelho/10 px-5 py-3 text-[13px] font-bold uppercase tracking-wide text-vermelho transition-colors hover:bg-vermelho/15"
+        >
+          Ver painel do Batalhão
+        </a>
+      </div>
+    </div>
   );
 }
 
