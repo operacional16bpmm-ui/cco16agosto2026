@@ -51,6 +51,7 @@ import {
   nivelPorCumprimento,
   type Nivel,
 } from "@/lib/cop2026-metricas";
+import { type RelatorioMes } from "@/lib/cop2026-relatorios";
 import { DiretrizEmFoco } from "@/components/publico16/diretriz-em-foco";
 import { AgulhaoMetas } from "@/components/publico16/cop/graficos";
 import {
@@ -96,29 +97,38 @@ export function BriefingSlides({
   lidoEm,
   email,
   ehAdmin = false,
+  mes = null,
 }: {
   lancamentos: LancamentoCop[];
   metas: MetaSubunidade[];
   lidoEm: string;
   email?: string;
   ehAdmin?: boolean;
+  /** Mês do ciclo que o briefing apresenta. Vem resolvido do servidor
+   *  (`mesCorrente()`) para que o recorte não dependa do relógio de quem
+   *  projeta o telão. `null` = fora do ciclo de 2026. */
+  mes?: RelatorioMes | null;
 }) {
   const [i, setI] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
 
-  // Mesmo motor do dashboard, sem recorte: o briefing fala do Batalhão inteiro.
+  /* Mesmo motor e mesmo recorte do dashboard: o MÊS CORRENTE, nunca "tudo o
+     que já entrou". A meta de 960 é mensal — sem este recorte o briefing
+     projetado em setembro somaria agosto contra a meta de um mês só e
+     anunciaria superação que não houve. Fora do ciclo, sem recorte: melhor o
+     ciclo inteiro do que telão vazio. */
   const p = useMemo(
     () =>
       calcularPainel(lancamentos, metas, {
         fracao: "todas",
         semana: "todas",
         turno: "todos",
-        de: "",
-        ate: "",
+        de: mes?.periodo.de ?? "",
+        ate: mes?.periodo.ate ?? "",
         excecao: "",
         busca: "",
       }),
-    [lancamentos, metas]
+    [lancamentos, metas, mes]
   );
 
   const v = veredito(p);
@@ -198,7 +208,10 @@ export function BriefingSlides({
             <div className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-4 py-1.5 backdrop-blur-md">
               <span className="bf-ao-vivo h-2 w-2 rounded-full bg-[#ca0202]" />
               <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-white sm:text-xs">
+                {/* O mês entra no selo, não em constante: em 1º de outubro o
+                    telão tem que dizer "Outubro" sozinho. */}
                 Ambiente Executivo de Gestão e Controle
+                {mes ? ` · ${mes.rotulo}/${mes.ano}` : ""}
               </span>
             </div>
           </div>
@@ -243,7 +256,9 @@ export function BriefingSlides({
     {
       selo: "Desempenho geral do 16º BPM/M",
       titulo: "Conformidade e ritmo da meta operacional",
-      subtitulo: `Aferição ao vivo da meta de ${FMT.format(p.meta)} evidências no ciclo`,
+      subtitulo: `Aferição ao vivo da meta de ${FMT.format(p.meta)} evidências${
+        mes ? ` em ${mes.rotulo}/${mes.ano}` : " no ciclo"
+      }`,
       icone: <Gauge size={13} />,
       corpo: (
         <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,360px)_1fr]">
