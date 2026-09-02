@@ -73,7 +73,7 @@ import {
   type LinhaAuditor,
 } from "@/lib/cop2026-metricas";
 import { cn } from "@/lib/utils";
-import { entregarArquivo } from "@/lib/entregar-arquivo";
+import { entregarArquivo, suportaEntregaNativa } from "@/lib/entregar-arquivo";
 import { toast } from "sonner";
 import { Cartao, Selo, SemDados } from "./primitivos";
 import { PaletaComando } from "./paleta-comando";
@@ -564,14 +564,19 @@ export function DashboardCop({
     []
   );
 
-  /* CAMINHO PRINCIPAL — o PNG vem pronto do servidor.
-     O celular não desenha nada: /api/cop2026/briefing-png abre esta mesma
-     página num Chromium headless de 1240px e devolve o arquivo. É o que faz a
-     exportação sair igual no iPhone, no Android e no telão do CCO. O diagnóstico
-     de por que a rasterização local não tem conserto no iOS está em
-     lib/cop2026-briefing-png.ts. */
+  /* Endereço do PNG. É o mesmo `href` do botão: no celular o toque vai direto
+     para cá como navegação, e no desktop o fetch abaixo o consome. Carrega o
+     recorte da tela para o arquivo sair com o mesmo filtro. */
+  const urlBriefingPng = `/api/cop2026/briefing-png${escreverFiltros(f)}`;
+
+  /* CAMINHO DO DESKTOP — o PNG vem pronto do servidor, por fetch.
+     O navegador não desenha nada: a rota abre esta mesma página num Chromium
+     headless e devolve o arquivo. O fetch existe pelo giro no botão, pelo aviso
+     de erro e pela queda para o rasterizador local. No celular ele é PULADO de
+     propósito — a espera de ~30s mata a ativação do toque; ver
+     `aoTocarExportar` e lib/entregar-arquivo.ts. */
   const exportarPeloServidor = useCallback(async (): Promise<Blob> => {
-    const resposta = await fetch(`/api/cop2026/briefing-png${escreverFiltros(f)}`, {
+    const resposta = await fetch(urlBriefingPng, {
       /* O cookie de acesso é httpOnly: sem `same-origin` a rota devolve 401. */
       credentials: "same-origin",
       cache: "no-store",
@@ -584,7 +589,7 @@ export function DashboardCop({
       throw new Error(`o servidor devolveu ${blob.size} bytes`);
     }
     return blob;
-  }, [f]);
+  }, [urlBriefingPng]);
 
   /* PLANO B — rasterização no próprio navegador, o método antigo.
      Fica de reserva para o caso de a função do Chromium falhar ou estourar o
@@ -670,6 +675,38 @@ export function DashboardCop({
     p.total,
     p.meta,
   ]);
+
+  /**
+   * O CELULAR NÃO PASSA PELO JAVASCRIPT — e é isto que conserta o iPhone.
+   *
+   * Deixar o toque seguir para o `href` transforma a exportação numa navegação
+   * comum, e o `Content-Disposition: attachment` da rota faz o Safari abrir o
+   * download nativo. Interceptar aqui com `preventDefault` seria reproduzir o
+   * defeito por outra causa: o fetch demora ~30s, a *transient activation* do
+   * toque expira em poucos segundos no iOS, e depois disso tanto o
+   * `navigator.share` quanto o clique programático de `<a download>` são
+   * recusados — 30 segundos de giro e nenhum arquivo.
+   *
+   * No desktop a interceptação vale a pena: lá a espera não custa ativação
+   * nenhuma, e é ela que dá o giro no botão, o aviso de erro e a queda para o
+   * rasterizador local quando a função do servidor não responde.
+   */
+  const aoTocarExportar = useCallback(
+    (evento: React.MouseEvent<HTMLAnchorElement>) => {
+      if (suportaEntregaNativa()) {
+        /* Sem `preventDefault`: a navegação É o caminho. O giro fica alguns
+           segundos só para o toque ter resposta — quem mostra o progresso de
+           verdade daqui em diante é o próprio navegador. */
+        setExportandoBriefing(true);
+        toast.message("Gerando o painel no servidor — o download começa em instantes.");
+        window.setTimeout(() => setExportandoBriefing(false), 8000);
+        return;
+      }
+      evento.preventDefault();
+      void exportarBriefingPng();
+    },
+    [exportarBriefingPng]
+  );
 
   const definir = (patch: Partial<Filtros>) => setF((a) => ({ ...a, ...patch }));
 
@@ -1506,14 +1543,20 @@ export function DashboardCop({
             </div>
           )}
 
-          <button
-            type="button"
-            onClick={exportarBriefingPng}
-            disabled={exportandoBriefing}
+          {/* <a> e não <button>: no celular o toque tem de virar NAVEGAÇÃO, não
+              JavaScript — é o que faz o Safari abrir o download nativo em vez
+              de esperar uma folha de compartilhamento que a ativação já não
+              autoriza. Ver `aoTocarExportar`. O `href` também deixa o endereço
+              do PNG copiável pelo menu de contexto, para colar no WhatsApp. */}
+          <a
+            href={urlBriefingPng}
+            download
+            onClick={aoTocarExportar}
+            aria-disabled={exportandoBriefing || undefined}
             data-no-briefing="true"
             aria-label="Exportar painel completo (situação + semanal) em PNG"
             title="Exportar painel completo em PNG"
-            className="group absolute right-[-14px] top-3 z-20 flex h-14 w-14 sm:right-[-20px] items-center justify-center rounded-full border-2 border-white bg-[#ca0202] text-white shadow-[0_10px_24px_rgba(202,2,2,0.38)] transition-all duration-300 hover:scale-110 hover:bg-[#a80000] hover:shadow-[0_14px_30px_rgba(202,2,2,0.48)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ca0202] disabled:cursor-wait disabled:opacity-80 lg:top-5 min-[1560px]:right-[-70px]"
+            className="group absolute right-[-14px] top-3 z-20 flex h-14 w-14 sm:right-[-20px] items-center justify-center rounded-full border-2 border-white bg-[#ca0202] text-white shadow-[0_10px_24px_rgba(202,2,2,0.38)] transition-all duration-300 hover:scale-110 hover:bg-[#a80000] hover:shadow-[0_14px_30px_rgba(202,2,2,0.48)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ca0202] aria-disabled:cursor-wait aria-disabled:opacity-80 lg:top-5 min-[1560px]:right-[-70px]"
           >
             {exportandoBriefing ? (
               <Loader2 size={20} className="animate-spin" aria-hidden="true" />
@@ -1527,7 +1570,7 @@ export function DashboardCop({
               </svg>
             )}
             <span className="sr-only">Exportar briefing PNG</span>
-          </button>
+          </a>
         </div>
       </section>
 
