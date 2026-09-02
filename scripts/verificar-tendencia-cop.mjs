@@ -163,13 +163,23 @@ test("alvo do dia seguinte embute a dívida, e não a média do que falta", () =
   assert.equal(a.ultimo, false);
 });
 
-test("quem está adiantado não recebe cobrança inventada", () => {
+test("ágio vira crédito, e não dispensa de trabalhar amanhã", () => {
   // Batalhão em 02/09/2026: 97 evidências contra 64 previstas.
   const a = metaDeAmanha({ meta: 960, realizado: 97, turnosMes: 30, turnosDecorridos: 2 });
   perto(a.cota, 32);
   perto(a.agio, 33);
   perto(a.divida, 0);
-  perto(a.alvo, 0); // o crédito já cobre a cota de amanhã
+  /* `previsto(d+1) − realizado` daria 0 e o painel mandaria a fração adiantada
+     não fazer nada amanhã. O alvo nunca cai abaixo da cota. */
+  perto(a.alvo, 32);
+});
+
+test("alvo do dia seguinte nunca fica abaixo da cota", () => {
+  for (const realizado of [0, 30, 64, 97, 400]) {
+    const a = metaDeAmanha({ meta: 960, realizado, turnosMes: 30, turnosDecorridos: 2 });
+    assert.ok(a.alvo >= a.cota, `realizado ${realizado} devolveu alvo ${a.alvo}`);
+    perto(a.alvo, a.cota + a.divida);
+  }
 });
 
 test("mês encerrado não tem dia seguinte", () => {

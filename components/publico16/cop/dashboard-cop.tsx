@@ -1886,7 +1886,7 @@ export function DashboardCop({
         <section aria-label="Plano contra realizado" className="mb-6">
           <Cartao
             titulo="Plano × realizado · dia a dia"
-            nota={`mês inteiro (${FMT.format(p.janela.dias)} dias) · independe da semana selecionada`}
+            nota={`mês inteiro · dia ${FMT.format(p.janela.decorridos)} de ${FMT.format(p.janela.dias)} · independe da semana selecionada`}
             ajuda={
               <p>
                 A linha azul é a meta acumulada dia a dia; a âmbar é o que foi auditado, e ela para

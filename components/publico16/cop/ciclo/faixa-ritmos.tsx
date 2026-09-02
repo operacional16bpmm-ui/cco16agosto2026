@@ -214,7 +214,7 @@ export function FaixaRitmos({
             <span className="text-[9px] font-semibold text-slate-500">
               {amanha.divida > 0
                 ? `cota ${N2.format(amanha.cota)} + dívida ${N0.format(Math.round(amanha.divida))}`
-                : `cota ${N2.format(amanha.cota)} − crédito ${N0.format(Math.round(amanha.agio))}`}
+                : `cota do dia · ${N0.format(Math.round(amanha.agio))} de folga`}
             </span>
           </span>
           <span className="flex items-baseline gap-1">

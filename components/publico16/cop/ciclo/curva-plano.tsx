@@ -152,7 +152,11 @@ function Cartao({
               >
                 {N2.format(amanha.alvo)}
               </strong>{" "}
-              <span className="text-slate-500">para reencontrar a linha</span>
+              <span className="text-slate-500">
+                {amanha.divida > 0
+                  ? `= cota ${N2.format(amanha.cota)} + dívida ${N0.format(Math.round(amanha.divida))}`
+                  : "= a cota do dia"}
+              </span>
             </>
           )}
         </span>
@@ -190,18 +194,35 @@ function Cartao({
             />
           )}
 
-          <Bar yAxisId="dia" dataKey="feito" name="Evidências do dia" fill={CINZA} barSize={5} />
+          <Bar yAxisId="dia" dataKey="feito" name="Evidências do dia" fill={CINZA} barSize={7} />
+          {/* Empilhadas: feito + dívida = previsto, por construção. A faixa
+              vermelha É o vão entre as duas linhas — o gráfico deixa de ter um
+              buraco branco onde mora o indicador mais importante. */}
           <Area
             yAxisId="acum"
             type="monotone"
             dataKey="acumulado"
+            stackId="acum"
             stroke="none"
             fill={AMBAR}
-            fillOpacity={0.12}
+            fillOpacity={0.14}
             connectNulls={false}
             activeDot={false}
             legendType="none"
             tooltipType="none"
+          />
+          <Area
+            yAxisId="acum"
+            type="monotone"
+            dataKey="divida"
+            name="Dívida acumulada"
+            stackId="acum"
+            stroke="none"
+            fill={VERM}
+            fillOpacity={0.16}
+            connectNulls={false}
+            activeDot={false}
+            legendType="none"
           />
           <Line
             yAxisId="acum"
@@ -220,7 +241,7 @@ function Cartao({
             name="Feito acumulado"
             stroke={AMBAR}
             strokeWidth={2.5}
-            dot={false}
+            dot={{ r: 2, fill: AMBAR, strokeWidth: 0 }}
             connectNulls={false}
           />
 
@@ -275,6 +296,10 @@ export function CurvaPlanoRealizado({
           <span className="inline-block h-2.5 w-2" style={{ background: CINZA }} />
           evidências do dia (eixo da direita)
         </span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-2.5 w-4" style={{ background: VERM, opacity: 0.16 }} />
+          dívida acumulada
+        </span>
       </div>
 
       <Cartao
@@ -308,9 +333,10 @@ export function CurvaPlanoRealizado({
 
       <p className="text-[11.5px] leading-snug text-slate-500">
         A dívida é a distância entre as duas linhas: cresce em dia sem lançamento e cai quando a
-        fração produz acima da cota. O alvo de <strong>amanhã</strong> já embute essa dívida — é o
-        que precisa entrar até o fim do dia seguinte para o acumulado reencontrar a linha do
-        previsto, e não a média do que falta diluída pelos dias que sobram.
+        fração produz acima da cota. O alvo de <strong>amanhã</strong> é a cota normal do dia mais
+        essa dívida — não a média do que falta diluída pelos dias que sobram. Fração adiantada
+        continua com a cota cheia amanhã: o ágio aparece como crédito, e crédito é folga, não
+        dispensa.
       </p>
     </div>
   );

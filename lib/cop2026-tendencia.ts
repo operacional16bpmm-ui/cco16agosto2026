@@ -573,26 +573,35 @@ export interface MetaDeAmanha {
   divida: number;
   /** Crédito acumulado — o inverso da dívida. */
   agio: number;
-  /** Quanto precisa entrar até o fim do PRÓXIMO período para o acumulado
-   *  reencontrar a linha do previsto. Zero quando o ágio já cobre a cota. */
+  /** Ordem do dia seguinte: a cota normal MAIS a dívida acumulada. Nunca fica
+   *  abaixo da cota — ágio é folga, não dispensa de trabalhar. */
   alvo: number;
   /** Não há período seguinte dentro do mês. */
   ultimo: boolean;
 }
 
 /**
- * Alvo do dia seguinte: `previsto(d+1) − realizado`, que é o mesmo que
- * `cota − saldo`. Um número só, e ele já embute a dívida — é por isso que serve
- * de ordem do dia e o ritmo de recuperação não serve.
+ * Alvo do dia seguinte: **cota do dia + dívida acumulada**.
+ *
+ * A conta natural seria `previsto(d+1) − realizado`, isto é `cota − saldo`. Ela
+ * é aritmeticamente correta e operacionalmente inaceitável: no dia 02/09/2026 o
+ * Batalhão tinha ágio de 33 e o painel escreveu **"AMANHÃ 0,00"** em quatro dos
+ * seis cartões — uma ordem do dia mandando a fração não fazer nada. Ágio não é
+ * licença para parar: é folga, e aparece como CRÉDITO, num campo separado.
+ *
+ * A dívida, essa sim, entra no alvo. É o efeito catraca que a Coordenadoria
+ * Operacional descreveu: o que não foi feito ontem se soma à cota de amanhã e só
+ * sai quando for saneado.
  */
 export function metaDeAmanha(e: EntradaTendencia): MetaDeAmanha {
   const t = calcularTendencia(e);
   const ultimo = t.turnosRestantes <= 0;
+  const divida = Math.max(0, -t.saldoTrajetoria);
   return {
     cota: t.ritmoAlvo,
-    divida: Math.max(0, -t.saldoTrajetoria),
+    divida,
     agio: Math.max(0, t.saldoTrajetoria),
-    alvo: ultimo ? 0 : Math.max(0, t.ritmoAlvo - t.saldoTrajetoria),
+    alvo: ultimo ? 0 : t.ritmoAlvo + divida,
     ultimo,
   };
 }
