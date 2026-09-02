@@ -130,6 +130,17 @@ function Cartao({
   /** Cota de um dia — é o ritmo-alvo diário, e vira linha sobre as barras. */
   const amanhaCota = amanha.cota;
 
+  /* DIA PARADO é o caso que a barra colorida não alcança: produção zero não
+     desenha barra nenhuma, então o dia em que ninguém auditou — justamente o
+     que precisa saltar aos olhos — seria o único sem cor no gráfico. Vira uma
+     coluna vermelha pálida de fundo, larga e clara o bastante para não ser
+     confundida com um valor. É também o desenho do vício que a Coordenadoria
+     Operacional descreveu: três semanas de coluna pálida e uma de barra azul. */
+  const dados = pontos.map((pt) => ({
+    ...pt,
+    parado: pt.decorrido && pt.feito === 0 ? meta : 0,
+  }));
+
   return (
     <div className="flex min-w-0 flex-col rounded-xl border-2 border-slate-200 bg-white p-3 shadow-xs">
       <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1 border-b-2 border-slate-200 pb-2">
@@ -190,7 +201,7 @@ function Cartao({
       </div>
 
       <ResponsiveContainer width="100%" height={186}>
-        <ComposedChart data={pontos} margin={{ top: 6, right: 4, left: -22, bottom: 0 }}>
+        <ComposedChart data={dados} margin={{ top: 6, right: 4, left: -22, bottom: 0 }}>
           <CartesianGrid stroke={GRID} vertical={false} />
           <XAxis dataKey="rotulo" tick={EIXO} axisLine={false} tickLine={false} interval={4} />
           <YAxis yAxisId="acum" tick={EIXO} axisLine={false} tickLine={false} width={44} />
@@ -221,6 +232,16 @@ function Cartao({
             />
           )}
 
+          <Bar
+            yAxisId="acum"
+            dataKey="parado"
+            barSize={11}
+            fill={VERM}
+            fillOpacity={0.07}
+            legendType="none"
+            tooltipType="none"
+            isAnimationActive={false}
+          />
           <Bar yAxisId="dia" dataKey="feito" name="Evidências do dia" barSize={7}>
             {pontos.map((pt) => (
               <Cell key={pt.dia} fill={corDaBarra(pt, amanhaCota)} />
@@ -364,6 +385,13 @@ export function CurvaPlanoRealizado({
             <span className="inline-block h-2.5 w-2" style={{ background: COR_FAIXA.superacao }} />
           </span>
           evidências do dia — não fechou a cota · fechou · superou
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span
+            className="inline-block h-3 w-2"
+            style={{ background: VERM, opacity: 0.12 }}
+          />
+          dia sem lançamento nenhum
         </span>
         <span className="flex items-center gap-1.5">
           <span
