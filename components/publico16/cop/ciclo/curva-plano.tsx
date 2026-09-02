@@ -301,6 +301,11 @@ function Cartao({
   const amanhaCota = amanha.cota;
   const atrasado = amanha.divida > 0;
   const corStatus = atrasado ? VERM : VERDE;
+  /* Evidência é inteira: dívida de 0,4 significa UMA evidência a produzir, e
+     arredondar para baixo escreveria "ATRASADA · dívida 0" no mesmo cartão.
+     Crédito vai para baixo pelo mesmo motivo — 0,4 de folga não é folga. */
+  const dividaInteira = Math.ceil(amanha.divida);
+  const creditoInteiro = Math.floor(amanha.agio);
 
   const hoje = [...pontos].reverse().find((p) => p.decorrido && p.acumulado !== null);
   const parados = pontos.filter((p) => p.decorrido && p.feito === 0).length;
@@ -364,14 +369,14 @@ function Cartao({
           <span className="font-semibold text-slate-700">
             Dívida acumulada{" "}
             <strong className="dados text-[13px] font-black" style={{ color: VERM }}>
-              {N0.format(Math.round(amanha.divida))}
+              {N0.format(dividaInteira)}
             </strong>
           </span>
         ) : (
           <span className="font-semibold text-slate-700">
             Crédito acumulado{" "}
             <strong className="dados text-[13px] font-black" style={{ color: AZUL }}>
-              +{N0.format(Math.round(amanha.agio))}
+              +{N0.format(creditoInteiro)}
             </strong>
           </span>
         )}
@@ -389,7 +394,7 @@ function Cartao({
               </strong>{" "}
               <span className="text-slate-500">
                 {atrasado
-                  ? `= cota ${N2.format(amanha.cota)} + dívida ${N0.format(Math.round(amanha.divida))}`
+                  ? `= cota ${N2.format(amanha.cota)} + dívida ${N2.format(amanha.divida)}`
                   : "= a cota do dia"}
               </span>
             </>
@@ -586,9 +591,9 @@ function Cartao({
             <strong className="dados">{N0.format(realizado)}</strong> ·{" "}
             {atrasado ? (
               <>
-                faltam{" "}
+                {dividaInteira === 1 ? "falta" : "faltam"}{" "}
                 <strong className="dados font-black" style={{ color: VERM }}>
-                  {N0.format(Math.round(amanha.divida))}
+                  {N0.format(dividaInteira)}
                 </strong>{" "}
                 para encostar na linha
               </>
@@ -597,7 +602,7 @@ function Cartao({
                 <strong className="dados font-black" style={{ color: VERDE }}>
                   na linha
                 </strong>
-                , com {N0.format(Math.round(amanha.agio))} de folga
+                , com {N0.format(creditoInteiro)} de folga
               </>
             )}
             {parados > 0 && (
