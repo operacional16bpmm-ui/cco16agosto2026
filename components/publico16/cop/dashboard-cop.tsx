@@ -48,6 +48,7 @@ import { CaixaTendencia } from "@/components/publico16/cop/ciclo/caixa-tendencia
 import { CurvaPlanoRealizado } from "@/components/publico16/cop/ciclo/curva-plano";
 import { progressoDoMes } from "@/lib/cop2026-tendencia";
 import {
+  META_TOTAL_BATALHAO,
   ROTULO_SUBUNIDADE,
   type LancamentoCop,
   type MetaSubunidade,
@@ -1889,20 +1890,26 @@ export function DashboardCop({
             nota={`mês inteiro · dia ${FMT.format(p.janela.decorridos)} de ${FMT.format(p.janela.dias)} · independe da semana selecionada`}
             ajuda={
               <p>
-                A linha azul é a meta acumulada dia a dia; a âmbar é o que foi auditado, e ela para
-                no dia de hoje. O vão entre as duas é a dívida — o que se deixou de fazer, somado —
-                e ela diminui sozinha assim que a fração produz acima da cota. As barras cinza são
-                as evidências de cada dia, no eixo da direita.
+                A linha azul tracejada é a meta acumulada dia a dia; a linha grossa é o que foi
+                auditado — vermelha enquanto está abaixo do previsto, verde quando alcança — e ela
+                para no dia de hoje. O vão entre as duas é a dívida, que diminui sozinha assim que a
+                fração produz acima da cota. As barras são as evidências de cada dia, no eixo da
+                direita, coloridas pela régua de faixas. O quadro no topo da seção traz as regras e
+                os parâmetros; a linha sob cada gráfico, a leitura daquela fração hoje.
               </p>
             }
           >
             <CurvaPlanoRealizado
               fracoes={p.fracoes}
-              metaGlobal={p.fracoes.reduce((s, x) => s + x.meta, 0)}
+              metaGlobal={META_TOTAL_BATALHAO}
               porDiaBatalhao={p.porDiaMes}
               diasMes={p.janela.dias}
               diasDecorridos={p.janela.decorridos}
               prefixo={p.janela.de.slice(0, 7)}
+              /* Com uma fração filtrada, `p.fracoes` tem uma linha só e
+                 `porDiaMes` é a série daquela fração: um cartão rotulado
+                 "Batalhão" ali mostraria a curva de uma Cia. */
+              mostrarBatalhao={f.fracao === "todas"}
             />
           </Cartao>
         </section>

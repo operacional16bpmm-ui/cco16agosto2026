@@ -246,10 +246,10 @@ export function CaixaTendencia({
   });
 
   /* Modelo de turnos confirmado pelo Maj PM em 02/09/2026: cada fração roda 2
-     turnos por dia — o Batalhão, portanto, roda 2 × o número de frações. Sai do
-     dado, não de constante: fração que entrar ou sair da Matriz muda o número
-     sozinha. */
-  const turnosDiaBatalhao = fracoes.length * TURNOS_POR_DIA;
+     turnos por dia — o Batalhão, portanto, roda 2 × o número de frações. Conta a
+     MATRIZ, não a lista da tela: com um filtro de fração ligado, `fracoes` tem
+     uma linha só e a frase viraria "o Batalhão roda 2 turnos-fração por dia". */
+  const turnosDiaBatalhao = Object.keys(MATRIZ_PROPORCIONAL_2026).length * TURNOS_POR_DIA;
   const turnosMesBatalhao = turnosDiaBatalhao * p.diasMes;
 
   const equilibrio = indiceEquilibrio(linhas.map((l) => l.t.aderencia));

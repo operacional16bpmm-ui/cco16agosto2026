@@ -15,6 +15,7 @@ import {
   YAxis,
 } from "recharts";
 import { nivelPorCumprimento } from "@/lib/cop2026-metricas";
+import { META_TOTAL_BATALHAO } from "@/lib/cop2026";
 import { COR_FAIXA } from "@/components/publico16/cop/graficos";
 import {
   COR_TRAJETORIA,
@@ -146,15 +147,11 @@ function Regra({ children, amostra }: { children: React.ReactNode; amostra: Reac
  * Batalhão para fora da primeira tela. Debaixo de CADA cartão fica a leitura
  * daquele cartão, com os números dele — que é outra coisa.
  */
-function QuadroDeRegras({
-  metaGlobal,
-  diasMes,
-  diasDecorridos,
-}: {
-  metaGlobal: number;
-  diasMes: number;
-  diasDecorridos: number;
-}) {
+function QuadroDeRegras({ diasMes, diasDecorridos }: { diasMes: number; diasDecorridos: number }) {
+  /* META_TOTAL_BATALHAO, e não a soma das frações da tela: com um filtro de
+     fração ligado, `p.fracoes` tem uma linha só e o quadro anunciaria "meta do
+     mês: 147 evidências no Batalhão". */
+  const metaGlobal = META_TOTAL_BATALHAO;
   const cotaDia = diasMes > 0 ? metaGlobal / diasMes : 0;
   return (
     <div className="rounded-xl border-2 border-slate-300 bg-slate-50 p-4">
@@ -262,6 +259,11 @@ function QuadroDeRegras({
               <strong>Período</strong> — dia {N0.format(diasDecorridos)} de {N0.format(diasMes)}. O
               dia em curso conta; o mês zera na virada, e nada é fixo no sistema.
             </li>
+            <li>
+              <strong>Batalhão ≠ soma das frações</strong> — a curva do Batalhão inclui também as
+              evidências lançadas <em>sem fração declarada</em>, que não têm cota e por isso não
+              entram em curva nenhuma de fração.
+            </li>
           </ul>
         </div>
       </div>
@@ -301,11 +303,13 @@ function Cartao({
   const amanhaCota = amanha.cota;
   const atrasado = amanha.divida > 0;
   const corStatus = atrasado ? VERM : VERDE;
-  /* Evidência é inteira: dívida de 0,4 significa UMA evidência a produzir, e
-     arredondar para baixo escreveria "ATRASADA · dívida 0" no mesmo cartão.
-     Crédito vai para baixo pelo mesmo motivo — 0,4 de folga não é folga. */
-  const dividaInteira = Math.ceil(amanha.divida);
-  const creditoInteiro = Math.floor(amanha.agio);
+  /* ARREDONDA, como o saldo da tabela Tendência por Fração — teto e piso
+     divergiriam em 1 da mesma fração na mesma tela, que é a classe de erro que o
+     Comando cobrou. O caso de 0,x vira "menos de 1", em vez do "dívida 0" que
+     apareceria ao lado do selo ATRASADA. */
+  const dividaInteira = Math.round(amanha.divida);
+  const creditoInteiro = Math.round(amanha.agio);
+  const dividaTexto = dividaInteira === 0 ? "menos de 1" : N0.format(dividaInteira);
 
   const hoje = [...pontos].reverse().find((p) => p.decorrido && p.acumulado !== null);
   const parados = pontos.filter((p) => p.decorrido && p.feito === 0).length;
@@ -326,7 +330,10 @@ function Cartao({
     const antes = anterior && anterior.acumulado !== null ? emAtraso(anterior) : agora;
     return {
       ...pt,
-      parado: pt.decorrido && pt.feito === 0 ? meta : 0,
+      /* Só dia FECHADO leva o carimbo: o dia em curso ainda pode receber
+         lançamento, e às 08h da manhã a coluna diria "sem lançamento nenhum"
+         sobre um dia que mal começou. A linha "hoje" já marca onde o mês está. */
+      parado: pt.decorrido && pt.dia < diasDecorridos && pt.feito === 0 ? meta : 0,
       acumAtraso: pt.acumulado !== null && (agora || antes) ? pt.acumulado : null,
       acumEmDia: pt.acumulado !== null && (!agora || !antes) ? pt.acumulado : null,
     };
@@ -369,7 +376,7 @@ function Cartao({
           <span className="font-semibold text-slate-700">
             Dívida acumulada{" "}
             <strong className="dados text-[13px] font-black" style={{ color: VERM }}>
-              {N0.format(dividaInteira)}
+              {dividaTexto}
             </strong>
           </span>
         ) : (
@@ -406,6 +413,11 @@ function Cartao({
         <ComposedChart data={dados} margin={{ top: 6, right: 4, left: -22, bottom: 0 }}>
           <CartesianGrid stroke={GRID} vertical={false} />
           <XAxis dataKey="rotulo" tick={EIXO} axisLine={false} tickLine={false} interval={4} />
+          {/* Eixo X só para a coluna do dia parado. Recharts agrupa barras POR
+              EIXO X: com as duas no mesmo eixo, elas ficam lado a lado dentro da
+              banda do dia — a coluna deixava de ser fundo e ainda empurrava a
+              barra do dia para fora do seu próprio tick. */}
+          <XAxis xAxisId="fundo" dataKey="rotulo" hide />
           <YAxis yAxisId="acum" tick={EIXO} axisLine={false} tickLine={false} width={44} />
           <YAxis
             yAxisId="dia"
@@ -436,6 +448,7 @@ function Cartao({
 
           <Bar
             yAxisId="acum"
+            xAxisId="fundo"
             dataKey="parado"
             barSize={11}
             fill={VERM}
@@ -562,8 +575,10 @@ function Cartao({
           <Tooltip
             {...TOOLTIP}
             cursor={{ fill: "#1d1d1d0a" }}
-            formatter={(v, n) => {
+            formatter={(v, n, item) => {
               const valor = Number(v ?? 0);
+              const ponto = (item as { payload?: PontoCurva } | undefined)?.payload;
+              if (ponto && !ponto.decorrido) return ["—", String(n)];
               if (n === "Evidências do dia" && amanhaCota > 0) {
                 return [
                   `${N0.format(Math.round(valor))} · ${N0.format((valor / amanhaCota) * 100)}% da cota`,
@@ -593,7 +608,7 @@ function Cartao({
               <>
                 {dividaInteira === 1 ? "falta" : "faltam"}{" "}
                 <strong className="dados font-black" style={{ color: VERM }}>
-                  {N0.format(dividaInteira)}
+                  {dividaTexto}
                 </strong>{" "}
                 para encostar na linha
               </>
@@ -629,6 +644,7 @@ export function CurvaPlanoRealizado({
   diasMes,
   diasDecorridos,
   prefixo,
+  mostrarBatalhao = true,
 }: {
   fracoes: CurvaFracao[];
   metaGlobal: number;
@@ -637,6 +653,10 @@ export function CurvaPlanoRealizado({
   diasDecorridos: number;
   /** "AAAA-MM" do recorte. */
   prefixo?: string;
+  /** Com filtro de fração ligado, `fracoes` tem uma linha só e a série do
+   *  Batalhão é a daquela fração: o cartão sairia rotulado "Batalhão" com a meta
+   *  e a curva de uma Cia. Some, e a curva da fração fica na grade abaixo. */
+  mostrarBatalhao?: boolean;
 }) {
   const btl = curvaPlanoRealizado({
     meta: metaGlobal,
@@ -648,20 +668,18 @@ export function CurvaPlanoRealizado({
 
   return (
     <div className="flex flex-col gap-3">
-      <QuadroDeRegras
-        metaGlobal={metaGlobal}
-        diasMes={diasMes}
-        diasDecorridos={diasDecorridos}
-      />
+      <QuadroDeRegras diasMes={diasMes} diasDecorridos={diasDecorridos} />
 
-      <Cartao
-        rotulo="Batalhão"
-        meta={metaGlobal}
-        pontos={btl}
-        diasMes={diasMes}
-        diasDecorridos={diasDecorridos}
-        porTurno={false}
-      />
+      {mostrarBatalhao && (
+        <Cartao
+          rotulo="Batalhão"
+          meta={metaGlobal}
+          pontos={btl}
+          diasMes={diasMes}
+          diasDecorridos={diasDecorridos}
+          porTurno={false}
+        />
+      )}
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         {fracoes.map((f) => (

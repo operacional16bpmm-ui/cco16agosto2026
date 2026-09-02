@@ -251,6 +251,24 @@ ACUMULADO ("estou no prazo do mês?"); a pontilhada escura, sobre as barras, é 
 diferentes — a acumulada no eixo da esquerda, a diária no da direita. A linha do
 dia é neutra de propósito: a cor, ali, é da barra.
 
+**Nada na curva pode sair da lista de frações da TELA.** Com um filtro de fração
+ligado, `p.fracoes` tem uma linha só: a soma das metas deixa de ser 960, a série
+"do Batalhão" passa a ser a daquela Cia e `fracoes.length` deixa de contar as
+frações do Batalhão. Três textos já mentiram por isso e o conserto é o mesmo nos
+três — ler a fonte, não a tela: `META_TOTAL_BATALHAO` para a meta,
+`MATRIZ_PROPORCIONAL_2026` para a contagem de frações, e o cartão "Batalhão"
+some quando há filtro (`mostrarBatalhao`).
+
+**Carimbo de dia parado só vale para dia FECHADO.** O dia em curso ainda pode
+receber lançamento; às 08h da manhã a coluna diria "sem lançamento nenhum" sobre
+um dia que mal começou. A dívida, essa, conta o dia em curso — são coisas
+diferentes: uma é medida, a outra é veredito.
+
+**Barra de fundo precisa de eixo X próprio.** O Recharts agrupa barras por eixo
+X: duas barras no mesmo eixo ficam LADO A LADO dentro da banda do dia, e a
+coluna do dia parado deixava de ser fundo e ainda empurrava a barra do dia para
+fora do próprio tick. A coluna vive num `xAxisId="fundo"` escondido.
+
 **A barra do dia é classificada pela régua de faixas.** Pedido de 02/09/2026:
 "a barra quando não cumprir a meta seja vermelha, quando cumprir seja verde,
 quando superar seja azul". Implementado com `nivelPorCumprimento(feito ÷ cota)` e
