@@ -69,6 +69,7 @@ export function CartaoTrajetoria({
     realizado: total,
     turnosMes: p.diasMes,
     turnosDecorridos: p.diasDecorridos,
+    encerrado: p.encerrado,
   });
 
   const cor = COR_TRAJETORIA[t.situacao];

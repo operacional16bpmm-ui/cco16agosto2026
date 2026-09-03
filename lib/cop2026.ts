@@ -84,7 +84,6 @@ export const MATRIZ_PROPORCIONAL_2026: Record<
     pctMeta: number;
     meta: number;
     ritmoProporcional: number;
-    metaSemanalMedia: number;
     rotulo: string;
   }
 > = {
@@ -94,7 +93,6 @@ export const MATRIZ_PROPORCIONAL_2026: Record<
     pctMeta: 5.0,
     meta: 48,
     ritmoProporcional: 4,
-    metaSemanalMedia: 12,
     rotulo: "Estado-Maior",
   },
   "1cia": {
@@ -103,7 +101,6 @@ export const MATRIZ_PROPORCIONAL_2026: Record<
     pctMeta: 20.32,
     meta: 195,
     ritmoProporcional: 15,
-    metaSemanalMedia: 48.75,
     rotulo: "1ª Cia",
   },
   "2cia": {
@@ -112,7 +109,6 @@ export const MATRIZ_PROPORCIONAL_2026: Record<
     pctMeta: 18.74,
     meta: 180,
     ritmoProporcional: 14,
-    metaSemanalMedia: 45,
     rotulo: "2ª Cia",
   },
   "3cia": {
@@ -121,7 +117,6 @@ export const MATRIZ_PROPORCIONAL_2026: Record<
     pctMeta: 21.9,
     meta: 210,
     ritmoProporcional: 16,
-    metaSemanalMedia: 52.5,
     rotulo: "3ª Cia",
   },
   "4cia": {
@@ -130,7 +125,6 @@ export const MATRIZ_PROPORCIONAL_2026: Record<
     pctMeta: 18.74,
     meta: 180,
     ritmoProporcional: 14,
-    metaSemanalMedia: 45,
     rotulo: "4ª Cia",
   },
   ft: {
@@ -139,7 +133,6 @@ export const MATRIZ_PROPORCIONAL_2026: Record<
     pctMeta: 15.23,
     meta: 147,
     ritmoProporcional: 11,
-    metaSemanalMedia: 36.75,
     rotulo: "Força Tática",
   },
 };

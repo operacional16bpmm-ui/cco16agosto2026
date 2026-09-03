@@ -27,6 +27,7 @@ import {
 import {
   DIAS,
   FAIXAS_HORA,
+  FAIXA_HORA_SEM_HORA,
   FMT,
   PCT,
   SUBTITULO_NIVEL,
@@ -963,20 +964,37 @@ export function Heatmap({ matriz, max }: { matriz: number[][]; max: number }) {
               <th scope="row" className="pr-2 text-right text-[12px] font-medium text-texto-suave">
                 {DIAS[d]}
               </th>
-              {linha.map((v, i) => (
+              {linha.map((v, i) => {
+                /* A última coluna não é horário: é o lançamento que chegou sem
+                   hora. Fica em cinza e fora da escala de calor — pintá-la de
+                   vermelho anunciaria um pico de atividade que é dado
+                   faltante. Ver FAIXA_HORA_SEM_HORA em cop2026-metricas. */
+                const semHora = i === FAIXA_HORA_SEM_HORA;
+                return (
                 <td key={FAIXAS_HORA[i]}>
                   <div
-                    title={`${DIAS[d]}, ${FAIXAS_HORA[i]}h: ${FMT.format(v)} evidências`}
+                    title={
+                      semHora
+                        ? `${DIAS[d]}, sem hora informada: ${FMT.format(v)} evidências`
+                        : `${DIAS[d]}, ${FAIXAS_HORA[i]}h: ${FMT.format(v)} evidências`
+                    }
                     className="dados flex h-9 items-center justify-center rounded text-[12px] font-bold"
                     style={{
-                      background: v ? `rgba(202,2,2,${0.12 + (v / max) * 0.72})` : "rgba(29,29,29,0.05)",
-                      color: v / max > 0.45 ? "#fff" : "#1d1d1d",
+                      background: semHora
+                        ? v
+                          ? "rgba(100,116,139,0.22)"
+                          : "rgba(29,29,29,0.05)"
+                        : v
+                          ? `rgba(202,2,2,${0.12 + (v / max) * 0.72})`
+                          : "rgba(29,29,29,0.05)",
+                      color: !semHora && v / max > 0.45 ? "#fff" : "#1d1d1d",
                     }}
                   >
                     {v || ""}
                   </div>
                 </td>
-              ))}
+                );
+              })}
             </tr>
           ))}
         </tbody>

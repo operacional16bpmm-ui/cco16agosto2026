@@ -60,6 +60,12 @@ própria — sem ternário `pct >= 80 ? … : pct >= 50 ? …` espalhado pela UI
 
 Mutuamente exclusiva e coletivamente exaustiva: sem sobreposição e sem lacuna.
 
+**"Não aferível" é ausência de BASE, nunca resultado zero** (03/09/2026). Um
+período que já começou e não produziu nada tem base de cálculo: é `0%`, logo
+**FAIXA CRÍTICA**. O discriminador é `semanasIniciadas(diaDoMes)` — nunca
+`feito > 0`, que era o que pintava de cinza a semana em curso de uma fração
+parada enquanto a linha da mesma fração, na mesma tela, já saía vermelha.
+
 **Detalhes que já custaram retrabalho:**
 
 - A classificação opera sobre o **valor bruto, antes de qualquer arredondamento** de
@@ -82,7 +88,11 @@ Sequência curta para rótulos apertados: **CRÍTICA → ATENÇÃO → CONFORMID
 
 ## 3. Por que auditamos — Diretriz PM3-001/02/25, item 6.1.6
 
-Bloco obrigatório **no dashboard e no briefing executivo**. Redação homologada:
+Bloco obrigatório **na página de entrada (`/cop2026`) e no briefing executivo**
+— e deliberadamente **fora do dashboard**. A primeira versão desta seção dizia
+"no dashboard e no briefing", contra a última palavra do Major em 28/08/2026 às
+08:46: *"tirando dashboard e deixa na tela principal"*. O código já obedecia; o
+documento é que estava desatualizado. Redação homologada:
 
 > **POR QUE AUDITAMOS?**
 > Cinco finalidades institucionais orientam toda a auditoria das evidências digitais
@@ -333,6 +343,28 @@ isolada, aparece na linha do feito descolando da linha do previsto por vinte dia
 É o mesmo fenômeno que `alertaLote` e a coluna REGULARIDADE já classificam; a
 curva é a prova visual dele enquanto o mês ainda corre.
 
+### A régua do mínimo é o TURNO, e vale em TODAS as superfícies (03/09/2026)
+
+Decisão do Comando. O mínimo de 3 é do **turno de serviço**: dois envios do
+mesmo auditor no mesmo dia e turno somam. Fonte única em `cop2026-metricas.ts` —
+`chaveDoTurno`, `somarPorTurno`, `turnosAbaixoDoMinimo`. **Nenhuma superfície
+conta `l.videos < minimo` por conta própria.**
+
+A correção de 02/09 tinha entrado só no contador do topo e na lista nominal.
+Continuavam por lançamento — e portanto discordando do cartão que as abre:
+
+- o **filtro** `excecao=abaixo` (o cartão dizia 5, o clique listava 8);
+- a **tabela de auditores** (`abaixo`, `media`, `nivel`) — quem fez 2+2 no mesmo
+  turno saía com dois desvios e selo vermelho tendo cumprido;
+- o **bloco de exceções por fração** e o **Relatório de Dados**;
+- o **histograma**, a **dispersão**, a **mediana** e o **p90**.
+
+`aplicarFiltros` roda em duas fases por causa disso: recorte primeiro, exceção
+depois — a soma do turno tem de ser feita sobre o recorte que está na tela.
+
+A tabela de auditores ganhou a coluna **Turnos** e a média virou **Média/turno**;
+`Lanç.` fica, porque envio e turno são coisas diferentes e as duas se cobram.
+
 ### Mínimo por turno é 3, e é do Batalhão
 
 O mínimo exibido sai de `minimoDoRecorte`: com uma fração isolada vale a
@@ -364,6 +396,52 @@ briefing e foi mandado **também para o dashboard**. Os números vêm do `Painel
 (`ritmoNecessario`, `falta`, `turnosRestantes`, `turnosPrevistos`) — nunca hardcoded. A
 redação e o caso de borda (`turnosRestantes === 0`) já estão resolvidos em `veredito()`;
 reaproveite em vez de reescrever.
+
+---
+
+### Último dia do mês: `diasRestantes` zero não é mês encerrado (03/09/2026)
+
+`decorridos` inclui o dia em curso — de propósito — então `diasRestantes` conta
+os dias **depois de hoje** e chega a zero no dia 30 com o mês inteiro aberto.
+Quem responde por "acabou" é **`janela.encerrado`** (`hoje > ate`).
+
+Enquanto os dois eram confundidos, no dia 30 às 08h o painel dizia "o período de
+30 dias já se encerrou", marcava `irrecuperavel` e apagava o ritmo de
+recuperação (`—`). `EntradaTendencia.encerrado` passa esse dado ao motor; no
+último dia aberto a recuperação é o **déficit inteiro**, que é o que de fato
+precisa entrar hoje.
+
+### Pontos de atenção: janela móvel, sem período de carência (03/09/2026)
+
+As listas nominais são recortadas pelos últimos `janelaAtencaoDias` (padrão 7)
+sobre a **data** do lançamento. O segundo portão, que as esvaziava enquanto o
+RECORTE não tivesse 7 dias corridos, **saiu**: como o recorte zera na virada do
+mês, ele produzia uma janela cega do dia 1 ao dia 6 de todo mês — o Comando
+abria o painel no dia 2 e não via nome nenhum.
+
+Limite aceito: a base continua sendo o mês do recorte (§3-Z), então no dia 1º a
+lista começa curta e não alcança o fim do mês anterior.
+
+### Conferência da Matriz lê a MATRIZ, não a tela (03/09/2026)
+
+`conferirSomaCotas` recebe `MATRIZ_PROPORCIONAL_2026` e `META_TOTAL_BATALHAO`.
+Lendo `p.fracoes` — a lista filtrada — um `?fracao=1cia` fazia a soma dar 195 e
+o painel imprimia a tarja vermelha "as cotas somam 195, e não 960". Alarme
+criado pelo próprio filtro. Mesma regra do §4: **ler a fonte, nunca a tela.**
+
+### Matriz hora × dia: "s/ hora" é coluna, não meio da tarde (03/09/2026)
+
+Lançamento sem hora caía em `12–16` pelo `else` do cálculo e desenhava um pico
+de expediente que era dado faltante. Agora tem coluna própria
+(`FAIXA_HORA_SEM_HORA`), em cinza, e **fora da escala de calor** — ela mede
+buraco de preenchimento, não concentração de atividade.
+
+### Participação: dois números (03/09/2026)
+
+"Auditores ativos" contava qualquer resposta de formulário, inclusive a de quem
+declarou "não auditei" — e o IDA subia junto. O cartão passou a trazer os dois:
+`ativos` (quem participou do controle) e `ativosAuditando` (destes, quem de fato
+auditou).
 
 ---
 

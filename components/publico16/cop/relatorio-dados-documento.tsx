@@ -8,7 +8,7 @@
  * para quem quiser manusear a base viva.
  */
 import { ExternalLink } from "lucide-react";
-import { FMT, temPendencia } from "@/lib/cop2026-metricas";
+import { FMT, chaveDoTurno, temPendencia, turnosAbaixoDoMinimo } from "@/lib/cop2026-metricas";
 import {
   ORDEM_SUBUNIDADES,
   ROTULO_SUBUNIDADE,
@@ -33,6 +33,10 @@ type LinhaFracaoDados = {
 
 function consolidarPorFracao(dados: LancamentoCop[], minimo: number): LinhaFracaoDados[] {
   const mapa = new Map<string, LinhaFracaoDados>();
+  /* O mínimo é regra de TURNO desde 03/09/2026 — o mesmo conjunto que o painel
+     e o briefing usam, para os três documentos não divergirem. */
+  const turnosAbaixo = turnosAbaixoDoMinimo(dados, minimo);
+  const turnosContados = new Set<string>();
   for (const l of dados) {
     const chave = l.subunidade || "—";
     const linha =
@@ -52,11 +56,18 @@ function consolidarPorFracao(dados: LancamentoCop[], minimo: number): LinhaFraca
        continuam abrindo por motivo (um lançamento pode acumular dois), mas o
        total com pendência tem de fechar entre os dois documentos — foi a
        divergência entre eles que o Comando cobrou em 02/09/2026. */
-    if (temPendencia(l, minimo)) linha.comPendencia += 1;
+    if (temPendencia(l, minimo, turnosAbaixo)) linha.comPendencia += 1;
     if (l.auditou) {
       linha.auditaram += 1;
       linha.evidencias += l.videos;
-      if (l.videos < minimo) linha.abaixo += 1;
+      /* "Abaixo" conta TURNO, não envio: sem o `turnosContados` o auditor que
+         mandou dois formulários no mesmo turno somaria dois desvios para um
+         turno só, e a coluna desmentiria o cartão do painel. */
+      const turno = chaveDoTurno(l);
+      if (turnosAbaixo.has(turno) && !turnosContados.has(turno)) {
+        turnosContados.add(turno);
+        linha.abaixo += 1;
+      }
       if (!l.idsMidia.trim()) linha.semIds += 1;
     }
     mapa.set(chave, linha);

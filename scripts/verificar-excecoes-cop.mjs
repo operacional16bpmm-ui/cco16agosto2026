@@ -59,16 +59,22 @@ const FRACOES = [
 ];
 
 /* A base cobre os quatro casos que importam, incluindo o que derrubava a conta:
-   um lançamento que acumula DOIS motivos ao mesmo tempo. */
+   um lançamento que acumula DOIS motivos ao mesmo tempo.
+
+   CADA LINHA TEM RE PRÓPRIO, e isso é requisito do fixture desde 03/09/2026:
+   o mínimo passou a ser aferido por TURNO (RE + data + turno) e, com o RE
+   padrão em todas, as oito viravam UM turno de 27 evidências — nenhuma ficaria
+   abaixo do mínimo e o teste passaria a medir outra coisa. Um auditor por
+   linha é o que mantém "um lançamento = um turno" aqui dentro. */
 const BASE = [
-  lanc({ id: 1, subunidade: "em" }), // limpo
-  lanc({ id: 2, subunidade: "em", auditou: false }), // não auditou
-  lanc({ id: 3, subunidade: "1cia", videos: 1 }), // abaixo do mínimo
-  lanc({ id: 4, subunidade: "1cia", idsMidia: "  " }), // sem ID
-  lanc({ id: 5, subunidade: "1cia", videos: 1, idsMidia: "" }), // DOIS motivos
-  lanc({ id: 6, subunidade: "2cia" }), // limpo
-  lanc({ id: 7, subunidade: "" }), // órfão, limpo
-  lanc({ id: 8, subunidade: "", idsMidia: "" }), // órfão com pendência
+  lanc({ id: 1, re: "100001-1", subunidade: "em" }), // limpo
+  lanc({ id: 2, re: "100002-2", subunidade: "em", auditou: false }), // não auditou
+  lanc({ id: 3, re: "100003-3", subunidade: "1cia", videos: 1 }), // abaixo do mínimo
+  lanc({ id: 4, re: "100004-4", subunidade: "1cia", idsMidia: "  " }), // sem ID
+  lanc({ id: 5, re: "100005-5", subunidade: "1cia", videos: 1, idsMidia: "" }), // DOIS motivos
+  lanc({ id: 6, re: "100006-6", subunidade: "2cia" }), // limpo
+  lanc({ id: 7, re: "100007-7", subunidade: "" }), // órfão, limpo
+  lanc({ id: 8, re: "100008-8", subunidade: "", idsMidia: "" }), // órfão com pendência
 ];
 
 test("um lançamento com dois motivos conta UMA vez", () => {
@@ -109,6 +115,51 @@ test("o rodapé é a soma das barras, e não um contador paralelo", () => {
 
   // em: 1 (não auditou) · 1cia: 3 · 2cia: 0 · órfãos: 1
   assert.equal(r.totalPendencia, 5);
+});
+
+test("o mínimo é do TURNO: dois envios no mesmo turno somam", () => {
+  /* O caso do Maj Vinícius, 02/09/2026: dois formulários no mesmo dia e turno,
+     2 + 1 = 3, cumpriu — e mesmo assim aparecia como abaixo do mínimo, porque a
+     régua era por envio. A partir de 03/09/2026 a soma é do turno em TODAS as
+     superfícies, esta inclusive. */
+  const mesmoTurno = [
+    lanc({ id: 20, re: "200001-1", subunidade: "1cia", videos: 2 }),
+    lanc({ id: 21, re: "200001-1", subunidade: "1cia", videos: 1 }),
+  ];
+  const r = excecoesPorFracao(mesmoTurno, FRACOES, MINIMO);
+  assert.equal(r.totalPendencia, 0, "somou por envio: 2 e 1 viraram dois desvios");
+
+  /* Turnos diferentes do MESMO auditor não somam entre si. */
+  const doisTurnos = [
+    lanc({ id: 22, re: "200002-2", data: "2026-09-01", subunidade: "1cia", videos: 2 }),
+    lanc({ id: 23, re: "200002-2", data: "2026-09-02", subunidade: "1cia", videos: 1 }),
+  ];
+  assert.equal(excecoesPorFracao(doisTurnos, FRACOES, MINIMO).totalPendencia, 2);
+});
+
+test("o cartão e o filtro do cartão devolvem o mesmo tamanho", () => {
+  /* A divergência que o Comando via: o cartão "Abaixo do mínimo" contava turnos
+     e o clique nele filtrava por lançamento — 5 no cartão, 8 na lista. */
+  const base = [
+    lanc({ id: 30, re: "300001-1", subunidade: "1cia", videos: 2 }),
+    lanc({ id: 31, re: "300001-1", subunidade: "1cia", videos: 1 }), // mesmo turno: cumpriu
+    lanc({ id: 32, re: "300002-2", subunidade: "1cia", videos: 1 }), // turno abaixo
+  ];
+  const f = { ...filtrosDoMesCorrente(HOJE), fracao: "todas", turno: "todos", semana: "todas" };
+  const p = calcularPainel(base, METAS_PADRAO_2026, { hoje: HOJE, ...f });
+  assert.equal(p.abaixo, 1, "o contador do cartão deixou de ser por turno");
+  assert.equal(p.abaixoLista.length, p.abaixo, "a lista nominal divergiu do contador");
+
+  const filtrado = calcularPainel(base, METAS_PADRAO_2026, {
+    hoje: HOJE,
+    ...f,
+    excecao: "abaixo",
+  });
+  assert.equal(
+    new Set(filtrado.dados.map((l) => `${l.re}|${l.data}|${l.turno}`)).size,
+    p.abaixo,
+    "o filtro do cartão voltou a recortar por lançamento"
+  );
 });
 
 test("semIds entra na conta — a regressão que o Major apontou", () => {

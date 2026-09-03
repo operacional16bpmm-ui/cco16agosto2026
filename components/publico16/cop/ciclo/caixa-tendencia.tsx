@@ -27,7 +27,7 @@ import {
   type SituacaoTrajetoria,
   type Tendencia,
 } from "@/lib/cop2026-tendencia";
-import { MATRIZ_PROPORCIONAL_2026 } from "@/lib/cop2026";
+import { MATRIZ_PROPORCIONAL_2026, META_TOTAL_BATALHAO } from "@/lib/cop2026";
 import type { LinhaFracao } from "@/lib/cop2026-metricas";
 
 /**
@@ -238,6 +238,7 @@ export function CaixaTendencia({
     realizado: feitoGlobal,
     turnosMes: p.diasMes,
     turnosDecorridos: p.diasDecorridos,
+    encerrado: p.encerrado,
   });
 
   const linhas = fracoes.map((f) => {
@@ -246,6 +247,7 @@ export function CaixaTendencia({
       realizado: f.feito,
       turnosMes: p.turnosMes,
       turnosDecorridos: p.turnosDecorridos,
+      encerrado: p.encerrado,
     });
     const semanas = f.semanas ?? [];
     return {
@@ -277,7 +279,16 @@ export function CaixaTendencia({
   const turnosMesBatalhao = turnosDiaBatalhao * p.diasMes;
 
   const equilibrio = indiceEquilibrio(linhas.map((l) => l.t.aderencia));
-  const soma = conferirSomaCotas(fracoes.map((x) => x.metaMes ?? x.meta), 960);
+  /* A conferência é da MATRIZ, não da tela. Lendo `fracoes` — que é a lista
+     filtrada — um simples `?fracao=1cia` fazia a soma dar 195 e o painel
+     imprimia a tarja vermelha "as cotas somam 195, e não 960: falta de 765".
+     Alarme puramente artificial, criado pelo próprio filtro. Mesma lição da
+     linha logo acima (`turnosDiaBatalhao`) e do §4 dos padrões do Comando:
+     ler a fonte, nunca a tela. */
+  const soma = conferirSomaCotas(
+    Object.values(MATRIZ_PROPORCIONAL_2026).map((m) => m.meta),
+    META_TOTAL_BATALHAO
+  );
   const filaDeAcao = [...linhas]
     .filter((l) => l.prioridade !== "NORMAL" && l.prioridade !== "REDISTRIBUICAO")
     .sort(
@@ -694,7 +705,8 @@ export function CaixaTendencia({
         {/* ---------- conferência da soma das cotas ---------- */}
         {!soma.fecha && (
           <div className="border-t-2 border-[#ca0202] bg-[#fdf0f0] px-5 py-3 text-[13px] font-bold text-[#ca0202] sm:px-6">
-            ⚠ As cotas das frações somam {N0.format(soma.soma)}, e não 960 —{" "}
+            ⚠ As cotas das frações somam {N0.format(soma.soma)}, e não{" "}
+            {N0.format(META_TOTAL_BATALHAO)} —{" "}
             {soma.diferenca > 0 ? "excesso" : "falta"} de {N0.format(Math.abs(soma.diferenca))}{" "}
             evidências na Matriz Proporcional. Corrigir antes de levar o número adiante.
           </div>

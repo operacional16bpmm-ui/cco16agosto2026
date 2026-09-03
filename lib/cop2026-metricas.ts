@@ -23,7 +23,7 @@ import {
 } from "@/lib/cop2026";
 import { diasEntre, hojeBrt } from "@/lib/cop2026-ciclo";
 import { RELATORIOS_MENSAIS, mesCorrente } from "@/lib/cop2026-relatorios";
-import { TURNOS_POR_DIA } from "@/lib/cop2026-tendencia";
+import { TURNOS_POR_DIA, semanasIniciadas } from "@/lib/cop2026-tendencia";
 
 export {
   MATRIZ_PROPORCIONAL_2026,
@@ -36,7 +36,13 @@ export {
 export const FMT = new Intl.NumberFormat("pt-BR");
 export const PCT = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 });
 export const DIAS = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
-export const FAIXAS_HORA = ["00–04", "04–08", "08–12", "12–16", "16–20", "20–24"];
+/* A última faixa NÃO é horário: é o lançamento que chegou sem hora. Antes ele
+   era despejado em "12–16" pelo `else` do cálculo, e a matriz exibia um pico de
+   expediente que era dado faltante. Separado, o buraco vira número — e vira
+   argumento para cobrar o preenchimento. */
+export const FAIXAS_HORA = ["00–04", "04–08", "08–12", "12–16", "16–20", "20–24", "s/ hora"];
+/** Índice da coluna "sem hora" dentro de `FAIXAS_HORA`. */
+export const FAIXA_HORA_SEM_HORA = FAIXAS_HORA.length - 1;
 
 export const SEMANAS_ROTULOS = [
   { semana: 1, rotulo: "Semana 1", dias: "01 a 07" },
@@ -440,13 +446,60 @@ export function duplicadosDoLancamento(
   return [...vistos];
 }
 
+// ---------------------------------------------------------------------------
+// Turno de serviço — a régua do mínimo, em um lugar só
+// ---------------------------------------------------------------------------
+
+/**
+ * A chave do TURNO DE SERVIÇO: quem + dia + turno.
+ *
+ * O mínimo de 3 evidências é institucionalmente POR TURNO, não por formulário
+ * enviado. Dois lançamentos do mesmo auditor no mesmo dia e turno são o MESMO
+ * turno e somam — foi a queixa do Comando em 02/09/2026 ("Maj Vinícius fez 2
+ * envios no mesmo dia, se somar dá mais de 3, e ele apareceu como abaixo do
+ * mínimo").
+ *
+ * A correção tinha entrado só no contador do topo e na lista nominal. O filtro
+ * do próprio cartão, a tabela de auditores, o bloco de exceções por fração, o
+ * histograma e a dispersão continuavam contando por LANÇAMENTO: o cartão dizia
+ * 5 e o clique nele devolvia 8. Daqui em diante todos leem estas três funções.
+ */
+export function chaveDoTurno(l: LancamentoCop): string {
+  return `${l.re || l.nomeGuerra || "?"}|${l.data}|${(l.turno || "").toLowerCase()}`;
+}
+
+/** Evidências somadas por turno de serviço. Só entra quem declarou auditoria. */
+export function somarPorTurno(lancamentos: LancamentoCop[]): Map<string, number> {
+  const m = new Map<string, number>();
+  for (const l of lancamentos) {
+    if (!l.auditou) continue;
+    const k = chaveDoTurno(l);
+    m.set(k, (m.get(k) ?? 0) + l.videos);
+  }
+  return m;
+}
+
+/** Os turnos cuja SOMA ficou abaixo do mínimo — a fonte única do "abaixo". */
+export function turnosAbaixoDoMinimo(
+  lancamentos: LancamentoCop[],
+  minimo: number
+): Set<string> {
+  const fora = new Set<string>();
+  for (const [k, soma] of somarPorTurno(lancamentos)) if (soma < minimo) fora.add(k);
+  return fora;
+}
+
 export function aplicarFiltros(
   lancamentos: LancamentoCop[],
   f: Filtros,
   minimo: number,
   duplicados: Map<string, number> = new Map()
 ): LancamentoCop[] {
-  return lancamentos.filter((l) => {
+  /* Duas fases, e a ordem importa: o recorte primeiro, a exceção depois.
+     "Abaixo do mínimo" é uma pergunta sobre o TURNO, e o turno tem que ser
+     somado sobre o recorte que o usuário está vendo — somar sobre a planilha
+     inteira classificaria pelo mês errado. */
+  const base = lancamentos.filter((l) => {
     if (f.fracao !== "todas" && l.subunidade !== f.fracao) return false;
     if (f.turno !== "todos" && !(l.turno || "").toLowerCase().startsWith(f.turno)) return false;
     if (f.semana && f.semana !== "todas" && identificarSemana(l.data) !== parseInt(f.semana, 10)) {
@@ -454,20 +507,26 @@ export function aplicarFiltros(
     }
     if (f.de && (!l.data || l.data < f.de)) return false;
     if (f.ate && (!l.data || l.data > f.ate)) return false;
-    if (f.excecao === "naoauditou" && l.auditou) return false;
-    if (f.excecao === "abaixo" && !(l.auditou && l.videos < minimo)) return false;
-    if (f.excecao === "semids" && (!l.auditou || l.idsMidia.trim())) return false;
-    if (
-      f.excecao === "idinvalido" &&
-      !(
+    return true;
+  });
+
+  if (!f.excecao) return base;
+
+  const abaixoDoMinimo =
+    f.excecao === "abaixo" ? turnosAbaixoDoMinimo(base, minimo) : null;
+
+  return base.filter((l) => {
+    if (f.excecao === "naoauditou") return !l.auditou;
+    if (f.excecao === "abaixo") return l.auditou && abaixoDoMinimo!.has(chaveDoTurno(l));
+    if (f.excecao === "semids") return l.auditou && !l.idsMidia.trim();
+    if (f.excecao === "idinvalido") {
+      return (
         l.auditou &&
-        l.idsMidia.trim() &&
+        !!l.idsMidia.trim() &&
         !separarIdentificadores(l.idsMidia).some(ehIdentificadorValido)
-      )
-    ) {
-      return false;
+      );
     }
-    if (f.excecao === "duplicado" && !duplicadosDoLancamento(l, duplicados).length) return false;
+    if (f.excecao === "duplicado") return duplicadosDoLancamento(l, duplicados).length > 0;
     return true;
   });
 }
@@ -477,12 +536,17 @@ export function aplicarFiltros(
 // ---------------------------------------------------------------------------
 export type Nivel = "superacao" | "conforme" | "atencao" | "critico" | "neutro";
 
+/* "NÃO AFERÍVEL" é o termo do Comando para o quinto estado da régua, e não
+   "Sem dados": a regra sistêmica de 28/08/2026 nomeia assim o resultado
+   inválido, negativo, indeterminado ou sem base de cálculo. `cop2026-tendencia`
+   já usava o termo certo na régua de trajetória — eram duas palavras para o
+   mesmo estado, nas mesmas telas. */
 export const ROTULO_NIVEL: Record<Nivel, string> = {
   superacao: "Superação",
   conforme: "Conformidade",
   atencao: "Atenção",
   critico: "Crítica",
-  neutro: "Sem dados",
+  neutro: "Não aferível",
 };
 
 /** Subtítulo semântico das faixas conforme definição do Comando.
@@ -538,11 +602,13 @@ export function nivelPorCumprimento(pct: number, temDados: boolean): Nivel {
  * passar de 100% da própria fração e desmentiria o cartão de cima. Por isso o
  * predicado é um OR sobre o lançamento, e não uma soma de contadores.
  *
- * UNIDADE: **lançamento**. É a régua do denominador deste bloco ("N de M
- * lançamentos daquela fração"). O cartão "Abaixo do mínimo" do topo continua
- * contando TURNO, que é a régua institucional do mínimo — são perguntas
- * diferentes e cada superfície diz qual está usando. Unificar as duas mudaria
- * um número que a Coordenadoria já validou, e é decisão do Comando.
+ * UNIDADE: o DENOMINADOR é o lançamento ("N de M lançamentos daquela fração"),
+ * mas o motivo "abaixo do mínimo" passou a ser aferido por TURNO em 03/09/2026,
+ * por decisão do Comando — a régua institucional do mínimo é o turno de
+ * serviço, e ela agora vale em todas as superfícies (cartão, filtro, tabela de
+ * auditores, histograma, dispersão e este bloco). Um lançamento é marcado
+ * quando o TURNO a que ele pertence ficou abaixo, e não quando o envio isolado
+ * ficou. Ver `chaveDoTurno` / `turnosAbaixoDoMinimo`.
  *
  * ÓRFÃOS: lançamento sem `subunidade` declarada não casa com fração nenhuma e
  * saía de todas as barras, embora continuasse no total do rodapé — as barras
@@ -569,10 +635,23 @@ export type ExcecoesPorFracao = {
   totalLancamentos: number;
 };
 
-/** Um lançamento tem pendência? Binário, e cobre os três motivos sem duplicar. */
-export function temPendencia(l: LancamentoCop, minimo: number): boolean {
+/**
+ * Um lançamento tem pendência? Binário, e cobre os três motivos sem duplicar.
+ *
+ * `turnosAbaixo` é o conjunto de turnos que ficaram abaixo do mínimo no
+ * recorte, vindo de `turnosAbaixoDoMinimo`. Sem ele a função cai na leitura por
+ * lançamento — que só é equivalente quando o lançamento é o turno inteiro, o
+ * caso dos testes unitários de registro único. Quem tem uma base recortada nas
+ * mãos DEVE passar o conjunto, ou volta a divergir do cartão do topo.
+ */
+export function temPendencia(
+  l: LancamentoCop,
+  minimo: number,
+  turnosAbaixo?: Set<string>
+): boolean {
   if (!l.auditou) return true;
-  if (l.videos < minimo) return true;
+  const abaixo = turnosAbaixo ? turnosAbaixo.has(chaveDoTurno(l)) : l.videos < minimo;
+  if (abaixo) return true;
   return !l.idsMidia.trim();
 }
 
@@ -582,6 +661,9 @@ export function excecoesPorFracao(
   minimo: number
 ): ExcecoesPorFracao {
   const conhecidas = new Set(fracoes.map((f) => f.chave));
+  /* Somado UMA vez sobre a base recortada, e reusado nas linhas e nos órfãos:
+     é o que faz este bloco concordar com o cartão "Abaixo do mínimo" do topo. */
+  const turnosAbaixo = turnosAbaixoDoMinimo(dados, minimo);
 
   const linhas: ExcecoesLinha[] = fracoes.map((f) => {
     const daFracao = dados.filter((l) => l.subunidade === f.chave);
@@ -589,7 +671,7 @@ export function excecoesPorFracao(
       chave: f.chave,
       rotulo: f.rotulo,
       total: daFracao.length,
-      comPendencia: daFracao.filter((l) => temPendencia(l, minimo)).length,
+      comPendencia: daFracao.filter((l) => temPendencia(l, minimo, turnosAbaixo)).length,
     };
   });
 
@@ -602,7 +684,7 @@ export function excecoesPorFracao(
     chave: "__sem_fracao__",
     rotulo: "Sem fração declarada",
     total: semFracao.length,
-    comPendencia: semFracao.filter((l) => temPendencia(l, minimo)).length,
+    comPendencia: semFracao.filter((l) => temPendencia(l, minimo, turnosAbaixo)).length,
   };
 
   const soma = (f: (x: ExcecoesLinha) => number) =>
@@ -653,8 +735,10 @@ export type LinhaFracao = {
   ritmoProporcional?: number;
   /** Efetivo do quadro fixo da fração (base: 570 PMs). */
   efetivoQuadro?: number;
-  /** Média semanal da meta da fração. */
-  metaSemanalMedia: number;
+  /* `metaSemanalMedia` (meta ÷ 4) saiu em 03/09/2026: era uma segunda régua
+     semanal, plana, que não correspondia a semana nenhuma depois que a cota
+     passou a ser rateada por DIAS (§3-C dos padrões do Comando). A cota certa
+     de cada semana está em `semanas[].meta`, vinda de `metasSemanaisDaMeta`. */
   /** Desempenho semana a semana (S1, S2, S3, S4). */
   semanas: ProgressoSemana[];
   /** Série DIÁRIA do mês inteiro — base da curva plano × realizado pedida pela
@@ -668,9 +752,15 @@ export type LinhaAuditor = {
   nome: string;
   posto: string;
   fracao: string;
+  /** Envios de formulário — o que entrou pela porta. */
   lanc: number;
+  /** Turnos de serviço distintos com auditoria (RE + data + turno). É a régua
+   *  do mínimo, e o denominador de `media`. */
+  turnos: number;
   videos: number;
+  /** Evidências por TURNO, não por envio. */
   media: number;
+  /** Turnos abaixo do mínimo — não lançamentos abaixo do mínimo. */
   abaixo: number;
   semIds: number;
   naoAuditou: number;
@@ -729,6 +819,24 @@ export function calcularPainel(
      encolhida para a semana. É ele que dimensiona a 4ª semana. */
   const ultimoDiaDoMes = ultimoDiaDoMesDoRecorte(f, hoje);
 
+  /* Quantas semanas operacionais do MÊS do recorte já começaram.
+   *
+   * É o discriminador certo entre "não há base" e "há base e o resultado é
+   * zero". O anterior era `feito > 0`, que dava NÃO AFERÍVEL (cinza) para a
+   * semana em curso em que a fração não produziu nada — exatamente o caso que
+   * a régua do Comando manda pintar de FAIXA CRÍTICA. Enquanto isso, a linha
+   * da fração com zero já saía crítica: duas leituras opostas do mesmo zero na
+   * mesma tela.
+   *
+   * Mês encerrado abre as quatro; mês futuro não abre nenhuma. */
+  const mesAncora = mesDoRecorte(f, hoje);
+  const semanasAbertas =
+    mesAncora.ate && hoje > mesAncora.ate
+      ? SEMANAS_ROTULOS.length
+      : mesAncora.de && hoje < mesAncora.de
+        ? 0
+        : semanasIniciadas(Number(hoje.slice(8, 10)));
+
   // Normaliza as metas aplicando a Matriz Operacional Proporcional (960 evidências / 570 PMs)
   const metasMensais = metas.map((m) => {
     const mat = MATRIZ_PROPORCIONAL_2026[m.subunidade];
@@ -774,7 +882,19 @@ export function calcularPainel(
   const pct = meta > 0 ? (total / meta) * 100 : 0;
   const falta = Math.max(0, meta - total);
 
+  /* ---- participação: quem LANÇOU e, destes, quem AUDITOU -----------------
+   *
+   * `ativos` contava qualquer resposta de formulário — inclusive a de quem
+   * declarou "não auditei". O KPI "Auditores ativos" e o índice de dispersão
+   * (IDA) subiam com quem justamente NÃO auditou.
+   *
+   * Decisão do Comando em 03/09/2026: preservar o número de quem participou do
+   * controle (é ele que mostra alcance da ferramenta) e exibir ao lado o
+   * recorte honesto — destes, quantos de fato auditaram. */
   const ativos = new Set(dados.map((l) => l.re || l.nomeGuerra).filter(Boolean)).size;
+  const ativosAuditando = new Set(
+    dados.filter((l) => l.auditou).map((l) => l.re || l.nomeGuerra).filter(Boolean)
+  ).size;
   /* ---- unidade da conformidade: TURNO, não LANÇAMENTO -------------------
    *
    * Queixa do Comando em 02/09/2026: "Maj Vinícus fez 2 envios no mesmo dia,
@@ -791,18 +911,15 @@ export function calcularPainel(
    * lançamento sem `auditou` (declarou "não auditei") continua sendo evento
    * do turno — não vira "auditor no turno" para não puxar a taxa para baixo
    * indevidamente, mas continua contando em `naoAuditou`.
+   *
+   * `chaveDoTurno` e `somarPorTurno` são exportados do módulo desde 03/09/2026:
+   * o filtro do cartão, a tabela de auditores, o histograma, a dispersão e o
+   * bloco de exceções passaram a ler a MESMA soma, e não cada um a sua.
    */
-  type ChaveTurno = string;
-  const chaveDoTurno = (l: LancamentoCop): ChaveTurno =>
-    `${l.re || l.nomeGuerra || "?"}|${l.data}|${(l.turno || "").toLowerCase()}`;
-
-  const somaPorTurno = new Map<ChaveTurno, number>();
-  for (const l of dados) {
-    if (!l.auditou) continue;
-    somaPorTurno.set(chaveDoTurno(l), (somaPorTurno.get(chaveDoTurno(l)) ?? 0) + l.videos);
-  }
+  const somaPorTurno = somarPorTurno(dados);
+  const videosPorTurno = [...somaPorTurno.values()];
   const turnosAuditados = somaPorTurno.size;
-  const turnosConformes = [...somaPorTurno.values()].filter((v) => v >= minimo).length;
+  const turnosConformes = videosPorTurno.filter((v) => v >= minimo).length;
   const turnosAbaixo = turnosAuditados - turnosConformes;
 
   const conformes = turnosConformes;
@@ -850,14 +967,22 @@ export function calcularPainel(
   ).length;
   const indiceRastreabilidade = total > 0 ? (evidenciasRastreaveis / total) * 100 : 0;
   const partes = dados.filter((l) => l.numeroParte).length;
-  const mediana = quantil(videosPorLanc, 0.5);
-  const p90 = quantil(videosPorLanc, 0.9);
+  /* Mediana e p90 do TURNO, não do envio: são lidos ao lado do mínimo de 3, que
+     é regra de turno. Por lançamento, o auditor que fez 2+2 no mesmo turno
+     entrava duas vezes com 2 e puxava a mediana para baixo de um mínimo que ele
+     cumpriu. */
+  const mediana = quantil(videosPorTurno, 0.5);
+  const p90 = quantil(videosPorTurno, 0.9);
 
   // ---- série diária + carta de controle -----------------------------------
   const porDia = (() => {
     const m = new Map<string, number>();
+    /* Mesmo predicado de `porDiaMes` e de `total`: só soma quem declarou
+       auditoria. Empatava por acaso — quem responde "não auditei" traz zero —
+       e bastava uma linha suja na base para a série diária discordar do total
+       do topo sem nenhum aviso. */
     dados.forEach((l) => {
-      if (!l.data) return;
+      if (!l.auditou || !l.data) return;
       m.set(l.data, (m.get(l.data) ?? 0) + l.videos);
     });
     return [...m.entries()]
@@ -942,7 +1067,9 @@ export function calcularPainel(
       feito,
       pct: p,
       falta: Math.max(0, metaSem - feito),
-      nivel: nivelPorCumprimento(p, feito > 0),
+      /* Semana que já abriu tem base de cálculo, mesmo com zero feito: é
+         FAIXA CRÍTICA, e não "não aferível". Ver `semanasAbertas`. */
+      nivel: nivelPorCumprimento(p, metaSem > 0 && s.semana <= semanasAbertas),
     };
   });
 
@@ -998,7 +1125,7 @@ export function calcularPainel(
           feito: feitoSem,
           pct: pSem,
           falta: Math.max(0, metaSem - feitoSem),
-          nivel: nivelPorCumprimento(pSem, feitoSem > 0),
+          nivel: nivelPorCumprimento(pSem, metaSem > 0 && s.semana <= semanasAbertas),
         };
       });
 
@@ -1024,7 +1151,6 @@ export function calcularPainel(
         ritmoProporcional:
           janela.turnosFracao > 0 ? metaReal / janela.turnosFracao : mat?.ritmoProporcional,
         efetivoQuadro: mat ? mat.efetivo : m.efetivo,
-        metaSemanalMedia: metaMensal / 4,
         semanas: semanasFracao,
         porDia: porDiaFracao,
       };
@@ -1118,7 +1244,7 @@ export function calcularPainel(
    * Se a soma dos lançamentos do turno ≥ mínimo, o turno cumpriu e sai da
    * lista. Isto casa com o novo `abaixo` (contador) — as duas leituras andam
    * juntas por construção. */
-  const primeiroDoTurno = new Map<ChaveTurno, LancamentoCop>();
+  const primeiroDoTurno = new Map<string, LancamentoCop>();
   for (const l of dados) {
     if (!l.auditou) continue;
     const k = chaveDoTurno(l);
@@ -1170,25 +1296,34 @@ export function calcularPainel(
    * somando TUDO no recorte — é a régua bruta que precisa aparecer no topo.
    * As LISTAS abaixo, que a caixa "Pontos de atenção" exibe com nome, RE e
    * justificativa, são o gatilho de intervenção — e um lançamento isolado no
-   * dia não caracteriza padrão. Por isso são recortadas pela janela do
-   * Comando (`janelaAtencaoDias`, padrão 7).
+   * dia não caracteriza padrão. Por isso são recortadas pela JANELA MÓVEL de
+   * `janelaAtencaoDias` (padrão 7) sobre a DATA do lançamento.
    *
-   * O `atencao.emCurso` sinaliza para a UI que a janela ainda não fechou: o
-   * cartão mostra "em curso: dia X/Y do período mínimo" em vez de listar
-   * gente que ainda não teve semana inteira para se comportar.
+   * O que saiu em 03/09/2026: havia um segundo portão, `janelaEmCurso`, que
+   * esvaziava as três listas enquanto o RECORTE não tivesse 7 dias corridos.
+   * Como o recorte zera na virada do mês, isso produzia uma janela cega do dia
+   * 1 ao dia 6 de TODO mês — o Comando abria o painel no dia 2 e não via nome
+   * nenhum, nem de quem declarou "não auditei". A janela móvel já responde
+   * sozinha à preocupação original (um caso isolado some da lista em 7 dias);
+   * o portão extra só apagava a tela.
+   *
+   * Limite conhecido e aceito: a base é o mês do recorte, então no dia 1º a
+   * lista começa curta e não alcança o fim do mês anterior. Preferimos isso a
+   * abrir exceção à regra do §3-Z ("ninguém varre `lancamentos` fora do
+   * portão"), que é o que protege o painel do bug de recorte.
    */
   const decorridosNaJanela = janela.decorridos;
-  const janelaEmCurso = decorridosNaJanela < janelaAtencaoDias;
   const dentroDaJanela = (dataIso: string) =>
     dentroDaJanelaAtencao(dataIso, hoje, janelaAtencaoDias);
 
   const atencao = {
     janelaDias: janelaAtencaoDias,
     diasDecorridos: decorridosNaJanela,
-    emCurso: janelaEmCurso,
-    naoAuditou: janelaEmCurso ? [] : naoAuditouLista.filter((l) => dentroDaJanela(l.data)),
-    abaixo: janelaEmCurso ? [] : abaixoLista.filter((l) => dentroDaJanela(l.data)),
-    partes: janelaEmCurso ? [] : partesLista.filter((l) => dentroDaJanela(l.data)),
+    /** Mantido para a UI, sempre falso: não há mais período de carência. */
+    emCurso: false,
+    naoAuditou: naoAuditouLista.filter((l) => dentroDaJanela(l.data)),
+    abaixo: abaixoLista.filter((l) => dentroDaJanela(l.data)),
+    partes: partesLista.filter((l) => dentroDaJanela(l.data)),
   };
 
   /* Auditores DISTINTOS por quinzena e por fração — a coluna QUINZENA da
@@ -1214,16 +1349,21 @@ export function calcularPainel(
     auditoresPorQuinzena[chave] = [q1.size, q2.size];
   }
 
-  // ---- histograma ----------------------------------------------------------
+  /* ---- histograma ----------------------------------------------------------
+     Distribuição por TURNO DE SERVIÇO. A barra é lida contra o mínimo (`conforme:
+     n >= minimo`), e o mínimo é regra de turno: por lançamento, quem fez 2+2 no
+     mesmo turno aparecia duas vezes na coluna "2", em vermelho, tendo cumprido. */
   const histograma = [0, 1, 2, 3, 4, 5].map((n) => ({
     faixa: n === 5 ? "5+" : String(n),
-    q: videosPorLanc.filter((v) => (n === 5 ? v >= 5 : v === n)).length,
+    q: videosPorTurno.filter((v) => (n === 5 ? v >= 5 : v === n)).length,
     conforme: n >= minimo,
   }));
 
   // ---- dispersão por fração ------------------------------------------------
+  /* Também por TURNO, pelo mesmo motivo do histograma: a caixa é comparada com
+     a linha do mínimo na mesma tela. */
   const dispersao = fracoes.map((s) => {
-    const v = dados.filter((l) => l.subunidade === s.chave && l.auditou).map((l) => l.videos);
+    const v = [...somarPorTurno(dados.filter((l) => l.subunidade === s.chave)).values()];
     return {
       rotulo: s.rotulo,
       min: v.length ? Math.min(...v) : 0,
@@ -1237,15 +1377,27 @@ export function calcularPainel(
   });
 
   // ---- matriz hora × dia ---------------------------------------------------
-  const matriz: number[][] = Array.from({ length: 7 }, () => Array(6).fill(0));
+  const matriz: number[][] = Array.from({ length: 7 }, () =>
+    Array(FAIXAS_HORA.length).fill(0)
+  );
   dados.forEach((l) => {
     if (!l.data) return;
     const d = new Date(`${l.data}T12:00:00`).getDay();
     const h = Number.parseInt((l.hora || "").slice(0, 2), 10);
-    const faixa = Number.isFinite(h) ? Math.min(5, Math.floor(h / 4)) : 3;
+    /* Sem hora vai para a coluna própria, e não para o meio da tarde. */
+    const faixa =
+      Number.isFinite(h) && h >= 0 && h <= 23
+        ? Math.min(5, Math.floor(h / 4))
+        : FAIXA_HORA_SEM_HORA;
     matriz[d][faixa] += l.videos;
   });
-  const maxMatriz = Math.max(1, ...matriz.flat());
+  /* A escala de calor é das HORAS. A coluna "s/ hora" fica de fora do máximo:
+     ela mede dado faltante, não concentração de atividade, e se entrasse aqui
+     um mês mal preenchido achataria o mapa inteiro. */
+  const maxMatriz = Math.max(
+    1,
+    ...matriz.map((linha) => linha.slice(0, FAIXA_HORA_SEM_HORA)).flat()
+  );
 
   // ---- Pareto de auditores -------------------------------------------------
   const pareto = (() => {
@@ -1270,19 +1422,41 @@ export function calcularPainel(
    * o nome dela promete, e a última fecha o funil com a verdade: nada foi
    * conferido contra a plataforma, porque não há integração com ela. Mostrar
    * zero é honesto — e é o argumento mais forte para conseguir o acesso. */
+  /* A partir da segunda etapa a unidade é o TURNO (RE+data+turno), e não o
+     envio de formulário: é a régua do mínimo. Misturar as duas fazia o funil
+     estreitar por motivo errado — dois envios do mesmo turno "perdiam" um
+     degrau que nunca existiu. A primeira etapa fica em lançamentos de
+     propósito: é o que entrou pela porta. */
+  const turnosComIdValido = [
+    ...somarPorTurno(
+      dados.filter((l) => separarIdentificadores(l.idsMidia).some(ehIdentificadorValido))
+    ).keys(),
+  ].length;
   const funil = [
     { etapa: "Lançamentos recebidos", v: dados.length },
-    { etapa: "Auditaram no turno", v: dados.filter((l) => l.auditou).length },
-    /* Aqui a unidade muda de LANÇAMENTO para TURNO (RE+data+turno) porque o
-       mínimo de 3 vale por turno: dois envios do mesmo auditor no mesmo turno
-       somam. Ver `chaveDoTurno` acima. */
+    { etapa: "Turnos com auditoria lançada", v: turnosAuditados },
     { etapa: `Turnos com ≥ ${minimo} evidências`, v: turnosConformes },
-    { etapa: "Com identificador em formato válido", v: comIdRastreavel },
+    { etapa: "Turnos com identificador em formato válido", v: turnosComIdValido },
     { etapa: "Conferidos na plataforma", v: 0 },
   ];
 
   // ---- tabela analítica ----------------------------------------------------
   const auditoresLinhas: LinhaAuditor[] = (() => {
+    /* Turnos por auditor, a partir da MESMA soma que o cartão do topo usa.
+       Antes esta tabela contava `l.videos < minimo` por envio: o auditor que
+       fez 2+2 no mesmo turno aparecia com dois desvios e selo vermelho,
+       enquanto o cartão acima o dava como conforme. */
+    const turnosDoAuditor = new Map<string, { total: number; abaixo: number }>();
+    for (const [chave, soma] of somaPorTurno) {
+      const l = primeiroDoTurno.get(chave);
+      const quem = l ? l.re || l.nomeGuerra : "";
+      if (!quem) continue;
+      const a = turnosDoAuditor.get(quem) ?? { total: 0, abaixo: 0 };
+      a.total += 1;
+      if (soma < minimo) a.abaixo += 1;
+      turnosDoAuditor.set(quem, a);
+    }
+
     const m = new Map<string, LinhaAuditor>();
     dados.forEach((l) => {
       const k = l.re || l.nomeGuerra;
@@ -1295,6 +1469,7 @@ export function calcularPainel(
           posto: l.posto,
           fracao: ROTULO_SUBUNIDADE[l.subunidade] ?? "",
           lanc: 0,
+          turnos: 0,
           videos: 0,
           media: 0,
           abaixo: 0,
@@ -1305,14 +1480,20 @@ export function calcularPainel(
       a.lanc += 1;
       a.videos += l.videos;
       if (!l.auditou) a.naoAuditou += 1;
-      if (l.auditou && l.videos < minimo) a.abaixo += 1;
       if (l.auditou && !l.idsMidia.trim()) a.semIds += 1;
       m.set(k, a);
     });
     return [...m.values()].map((a) => {
-      a.media = a.lanc ? a.videos / a.lanc : 0;
+      const t = turnosDoAuditor.get(a.chave);
+      a.turnos = t?.total ?? 0;
+      a.abaixo = t?.abaixo ?? 0;
+      a.media = a.turnos ? a.videos / a.turnos : 0;
+      /* Eventos = turnos auditados + declarações de "não auditei". É contra
+         esse total que o desvio vira crítico, e não contra o nº de envios. */
+      const eventos = a.turnos + a.naoAuditou;
       const desvios = a.abaixo + a.naoAuditou;
-      a.nivel = desvios === 0 ? "conforme" : desvios >= a.lanc ? "critico" : "atencao";
+      a.nivel =
+        desvios === 0 ? "conforme" : eventos > 0 && desvios >= eventos ? "critico" : "atencao";
       return a;
     });
   })();
@@ -1333,7 +1514,10 @@ export function calcularPainel(
     total,
     pct,
     falta,
+    /** Quem enviou formulário no recorte — inclui quem declarou "não auditei". */
     ativos,
+    /** Destes, quem de fato auditou. É o número honesto de participação. */
+    ativosAuditando,
     conformes,
     taxaConf,
     naoAuditou,
@@ -1426,15 +1610,21 @@ export function veredito(p: Painel): { titulo: string; detalhe: string; nivel: N
      Esta frase dizia "faltam 873 evidências em 13 turnos — 68 por turno", que
      era o modelo antigo (15 turnos de 12x36 menos os dias com lançamento) e
      contradizia o próprio painel, que já falava em dias na mesma tela. */
+  /* `diasRestantes` conta os dias DEPOIS de hoje — no dia 30 ele é zero com o
+     mês inteiro ainda aberto, e a frase anunciava "o período já se encerrou" às
+     08h. Quem responde por "acabou" é `janela.encerrado` (hoje > último dia). */
   const dias = p.janela.diasRestantes;
-  const ritmo =
-    dias > 0
+  const ritmo = p.janela.encerrado
+    ? `Faltam ${FMT.format(p.falta)} evidências e o período de ${FMT.format(
+        p.janela.dias
+      )} dias já se encerrou.`
+    : dias > 0
       ? `Faltam ${FMT.format(p.falta)} evidências em ${FMT.format(dias)} dia${
           dias === 1 ? "" : "s"
         } — ${FMT.format(Math.ceil(p.ritmoNecessario))} por dia para fechar a meta.`
-      : `Faltam ${FMT.format(p.falta)} evidências e o período de ${FMT.format(
-          p.janela.dias
-        )} dias já se encerrou.`;
+      : `Faltam ${FMT.format(p.falta)} evidências e hoje é o último dia do período — ${FMT.format(
+          Math.ceil(p.falta)
+        )} precisam entrar até o fim do expediente.`;
 
   const TITULO_POR_NIVEL: Record<Nivel, string> = {
     superacao: "ACIMA da Métrica para Monitoramento e Controle de Vídeos (Evidências / Ocorrências)",
@@ -1471,7 +1661,7 @@ export function conclusaoRitmo(p: Painel): string {
 export function conclusaoQualidade(p: Painel): string {
   const forte = p.histograma.filter((h) => h.conforme).reduce((s, h) => s + h.q, 0);
   const t = p.histograma.reduce((s, h) => s + h.q, 0) || 1;
-  return `${PCT.format((forte / t) * 100)}% dos lançamentos trouxeram ${p.minimo} ou mais evidências. A mediana é ${FMT.format(
+  return `${PCT.format((forte / t) * 100)}% dos turnos de serviço trouxeram ${p.minimo} ou mais evidências. A mediana por turno é ${FMT.format(
     p.mediana
   )} e os 10% mais produtivos entregam ${FMT.format(p.p90)} ou mais.`;
 }
@@ -1487,15 +1677,20 @@ export function conclusaoDistribuicao(p: Painel): string {
   const comDados = p.dispersao.filter((d) => d.n > 0);
   if (!comDados.length) return "Sem dispersão a comparar no recorte.";
   const pior = [...comDados].sort((a, b) => a.med - b.med)[0];
-  return `${pior.rotulo} tem a menor mediana do recorte (${FMT.format(pior.med)} evidências por lançamento, n=${FMT.format(pior.n)}).`;
+  return `${pior.rotulo} tem a menor mediana do recorte (${FMT.format(pior.med)} evidências por turno de serviço, n=${FMT.format(pior.n)} turnos).`;
 }
 
 export function conclusaoFunil(p: Painel): string {
-  const recebidos = p.funil[0]?.v || 1;
+  /* Denominador é o TURNO desde 03/09/2026, como o resto do funil: comparar
+     turnos com identificador contra lançamentos recebidos misturava réguas e
+     dava percentual menor do que o real. */
+  const auditados = p.funil[1]?.v || 1;
   const comIds = p.funil[3]?.v ?? 0;
-  return `De ${FMT.format(recebidos)} lançamentos recebidos, ${FMT.format(comIds)} (${PCT.format(
-    (comIds / recebidos) * 100
-  )}%) chegaram com os IDs das mídias — sem o ID, a evidência não é rastreável na conferência.`;
+  return `De ${FMT.format(auditados)} turno(s) com auditoria lançada, ${FMT.format(
+    comIds
+  )} (${PCT.format(
+    (comIds / auditados) * 100
+  )}%) trouxeram identificador em formato válido — sem o ID, a evidência não é rastreável na conferência.`;
 }
 
 export function conclusaoHorario(p: Painel): string {
@@ -1524,15 +1719,27 @@ export function auditoresParaCsv(linhas: LinhaAuditor[]): string {
     "Posto",
     "Fração",
     "Lançamentos",
+    "Turnos",
     "Evidências",
-    "Média",
-    "Abaixo do mínimo",
+    "Média por turno",
+    "Turnos abaixo do mínimo",
     "Sem IDs",
     "Não auditou",
   ];
   const escapar = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
   const corpo = linhas.map((r) =>
-    [r.nome, r.posto, r.fracao, r.lanc, r.videos, r.media.toFixed(2), r.abaixo, r.semIds, r.naoAuditou]
+    [
+      r.nome,
+      r.posto,
+      r.fracao,
+      r.lanc,
+      r.turnos,
+      r.videos,
+      r.media.toFixed(2),
+      r.abaixo,
+      r.semIds,
+      r.naoAuditou,
+    ]
       .map(escapar)
       .join(";")
   );

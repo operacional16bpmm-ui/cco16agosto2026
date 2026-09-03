@@ -144,6 +144,7 @@ export function FaixaRitmos({
     realizado: total,
     turnosMes: p.diasMes,
     turnosDecorridos: p.diasDecorridos,
+    encerrado: p.encerrado,
   });
 
   /* "Sempre a recuperação dia seguinte" — Coordenadoria Operacional, 02/09/2026.

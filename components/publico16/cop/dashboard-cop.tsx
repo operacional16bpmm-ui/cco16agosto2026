@@ -100,7 +100,7 @@ const ABAS = [
 ] as const;
 type Aba = (typeof ABAS)[number]["id"];
 
-type Coluna = "nome" | "lanc" | "videos" | "media" | "abaixo";
+type Coluna = "nome" | "lanc" | "turnos" | "videos" | "media" | "abaixo";
 
 /** A aba inativa continua no DOM, só escondida: é o que permite ao
  *  `@media print` expandir as quatro de uma vez sem obrigar o Comando a
@@ -923,7 +923,13 @@ export function DashboardCop({
     {
       rotulo: "Auditores ativos",
       valor: `${FMT.format(p.ativos)}/${FMT.format(p.auditores)}`,
-      nota: `${PCT.format(p.auditores ? (p.ativos / p.auditores) * 100 : 0)}% do efetivo designado`,
+      /* Dois números por decisão do Comando em 03/09/2026: o primeiro é quem
+         participou do controle (mede alcance da ferramenta), o segundo é quem
+         de fato auditou. Antes só existia o primeiro, e quem respondia "não
+         auditei" entrava como auditor ativo. */
+      nota: `${PCT.format(p.auditores ? (p.ativos / p.auditores) * 100 : 0)}% do efetivo designado · ${FMT.format(
+        p.ativosAuditando
+      )} auditaram`,
       foto: "/media/foto-oficial.jpg",
       icone: <Users size={18} aria-hidden />,
     },
@@ -1946,6 +1952,7 @@ export function DashboardCop({
                  independe da semana selecionada. */
               diasMes={p.janelaMes.dias}
               diasDecorridos={p.janelaMes.decorridos}
+              mesEncerrado={p.janelaMes.encerrado}
               prefixo={p.janelaMes.de.slice(0, 7)}
               /* Com uma fração filtrada, `p.fracoes` tem uma linha só e
                  `porDiaMes` é a série daquela fração: um cartão rotulado
@@ -2321,11 +2328,17 @@ export function DashboardCop({
                   <Th col="lanc" num ordem={ordem} ordenar={ordenarPor}>
                     Lanç.
                   </Th>
+                  {/* Turnos de serviço distintos: é a régua do mínimo, e o
+                      denominador da média. Dois envios do mesmo auditor no
+                      mesmo turno são UM turno. */}
+                  <Th col="turnos" num ordem={ordem} ordenar={ordenarPor}>
+                    Turnos
+                  </Th>
                   <Th col="videos" num ordem={ordem} ordenar={ordenarPor}>
                     Evidências
                   </Th>
                   <Th col="media" num ordem={ordem} ordenar={ordenarPor}>
-                    Média
+                    Média/turno
                   </Th>
                   <Th col="abaixo" num ordem={ordem} ordenar={ordenarPor}>
                     Desvios
@@ -2342,6 +2355,7 @@ export function DashboardCop({
                     <td className="px-4 py-2.5 text-texto-suave">{r.posto}</td>
                     <td className="px-4 py-2.5 text-texto-suave">{r.fracao}</td>
                     <td className="dados px-4 py-2.5 text-right">{FMT.format(r.lanc)}</td>
+                    <td className="dados px-4 py-2.5 text-right">{FMT.format(r.turnos)}</td>
                     <td className="dados px-4 py-2.5 text-right font-bold text-branco">
                       {FMT.format(r.videos)}
                     </td>

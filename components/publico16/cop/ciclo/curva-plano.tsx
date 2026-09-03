@@ -282,6 +282,7 @@ function Cartao({
   diasMes,
   diasDecorridos,
   porTurno,
+  encerrado = false,
 }: {
   rotulo: string;
   meta: number;
@@ -291,6 +292,9 @@ function Cartao({
   /** Mostra a equivalência por turno-fração (2 turnos por dia). Só nas frações:
    *  o Batalhão se mede por dia e nunca por turno. */
   porTurno: boolean;
+  /** O mês já fechou? Separa "último dia, ainda dá" de "acabou" — ver
+   *  `EntradaTendencia.encerrado`. */
+  encerrado?: boolean;
 }) {
   const realizado = pontos.reduce((s, p) => s + p.feito, 0);
   const entrada = {
@@ -298,6 +302,7 @@ function Cartao({
     realizado,
     turnosMes: diasMes,
     turnosDecorridos: diasDecorridos,
+    encerrado,
   };
   const amanha = metaDeAmanha(entrada);
   const t = calcularTendencia(entrada);
@@ -652,6 +657,7 @@ export function CurvaPlanoRealizado({
   diasDecorridos,
   prefixo,
   mostrarBatalhao = true,
+  mesEncerrado = false,
 }: {
   fracoes: CurvaFracao[];
   metaGlobal: number;
@@ -660,6 +666,9 @@ export function CurvaPlanoRealizado({
   diasDecorridos: number;
   /** "AAAA-MM" do recorte. */
   prefixo?: string;
+  /** O mês do recorte já terminou. Enquanto o último dia corre, o déficit
+   *  ainda tem para onde ir — ver `EntradaTendencia.encerrado`. */
+  mesEncerrado?: boolean;
   /** Com filtro de fração ligado, `fracoes` tem uma linha só e a série do
    *  Batalhão é a daquela fração: o cartão sairia rotulado "Batalhão" com a meta
    *  e a curva de uma Cia. Some, e a curva da fração fica na grade abaixo. */
@@ -685,6 +694,7 @@ export function CurvaPlanoRealizado({
           diasMes={diasMes}
           diasDecorridos={diasDecorridos}
           porTurno={false}
+          encerrado={mesEncerrado}
         />
       )}
 
@@ -706,6 +716,7 @@ export function CurvaPlanoRealizado({
             diasMes={diasMes}
             diasDecorridos={diasDecorridos}
             porTurno
+            encerrado={mesEncerrado}
           />
         ))}
       </div>

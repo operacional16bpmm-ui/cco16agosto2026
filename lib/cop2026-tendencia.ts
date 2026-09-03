@@ -179,6 +179,16 @@ export interface EntradaTendencia {
   realizado: number;
   turnosMes: number;
   turnosDecorridos: number;
+  /**
+   * O período já TERMINOU? Vem de `progressoDoMes`/`progressoDaJanela`.
+   *
+   * Existe porque `turnosDecorridos` inclui o turno EM CURSO: no último dia do
+   * mês `turnosRestantes` já é zero com o dia inteiro pela frente. Sem esta
+   * distinção o painel desistia de manhã — marcava `irrecuperavel`, apagava o
+   * ritmo de recuperação e o veredito anunciava "o período já se encerrou" às
+   * 08h do dia 30. Omitir mantém o comportamento antigo.
+   */
+  encerrado?: boolean;
 }
 
 export interface Tendencia {
@@ -227,10 +237,17 @@ export function calcularTendencia(e: EntradaTendencia): Tendencia {
   const deficit = Math.max(0, meta - realizado);
   const agio = Math.max(0, realizado - meta);
 
-  // Sem turno restante o ritmo de recuperação não existe. Dividir por 1 aqui
-  // — como fazia a proposta original com Math.max(1, ...) — anunciaria
-  // "faltam 415 por turno" com o mês já encerrado. O déficit fica em `deficit`.
-  const ritmoRecuperacao = turnosRestantes > 0 ? deficit / turnosRestantes : 0;
+  /* Sem turno restante o ritmo de recuperação não existe. Dividir por 1 aqui
+     — como fazia a proposta original com Math.max(1, ...) — anunciaria
+     "faltam 415 por turno" com o mês já encerrado. O déficit fica em `deficit`.
+
+     O ÚLTIMO DIA é o caso do meio: `turnosRestantes` é zero porque o turno em
+     curso já entrou em `turnosDecorridos`, mas o dia ainda está aberto e tudo
+     o que falta pode entrar hoje. Aí a recuperação é o déficit inteiro, e não
+     zero — que era o que punha "—" na célula às 08h do dia 30. */
+  const encerrado = e.encerrado ?? true;
+  const turnosParaRecuperar = turnosRestantes > 0 ? turnosRestantes : encerrado ? 0 : 1;
+  const ritmoRecuperacao = turnosParaRecuperar > 0 ? deficit / turnosParaRecuperar : 0;
 
   const aderencia = metaAcumulada > 0 ? (realizado / metaAcumulada) * 100 : null;
   const cumprimento = meta > 0 ? (realizado / meta) * 100 : 0;
@@ -264,7 +281,9 @@ export function calcularTendencia(e: EntradaTendencia): Tendencia {
     deficit,
     agio,
     situacao,
-    irrecuperavel: turnosRestantes === 0 && deficit > 0,
+    /* Irrecuperável é veredito, não medida: só vale depois que o período
+       fechou. Enquanto o último dia corre, o déficit ainda tem para onde ir. */
+    irrecuperavel: encerrado && turnosRestantes === 0 && deficit > 0,
   };
 }
 
