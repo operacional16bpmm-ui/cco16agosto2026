@@ -22,17 +22,38 @@
 -- que o 16º BPM/M pertence ao CPA/M-5. O padrão se repete em 501→CPA/M-1,
 -- 503→CPA/M-3, 505→CPA/M-5, 509→CPA/M-9.
 --
--- O QUE O DADO **NÃO** DIZ, E POR ISSO NÃO FOI ADIVINHADO
+-- O NOME DO COMANDO ESTAVA DENTRO DO PRÓPRIO DADO
 --
--- O nome do batalhão está no DEJEM ("16.BPM/M"). O nome do CPA **não está**
--- ligado ao código em lugar nenhum: `dejem_benchmark_gc` tem os 42 grandes
--- comandos como texto solto, com variantes do mesmo ("CPA/M-1" e
--- "CPA/M-1 66 1BPM/M" como registros distintos). São 22 grupos.
+-- Primeira leitura concluiu que o nome do CPA não existia ligado ao código, e
+-- que 48 grupos precisariam ser digitados à mão. Estava errado: a OPM de sufixo
+-- **`00`** é a SEDE do comando, e ela traz o nome.
 --
--- Por isso `cpa_nome` nasce NULL e é preenchido UMA vez pelo Comando, na tela
--- de Administração → Unidades. Carimbar um CPA errado num sistema oficial é
--- pior do que deixar em branco: em branco alguém pergunta, errado ninguém
--- percebe. `cop_unidade_pendente_de_revisao` é a lista do que falta.
+--     50500 → "CPA/M-5"   e 50516 é o 16.BPM/M, que pende dela
+--     50100 → "CPA/M-1"   60100 → "CPI-1"   62000 → "CPRV"
+--
+-- CONFERÊNCIA INDEPENDENTE, porque uma dedução sozinha não basta para carimbar
+-- comando em sistema oficial: o relatório `ExportRelGerEscOP` exportado da
+-- intranet (40.473 linhas, colunas CPA;Convênio;AISP) dá o par CPA↔batalhão
+-- direto da fonte da Corporação. Foram 96 batalhões, **zero conflito**, e o
+-- agrupamento bate 100% com o do código de 9 dígitos:
+--
+--     CPA/M-5  → 16, 23, 49 BPM/M   = grupo 505
+--     CPA/M-1  →  7, 11, 13 BPM/M   = grupo 501
+--     CPA/M-10 →  1, 22, 27, 37     = grupo 510
+--
+-- Nomeados assim: 12 CPA/M, 10 CPI, CPTRAN, CPRV, CPAMB, CPC, CPM, CBI-2,
+-- CBI-3, CAVPM e as diretorias — todo comando territorial, que é o universo da
+-- auditoria de COP.
+--
+-- OS 13 QUE CONTINUAM SEM NOME não têm OPM de sede e não são CPA: são comandos
+-- diretos do Comando Geral (ensino, saúde, Bombeiros, Choque, COPOM, Casa
+-- Militar). Ficam para a tela de Administração → Unidades, com a lista dos
+-- subordinados à vista. Carimbar um comando errado num sistema que a
+-- Corregedoria e o Ministério Público vão ler é pior do que deixar em branco:
+-- em branco alguém pergunta, errado ninguém percebe.
+--
+-- A sede sai de `ativa` depois de nomear o pai — senão ela apareceria como
+-- batalhão irmão dos próprios subordinados no seletor.
 --
 -- NOME É O QUE APARECE. O código de 9 dígitos existe só como chave estável —
 -- batalhão renomeado não quebra histórico. Nenhuma tela mostra o código fora da
