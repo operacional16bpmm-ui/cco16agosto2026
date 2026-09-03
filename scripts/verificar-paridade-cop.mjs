@@ -17,6 +17,7 @@
 import { createClient } from "@supabase/supabase-js";
 
 import { extrairLancamentos, METAS_PADRAO_2026 } from "../lib/cop2026.ts";
+import { normalizarRe } from "../lib/cop2026-lancamento.ts";
 import { calcularPainel, FILTROS_VAZIOS } from "../lib/cop2026-metricas.ts";
 import { parseCsv } from "../lib/inventario-2026.ts";
 
@@ -40,7 +41,16 @@ if (!resposta.ok) {
   console.error(`x A planilha respondeu ${resposta.status}.`);
   process.exit(1);
 }
-const daPlanilha = extrairLancamentos(parseCsv(await resposta.text()));
+/* O banco guarda o RE CANÔNICO — `normalizarRe()`, o mesmo que o backfill
+   aplica na importação. A planilha guarda o que o auditor digitou. Sem passar
+   a planilha pelo mesmo normalizador, `auditores distintos` acusa divergência
+   que é só grafia: em 03/09/2026 o mesmo policial aparecia como `NNNNNN` e
+   como `NNNNNN-D`, e a planilha contava DOIS auditores onde o banco, certo,
+   contava um. Comparar identidade com regra diferente dos dois lados não mede
+   a virada de fonte, mede a diferença entre as duas réguas. */
+const comReCanonico = (l) => ({ ...l, re: normalizarRe(l.re).canonico || l.re });
+
+const daPlanilha = extrairLancamentos(parseCsv(await resposta.text())).map(comReCanonico);
 
 /* ---------------------------------------------------------------- banco */
 
@@ -51,6 +61,12 @@ const { data, error } = await db
     "id, data_auditoria, hora, turno, re, nome_guerra, posto, funcao, subunidade, auditou, videos_declarados, numero_parte, justificativa, criado_em, cop_evidencia(bruto, posicao, descartada)"
   )
   .is("excluido_em", null)
+  /* Só o que VEIO da planilha. Desde 01/09/2026 o portal recebe lançamento
+     próprio (`origem = 'formulario'`, a tela /cop2026/lancar) e esse nunca
+     existiu na planilha — compará-lo deixaria o gate vermelho para sempre por
+     uma diferença que é o projeto funcionando. Em 03/09/2026 eram 16
+     lançamentos e 68 evidências só do formulário. */
+  .eq("origem", "planilha")
   .limit(20_000);
 if (error) {
   console.error(`x Falha ao ler o banco: ${error.message}`);
