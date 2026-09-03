@@ -163,6 +163,48 @@ export async function nomearCpa(
   }
 }
 
+/**
+ * O batalhão que ESTA instalação atende.
+ *
+ * É a costura da Fase 2: hoje devolve o 16º BPM/M e todo lançamento cai na
+ * árvore dele. Quando o segundo batalhão entrar, o valor passa a vir do vínculo
+ * do usuário — e nada mais no caminho de gravação muda, porque ninguém abaixo
+ * daqui sabe qual batalhão é.
+ *
+ * Variável de ambiente, e não constante: é o mesmo motivo de `COP2026_FONTE` —
+ * poder virar sem esperar build, no meio de um turno de serviço.
+ */
+export function batalhaoDaInstalacao(): string {
+  const v = process.env.COP2026_BATALHAO;
+  return v && /^\d{5}$/.test(v) ? v : "50516";
+}
+
+/**
+ * Vocabulário do painel ('em', '1cia', 'ft') → fração real da árvore.
+ *
+ * O de-para mora no banco (`cop_unidade.subunidade_painel`), não aqui: quando o
+ * 23º BPM/M entrar, o admin dele mapeia as frações próprias sem ninguém editar
+ * TypeScript. Devolve `null` quando não há correspondência — lançamento sem
+ * fração declarada continua existindo e continua aparecendo como órfão, que é a
+ * regra de `docs/cop2026-padroes-comando.md`.
+ */
+export async function fracaoDaSubunidade(
+  subunidade: string,
+  codBatalhao: string = batalhaoDaInstalacao()
+): Promise<string | null> {
+  if (!subunidade.trim()) return null;
+  return seguro(async () => {
+    const { data, error } = await createAdminClient()
+      .from("cop_unidade")
+      .select("cod")
+      .eq("cod_pai", codBatalhao)
+      .eq("subunidade_painel", subunidade)
+      .maybeSingle();
+    if (error) throw error;
+    return (data?.cod as string | undefined) ?? null;
+  }, null);
+}
+
 /** Contagem por tipo, para a área técnica do admin. */
 export async function resumoDaDimensao(): Promise<{
   cpas: number;

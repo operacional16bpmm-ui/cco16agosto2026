@@ -85,6 +85,7 @@ export function AbasAdmin({ atual }: { atual: string }) {
     { href: "/cop2026/admin/auditores", rotulo: "Auditores" },
     { href: "/cop2026/admin/parametros", rotulo: "Metas" },
     { href: "/cop2026/admin/unidades", rotulo: "Unidades" },
+    { href: "/cop2026/admin/trilha", rotulo: "Trilha" },
     { href: "/cop2026/admin/importar", rotulo: "Importar" },
     { href: "/cop2026/admin/saude", rotulo: "Saúde" },
   ];

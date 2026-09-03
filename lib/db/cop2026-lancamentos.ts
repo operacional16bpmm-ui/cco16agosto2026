@@ -9,6 +9,7 @@ import {
   type SubunidadeValida,
 } from "@/lib/cop2026-lancamento";
 import { RELATORIOS_MENSAIS } from "@/lib/cop2026-relatorios";
+import { fracaoDaSubunidade } from "@/lib/db/cop2026-unidade";
 
 /**
  * Gravação e leitura dos lançamentos próprios da Auditoria de COP
@@ -86,6 +87,11 @@ export async function gravarLancamento(
       posto: v.posto,
       funcao: v.funcao,
       subunidade: contexto.subunidade,
+      /* Fase 2: a fração REAL na árvore CPA → Batalhão → Fração. `subunidade`
+         continua sendo o vocabulário do painel e não muda de significado — as
+         duas convivem de propósito durante a virada. `null` quando a fração não
+         casa, e aí o lançamento aparece como órfão, como sempre apareceu. */
+      unidade_cod: await fracaoDaSubunidade(contexto.subunidade),
       auditou: v.auditou,
       // Régua A (oficial em setembro): o que a pessoa declarou. Quando ela não
       // declara número, a própria contagem de identificadores serve — é o que

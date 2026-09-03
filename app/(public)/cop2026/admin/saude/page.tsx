@@ -6,6 +6,7 @@ import { exigirAdminCop } from "@/lib/db/cop2026-autorizados";
 import { medirSaude } from "@/lib/cop2026-saude";
 import { AbasAdmin, CabecalhoAdmin } from "../cabecalho-admin";
 import { PainelSaude } from "./painel-saude";
+import { SecaoInfra } from "./secao-infra";
 
 export const metadata: Metadata = {
   title: "Saúde do sistema · Auditoria de COP 2026",
@@ -35,6 +36,9 @@ export default async function AdminSaudePage() {
 
       <main>
         <PainelSaude inicial={inicial} assistenteAtivo={Boolean(process.env.ANTHROPIC_API_KEY)} />
+        {/* Server component à parte: os dados de infraestrutura vêm de
+            `server-only` e não têm por que atravessar a fronteira do cliente. */}
+        <SecaoInfra />
       </main>
 
       <RodapeCop
