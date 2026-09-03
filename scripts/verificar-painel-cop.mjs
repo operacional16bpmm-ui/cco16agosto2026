@@ -238,3 +238,37 @@ test("a fração segue a escala do recorte, e não a do mês", () => {
   const somaSemanas = primeira.semanas.reduce((s, x) => s + x.meta, 0);
   assert.equal(somaSemanas, 195);
 });
+
+/* ------------------------------------------------- régua do "não aferível" */
+
+/**
+ * Determinação do Comando (03/09/2026): "não aferível" é ausência de BASE,
+ * nunca resultado zero. Um período ABERTO sem produção é FAIXA CRÍTICA — foi
+ * assim que a semana em curso deixou de sair cinza ao lado da linha da mesma
+ * fração, que já saía crítica. O veredito do topo era a última superfície com
+ * o discriminador antigo: dizia "não aferível" enquanto o velocímetro logo
+ * abaixo dizia CRÍTICA, sobre o mesmo zero.
+ */
+test("ciclo aberto sem nenhum lançamento é CRÍTICO, não 'não aferível'", () => {
+  const vazio = calcularPainel([], METAS_PADRAO_2026, RECORTE_SETEMBRO, "2026-09-03");
+  assert.equal(vazio.total, 0);
+  assert.equal(
+    vazio.nivelGeral,
+    "critico",
+    "período aberto sem produção tem base — a régua manda FAIXA CRÍTICA"
+  );
+});
+
+test("mês que ainda não começou continua 'não aferível'", () => {
+  const outubro = {
+    ...RECORTE_SETEMBRO,
+    de: "2026-10-01",
+    ate: "2026-10-31",
+  };
+  const futuro = calcularPainel([], METAS_PADRAO_2026, outubro, "2026-09-03");
+  assert.equal(
+    futuro.nivelGeral,
+    "neutro",
+    "sem período iniciado não há base para classificar"
+  );
+});

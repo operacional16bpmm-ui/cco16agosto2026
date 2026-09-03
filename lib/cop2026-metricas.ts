@@ -1498,7 +1498,13 @@ export function calcularPainel(
     });
   })();
 
-  const nivelGeral = nivelPorCumprimento(pct, meta > 0 && dados.length > 0);
+  /* `semanasAbertas > 0`, e não `dados.length > 0`: "não aferível" é ausência de
+     BASE, nunca resultado zero. Período ABERTO sem nenhum lançamento tem base —
+     é FAIXA CRÍTICA — e só o mês que ainda não começou sai não aferível. Com o
+     discriminador antigo o veredito do topo dizia "não aferível" enquanto o
+     velocímetro logo abaixo já dizia CRÍTICA: a última superfície com a régua
+     que o Comando aposentou em 03/09/2026. */
+  const nivelGeral = nivelPorCumprimento(pct, meta > 0 && semanasAbertas > 0);
 
   return {
     minimo,
