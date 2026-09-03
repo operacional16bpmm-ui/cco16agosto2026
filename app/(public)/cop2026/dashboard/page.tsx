@@ -5,7 +5,7 @@ import { RodapeCop } from "@/components/publico16/cop/rodape-cop";
 import { lerAuditoriaCop2026 } from "@/lib/cop2026-leitura";
 import { lerFiltros } from "@/lib/cop2026-metricas";
 import { janelaAtencaoDias } from "@/lib/cop2026-config-atencao";
-import { mesCorrente } from "@/lib/cop2026-relatorios";
+import { cicloAcabou, fimDoCicloCadastrado, mesCorrente } from "@/lib/cop2026-relatorios";
 import { ehAdminCop } from "@/lib/cop2026-acesso";
 import { exigirAcessoCop } from "@/lib/db/cop2026-autorizados";
 
@@ -80,6 +80,25 @@ export default async function DashboardPage({
             mesCorrente() ? `Painel de ${mesCorrente()!.rotulo}` : "Painel do ciclo"
           }
         />
+      )}
+
+      {/* Calendário do ciclo esgotado: sem mês âncora, `calcularPainel` soma o
+          CICLO INTEIRO contra a meta de um mês, e o painel não teria como
+          acusar isso sozinho — o número simplesmente fica errado em silêncio.
+          O aviso sai também no modo briefing: um PNG com essa distorção
+          circulando no WhatsApp é pior que a tela, porque ninguém vê o
+          contexto. A rede em `verificar:periodo` cobra o cadastro 45 dias
+          antes; esta faixa é o que resta se ela for ignorada. */}
+      {cicloAcabou() && (
+        <p
+          role="alert"
+          className="mx-auto mt-4 max-w-[1400px] rounded-lg border border-sinal-atencao/50 bg-sinal-atencao-suave px-4 py-3 text-[13px] leading-relaxed text-sinal-atencao"
+        >
+          <strong>O calendário da auditoria terminou em {fimDoCicloCadastrado()}.</strong>{" "}
+          Sem período cadastrado, os números abaixo somam o ciclo inteiro contra a meta
+          de um mês — não use este painel para cobrança até o próximo período ser
+          cadastrado.
+        </p>
       )}
 
       <main className={modoBriefing ? undefined : "pt-4 sm:pt-6"}>

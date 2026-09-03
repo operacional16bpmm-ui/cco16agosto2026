@@ -409,7 +409,11 @@ export function FormularioLancamento({ identificado }: { identificado: string | 
         avisos={estado.avisos}
         data={data}
         turno={turno}
-        re={re}
+        /* RE CANÔNICO, não o digitado: o servidor grava
+           `normalizarRe(re).canonico` (`972607-1`), e o comprovante é o print
+           que o auditor guarda como prova. Exibir "972607 1" ou "9726071" aqui
+           faz o papel discordar do registro que o Comando confere depois. */
+        re={reNormalizado.canonico || re}
         nomeGuerra={nomeGuerra}
         posto={posto}
         fracao={fichaRoster?.cia}
@@ -795,7 +799,9 @@ export function FormularioLancamento({ identificado }: { identificado: string | 
         <CartaoRevisao
           data={data}
           turno={turno}
-          re={re}
+          /* Mesma razão do comprovante: a revisão mostra o que VAI ser gravado,
+             e o que vai ser gravado é o canônico. */
+          re={reNormalizado.canonico || re}
           nomeGuerra={nomeGuerra}
           posto={posto}
           funcao={funcao}

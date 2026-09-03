@@ -91,6 +91,31 @@ export function mesCorrente(agora: Date = new Date()): RelatorioMes | undefined 
   return RELATORIOS_MENSAIS.find((m) => hoje >= m.periodo.de && hoje <= m.periodo.ate);
 }
 
+/**
+ * Último dia coberto pelo calendário do ciclo (`aaaa-mm-dd`).
+ *
+ * O calendário é uma lista escrita à mão, e é a única coisa que amarra o painel
+ * a um mês. Depois desta data `mesCorrente()` devolve `undefined` para sempre e
+ * TODO o painel degrada em silêncio para "ciclo inteiro": título genérico, meta
+ * somando períodos e recorte sem âncora. Nada quebra, nada acusa — que é o pior
+ * jeito de falhar num painel que o Comando lê. Ver `cicloAcabou()` e a rede em
+ * `verificar:periodo`, que cobra o cadastro do período seguinte ANTES da virada.
+ */
+export function fimDoCicloCadastrado(): string {
+  return RELATORIOS_MENSAIS.reduce(
+    (maior, m) => (m.periodo.ate > maior ? m.periodo.ate : maior),
+    ""
+  );
+}
+
+/** O ciclo cadastrado já terminou? Distinto de "ainda não começou": só é
+ *  verdade DEPOIS do último período, que é quando o painel precisa avisar em
+ *  vez de mostrar um agregado que ninguém pediu. */
+export function cicloAcabou(agora: Date = new Date()): boolean {
+  const hoje = agora.toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" });
+  return hoje > fimDoCicloCadastrado();
+}
+
 /** Verdadeiro depois do instante de encerramento do mês. */
 export function periodoEncerrado(mes: RelatorioMes): boolean {
   // Sem `encerraEm`, o fim do período é o fim do último dia dele em Brasília.

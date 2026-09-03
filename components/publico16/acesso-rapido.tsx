@@ -108,6 +108,14 @@ export function AcessoRapido({ urlFormulario }: { urlFormulario: string }) {
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {atalhos.map((a) => {
             const isDestaque = a.destaque;
+            /* O botão de socorro acompanha o FORMULÁRIO, não o cartão em
+               destaque. A dúvida que ele atende é a do preenchimento ("estou
+               com dúvida no preenchimento da Auditoria"), então ele só faz
+               sentido colado no cartão que abre o formulário. Estava preso a
+               `destaque`, que hoje calha de ser o mesmo cartão: bastaria o
+               Comando promover o Dashboard para o texto do WhatsApp passar a
+               prometer ajuda de preenchimento em cima de um painel de leitura. */
+            const ehOFormulario = a.href === urlFormulario;
 
             const cardContent = (
               <div
@@ -225,7 +233,7 @@ export function AcessoRapido({ urlFormulario }: { urlFormulario: string }) {
             // 01/09/2026 — o último link externo daqui era a planilha.
             return (
               <div key={a.rotulo} className="relative h-full">
-                {isDestaque && <AjudaWhatsApp />}
+                {ehOFormulario && <AjudaWhatsApp />}
                 <Link href={a.href} className="block h-full">
                   {cardContent}
                 </Link>
