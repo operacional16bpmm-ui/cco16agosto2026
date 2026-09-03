@@ -16,6 +16,7 @@ import {
   marcosMetaAcumulada,
   prioridadeAcao,
   progressoDoMes,
+  progressoDaJanela,
   quinzenasIniciadas,
   regularidadeProducao,
   semanasIniciadas,
@@ -188,6 +189,9 @@ export function CaixaTendencia({
   auditoresPorQuinzena,
   referencia,
   semFracao,
+  janela,
+  rotuloPeriodo = "mês",
+  diaDoMes,
 }: {
   fracoes: LinhaFracao[];
   /** Auditores distintos na 1a e na 2a quinzena, por fracao. */
@@ -196,9 +200,21 @@ export function CaixaTendencia({
   /** Evidências de lançamentos sem fração declarada — não têm cota e por isso
    *  não aparecem em linha nenhuma da tabela. Ver abaixo. */
   semFracao?: { lancamentos: number; videos: number; auditores: number };
+  /** Janela do recorte. Com uma semana selecionada as metas das frações já são
+   *  as da semana, e medir o passo contra os 60 turnos do mês punha "ALVO
+   *  0,18/turno · ADERÊNCIA 1.000%" na linha do Estado-Maior. */
+  janela?: { dias: number; decorridos: number; encerrado: boolean };
+  /** Como o período se chama no cabeçalho: "mês" ou "semana". */
+  rotuloPeriodo?: string;
+  /** Dia corrido DO MÊS. Semana e quinzena iniciadas são posições no calendário
+   *  mensal: medi-las pelo dia dentro da semana diria "1 semana iniciada" no
+   *  dia 24. Sem a prop, cai no dia da própria janela. */
+  diaDoMes?: number;
 }) {
   const { ano, mes, referencia: agora } = hojeEmSaoPaulo();
-  const p = progressoDoMes(referencia ?? agora, ano, mes);
+  const p = janela ? progressoDaJanela(janela) : progressoDoMes(referencia ?? agora, ano, mes);
+
+  const diaNoMes = diaDoMes ?? p.diasDecorridos;
 
   const metaGlobal = fracoes.reduce((s, f) => s + f.meta, 0);
   /* O total do Batalhão soma TODAS as evidências do recorte, inclusive as de
@@ -230,13 +246,13 @@ export function CaixaTendencia({
       peso: MATRIZ_PROPORCIONAL_2026[f.chave]?.pctMeta,
       regularidade: regularidadeProducao(
         semanas.map((s) => s.feito),
-        semanasIniciadas(p.diasDecorridos)
+        semanasIniciadas(diaNoMes)
       ),
       dispersao: indiceDispersao(f.lancaram, f.efetivo),
       quinzenal: dispersaoQuinzenal(
         auditoresPorQuinzena?.[f.chave] ?? [0, 0],
         f.efetivo,
-        quinzenasIniciadas(p.diasDecorridos)
+        quinzenasIniciadas(diaNoMes)
       ),
       lote: alertaLote(semanas.map((s) => ({ semana: s.semana, meta: s.meta, feito: s.feito }))),
       prioridade: prioridadeAcao(t),
@@ -742,7 +758,7 @@ export function CaixaTendencia({
         {/* ---------- meta acumulada por turno ---------- */}
         <div className="border-t-2 border-slate-200 px-5 py-4 sm:px-6">
           <span className="dados text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
-            Meta acumulada por turno · {N0.format(p.turnosMes)} turnos no mês
+            Meta acumulada por turno · {N0.format(p.turnosMes)} turnos no {rotuloPeriodo}
           </span>
           <p className="mt-1 text-[12px] leading-snug text-slate-500">
             O ritmo-alvo é fracionário e se acumula turno a turno. A produção real é sempre
@@ -804,7 +820,7 @@ export function CaixaTendencia({
             <span style={{ color: COR.real }}>real</span> é o praticado;{" "}
             <span style={{ color: COR.recuperacao }}>recuperação</span> é o que resta fazer no tempo
             que sobra, e <strong>pressão</strong> mostra quantas vezes isso está acima do normal. A
-            fração mede por turno de serviço — 2 por dia, {N0.format(p.turnosMes)} no mês, inclusive
+            fração mede por turno de serviço — 2 por dia, {N0.format(p.turnosMes)} no {rotuloPeriodo}, inclusive
             o Estado-Maior, que cobre dia e tarde por DEJEM. O Batalhão roda{" "}
             {N0.format(turnosDiaBatalhao)} turnos-fração por dia ({N0.format(turnosMesBatalhao)} no
             mês) e por isso se mede por DIA: dividir a meta global pelo total de turnos misturaria
