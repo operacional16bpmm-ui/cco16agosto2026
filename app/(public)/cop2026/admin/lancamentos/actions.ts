@@ -192,17 +192,23 @@ export async function salvarJanelaAtencaoAction(
     );
   }
   try {
-    const gravado = await gravarJanelaAtencaoDias(dias);
+    const { dias: gravado, persistido } = await gravarJanelaAtencaoDias(dias);
     revalidarPaineis();
     /* `revalidarPaineis()` não cobre a tela de Parâmetros, que é justamente a
        ÚNICA em que este formulário aparece — sem isto o "atual: X dias" logo
        acima do campo continuava mostrando o valor antigo depois de salvar.
        `salvarParametroAction` já fazia esse par; aqui tinha ficado de fora. */
     revalidatePath("/cop2026/admin/parametros");
+    const plural = gravado === 1 ? "" : "s";
     return {
       ok: true,
       error: null,
-      aviso: `Janela do padrão de atenção passa a ser ${gravado} dia${gravado === 1 ? "" : "s"}.`,
+      /* Quando o banco não aceita, a janela vale só neste navegador — e a tela
+         tem de dizer, porque foi exatamente esse silêncio que fez a decisão do
+         Major valer para uma aba só. */
+      aviso: persistido
+        ? `Janela do padrão de atenção passa a ser ${gravado} dia${plural}, para todos os leitores do painel.`
+        : `Janela ajustada para ${gravado} dia${plural}, mas SÓ NESTE NAVEGADOR: o banco não respondeu. A decisão ainda não está publicada para os demais.`,
     };
   } catch (e) {
     console.error("[cop2026-admin] salvar janela de atenção:", e);

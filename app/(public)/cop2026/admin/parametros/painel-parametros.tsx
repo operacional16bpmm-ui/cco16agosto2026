@@ -151,11 +151,16 @@ export function PainelParametros({
       {/* -------------------------------------------------------------------
        * JANELA DA CAIXA "PONTOS DE ATENÇÃO".
        *
-       * Não é meta, é decisão de UI do painel — por isso mora fora da tabela
-       * de metas e num cookie, não em migration nova (ver
-       * `lib/cop2026-config-atencao.ts`). Determinação do Maj PM em 02/09:
-       * um lançamento isolado no dia 2 não é padrão, então a janela mínima
-       * para caracterizar padrão é uma semana, e o corte fica editável aqui.
+       * Não é meta, é parâmetro de exibição do painel — por isso mora fora da
+       * tabela de metas, em `cop_config` (migration 030). Morava em COOKIE até
+       * 03/09/2026, e o efeito era uma decisão do Comando que valia só no
+       * navegador de quem clicou em Salvar: qualquer outro leitor do painel
+       * continuava na régua padrão sem ser avisado. Ver
+       * `lib/cop2026-config-atencao.ts`.
+       *
+       * Determinação do Maj PM em 02/09: um lançamento isolado no dia 2 não é
+       * padrão, então a janela mínima para caracterizar padrão é uma semana, e
+       * o corte fica editável aqui.
        * ---------------------------------------------------------------- */}
       <section className="space-y-3 rounded-xl border border-borda bg-tatico-super p-5">
         <header>
@@ -171,7 +176,8 @@ export function PainelParametros({
           </p>
           <p className="mt-1 text-[12px] text-texto-suave">
             Vale entre {JANELA_ATENCAO_MIN_DIAS} e {JANELA_ATENCAO_MAX_DIAS} dias · atual:{" "}
-            <strong className="dados text-branco">{janelaAtencaoDias}</strong>
+            <strong className="dados text-branco">{janelaAtencaoDias}</strong> · vale para{" "}
+            <strong className="text-branco">todos</strong> que abrem o painel
           </p>
         </header>
 
