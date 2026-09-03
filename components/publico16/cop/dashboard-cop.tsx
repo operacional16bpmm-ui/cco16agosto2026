@@ -48,7 +48,9 @@ import { CaixaTendencia } from "@/components/publico16/cop/ciclo/caixa-tendencia
 import { CurvaPlanoRealizado } from "@/components/publico16/cop/ciclo/curva-plano";
 import { progressoDoMes } from "@/lib/cop2026-tendencia";
 import {
+  MATRIZ_PROPORCIONAL_2026,
   META_TOTAL_BATALHAO,
+  ORDEM_SUBUNIDADES,
   ROTULO_SUBUNIDADE,
   type LancamentoCop,
   type MetaSubunidade,
@@ -375,9 +377,14 @@ function Grupo({ ativo, children }: { ativo: boolean; children: React.ReactNode 
    - fixar a altura e cortar com `overflow: hidden`: isso recorta o painel, não o
      ajusta. A altura aqui é sempre a altura natural do conteúdo. */
 
-/* 1240px é o A4 retrato a 150 dpi e fica acima do breakpoint `lg` (1024px):
-   é a largura em que o painel foi desenhado para ser lido. */
-const BRIEFING_LARGURA = 1240;
+/* MESMO valor de `BRIEFING_LARGURA` em lib/cop2026-briefing-arquivo.ts, que é
+   `server-only` e por isso não dá para importar daqui — se um mudar, mude o
+   outro. Era 1240 (A4 retrato a 150 dpi) e ficou para trás quando o servidor
+   subiu para 1440: a tabela "Tendência por Fração" pede ~1.250px de colunas, e
+   a 1240 as duas últimas (QUINZENA e AÇÃO) saíam cortadas na borda. O plano B
+   entregava justamente o PNG defeituoso no momento em que ele mais importa —
+   quando o gerador do servidor já falhou. */
+const BRIEFING_LARGURA = 1440;
 /* Altura provisória do palco só para o primeiro cálculo de layout; qualquer
    coisa em `vh` precisa de um viewport plausível antes da medição real. */
 const BRIEFING_ALTURA_INICIAL = 1754;
@@ -674,6 +681,22 @@ export function DashboardCop({
     f.semana === "todas"
       ? `META GLOBAL — ${FMT.format(p.meta)} EVIDÊNCIAS`
       : `META DA SEMANA ${f.semana} — ${FMT.format(p.meta)} EVIDÊNCIAS`;
+
+  /* GLOSSÁRIO — texto derivado da fonte única, nunca digitado.
+     Os dois verbetes traziam números fixos ("240/sem", "1ª Cia 49/sem", "3ª Cia
+     210 / 21,97%") que ficaram para trás quando o rateio semanal passou a ser
+     por DIAS (§3-C dos padrões do Comando): o glossário afirmava 240 enquanto os
+     cartões logo acima mostravam 225/224/223/288. Duas verdades na mesma tela,
+     no lugar em que o leitor vai justamente tirar a dúvida. */
+  const rateioDaMatriz = ORDEM_SUBUNIDADES.map((chave) => {
+    const m = MATRIZ_PROPORCIONAL_2026[chave];
+    return m ? `${m.rotulo} (${FMT.format(m.meta)} / ${PCT.format(m.pctMeta)}%)` : null;
+  })
+    .filter(Boolean)
+    .join(", ");
+  const rateioSemanal = p.semanasBatalhao
+    .map((s) => `${s.rotulo} ${FMT.format(s.meta)}`)
+    .join(" · ");
 
   /* Na V3 o prazo vem do CALENDARIO. O `veredito` de producao mede o que resta
      pelo numero de turnos com lancamento, e por isso anunciava "os 15 turnos
@@ -1209,6 +1232,7 @@ export function DashboardCop({
               <PaletaComando
                 className="w-full"
                 lancamentos={lancamentos}
+                semanas={p.semanasBatalhao}
                 onSelecionarFracao={(fracao) => {
                   definir({ fracao });
                   toast.info(`Filtro aplicado: ${ROTULO_SUBUNIDADE[fracao] ?? fracao}`);
@@ -1283,6 +1307,7 @@ export function DashboardCop({
             <div className="shrink-0">
               <PaletaComando
                 lancamentos={lancamentos}
+                semanas={p.semanasBatalhao}
                 onSelecionarFracao={(fracao) => {
                   definir({ fracao });
                   toast.info(`Filtro aplicado: ${ROTULO_SUBUNIDADE[fracao] ?? fracao}`);
@@ -2554,12 +2579,12 @@ export function DashboardCop({
           {[
             ["Evidência", "Cada mídia de COP auditada e registrada no formulário, com o ID informado."],
             [
-              "Meta global do Batalhão (960)",
-              "Universo total de 960 evidências distribuído de forma justa e proporcional ao quadro fixo com COP (570 PMs): 1ª Cia (195 / 20,32%), 2ª Cia (180 / 18,74%), 3ª Cia (210 / 21,97%), 4ª Cia (180 / 18,74%), FT (147 / 15,23%) e EM (48 / 5,00%).",
+              `Meta global do Batalhão (${FMT.format(META_TOTAL_BATALHAO)})`,
+              `Universo total de ${FMT.format(META_TOTAL_BATALHAO)} evidências distribuído de forma justa e proporcional ao quadro fixo com COP: ${rateioDaMatriz}.`,
             ],
             [
-              "Metas Semanais (240/sem)",
-              "Divisão do universo mensal em 4 semanas operacionais (240 evidências/semana para o Batalhão). O rateio semanal proporcional é: 1ª Cia (49/sem), 2ª Cia (45/sem), 3ª Cia (53/sem), 4ª Cia (45/sem), FT (37/sem) e EM (12/sem).",
+              "Metas Semanais",
+              `Divisão do universo mensal pelas semanas operacionais do mês, rateada por DIAS e não em quatro partes iguais — por isso a última costuma ser maior. No período em tela: ${rateioSemanal}.`,
             ],
             [
               "Matriz de Proporcionalidade",

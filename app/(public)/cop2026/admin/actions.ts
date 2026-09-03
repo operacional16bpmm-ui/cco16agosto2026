@@ -31,6 +31,22 @@ function falha(error: string): AutorizadoState {
   return { ...vazio, error };
 }
 
+/**
+ * O alvo da ação é a própria conta que a está executando?
+ *
+ * A tela já desabilita o botão nesse caso (`ehVoce`, em painel-autorizados.tsx),
+ * mas botão desabilitado não é proteção: pelo cabeçalho do arquivo, server
+ * action é endpoint próprio e invocável direto. Sem esta conferência, um POST
+ * cru se remove da lista de autorizados e tranca o Comando para fora da tela
+ * que administra o acesso.
+ *
+ * Os dois lados passam por `normalizarEmail` antes de chegar aqui; a comparação
+ * é redundante de propósito, para não depender de quem chamou ter normalizado.
+ */
+function ehOProprioAdmin(alvo: string, admin: string): boolean {
+  return normalizarEmail(alvo) === normalizarEmail(admin);
+}
+
 export async function incluirAutorizadoAction(
   _prev: AutorizadoState,
   formData: FormData
@@ -70,6 +86,9 @@ export async function alternarAtivoAction(
   const email = normalizarEmail(String(formData.get("email") ?? ""));
   const ativar = String(formData.get("ativar") ?? "") === "1";
   if (!EMAIL_VALIDO.test(email)) return falha("E-mail inválido.");
+  if (!ativar && ehOProprioAdmin(email, admin.email)) {
+    return falha("Você não pode desativar o próprio acesso.");
+  }
 
   try {
     await definirAtivo(email, ativar, admin.email);
@@ -89,6 +108,9 @@ export async function excluirAutorizadoAction(
 
   const email = normalizarEmail(String(formData.get("email") ?? ""));
   if (!EMAIL_VALIDO.test(email)) return falha("E-mail inválido.");
+  if (ehOProprioAdmin(email, admin.email)) {
+    return falha("Você não pode excluir o próprio acesso.");
+  }
 
   try {
     await removerAutorizado(email, admin.email);

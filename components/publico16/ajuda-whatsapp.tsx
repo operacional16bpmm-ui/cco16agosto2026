@@ -8,8 +8,10 @@
  * que do outro lado tem gente, não um FAQ.
  */
 const NUMERO = "5511949829748";
+/* Com acento: a mensagem sai em nome do Batalhão, e o `encodeURIComponent`
+   abaixo entrega UTF-8 que o WhatsApp lê sem problema no iOS e no Android. */
 const MENSAGEM =
-  "Ola! Sou do 16 BPM/M e estou com duvida no preenchimento da Auditoria de COP 2026.";
+  "Olá! Sou do 16º BPM/M e estou com dúvida no preenchimento da Auditoria de COP 2026.";
 
 export function AjudaWhatsApp() {
   return (

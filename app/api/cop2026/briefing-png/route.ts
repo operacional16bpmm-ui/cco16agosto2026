@@ -39,6 +39,6 @@ export async function GET(request: NextRequest) {
     const png = await capturarPainel(preparo.alvo, preparo.cookie);
     return respostaDeArquivo(png, "image/png", `painel-cop-2026-${dataDeHoje()}.png`);
   } catch (erro) {
-    return respostaDeFalha(erro, "png");
+    return respostaDeFalha(erro, "png", request);
   }
 }

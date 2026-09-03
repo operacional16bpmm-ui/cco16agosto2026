@@ -124,13 +124,51 @@ function escalaSegura(largura: number, altura: number) {
 export type CookieDeAcesso = { nome: string; valor: string; dominio: string };
 
 /**
+ * FILA DE UMA CAPTURA POR VEZ — e por que ela é obrigatória aqui.
+ *
+ * O cookie de sessão é posto com `browser.setCookie()`, que vale para o
+ * NAVEGADOR inteiro, não para a aba (ver o comentário do `--single-process`
+ * abaixo: contexto isolado não é possível neste binário). O navegador, por sua
+ * vez, é reaproveitado entre requisições da mesma instância quente.
+ *
+ * Sem serializar, duas exportações simultâneas na mesma instância se atropelam:
+ * a segunda chama `setCookie` antes de a primeira ter navegado, e a primeira
+ * fotografa o painel com a sessão da segunda — o recorte nominal de um auditor
+ * dentro do arquivo do outro. Pior ainda, o `finally` de uma apaga o cookie que
+ * a outra ainda está usando.
+ *
+ * O custo é real e aceito: capturas concorrentes na mesma instância viram
+ * sequenciais (a Vercel continua livre para escalar em instâncias novas, que
+ * têm cada uma o seu Chromium). Numa exportação que já leva dezenas de segundos,
+ * esperar a anterior é muito mais barato que vazar sessão entre auditores.
+ */
+let filaDeCaptura: Promise<unknown> = Promise.resolve();
+
+function emFila<T>(tarefa: () => Promise<T>): Promise<T> {
+  /* O `catch` no encadeamento é o que impede uma captura que falhou de derrubar
+     todas as seguintes: a fila segue viva, o erro continua indo para quem
+     chamou pelo `resultado`. */
+  const resultado = filaDeCaptura.then(tarefa, tarefa);
+  filaDeCaptura = resultado.catch(() => {});
+  return resultado;
+}
+
+/**
  * Abre a página em modo briefing, entrega a aba pronta a `render` e limpa tudo
  * depois. Existe para que PNG e PDF compartilhem exatamente a mesma preparação
  * — mesma sessão, mesmo viewport, mesma espera de rede e de fonte — e difiram
  * só no último passo. Quando os dois formatos divergem na preparação, um deles
  * envelhece em silêncio.
  */
-async function comPaginaDoPainel<T>(
+function comPaginaDoPainel<T>(
+  url: string,
+  cookie: CookieDeAcesso,
+  render: (pagina: Page) => Promise<T>
+): Promise<T> {
+  return emFila(() => capturar(url, cookie, render));
+}
+
+async function capturar<T>(
   url: string,
   cookie: CookieDeAcesso,
   render: (pagina: Page) => Promise<T>

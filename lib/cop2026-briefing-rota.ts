@@ -104,14 +104,75 @@ export function respostaDeArquivo(
   });
 }
 
-/** Falha de geração, com o detalhe técnico para o console do chamador. */
-export function respostaDeFalha(erro: unknown, formato: string): NextResponse {
+/**
+ * Requisição aberta por NAVEGAÇÃO (o `<a href>` do botão) e não por `fetch`.
+ *
+ * Mesma sonda que o `proxy.ts` usa para não devolver 401 cru ao Safari — aqui
+ * pelo mesmo motivo: a rota é aberta das duas formas, e a resposta de erro
+ * precisa mudar de forma junto.
+ */
+function ehNavegacao(request: NextRequest): boolean {
+  const modo = request.headers.get("sec-fetch-mode");
+  if (modo) return modo === "navigate";
+  return (request.headers.get("accept") ?? "").includes("text/html");
+}
+
+/**
+ * Falha de geração, com o detalhe técnico para o console do chamador.
+ *
+ * O PDF NUNCA é interceptado pelo JavaScript (ver `aoTocarExportar` — no iOS a
+ * ativação do toque expira antes do fetch de ~30s terminar), então ele chega
+ * aqui sempre por navegação. Devolver JSON nesse caminho põe `{"erro":...}` na
+ * cara de quem tocou no botão, ou baixa um ".pdf" com JSON dentro — é o mesmo
+ * defeito que o 401 cru já teve no proxy em 02/09/2026. Navegação recebe uma
+ * página que se lê; `fetch` continua recebendo o JSON que o PNG sabe tratar.
+ */
+export function respostaDeFalha(
+  erro: unknown,
+  formato: string,
+  request?: NextRequest
+): NextResponse {
   console.error(`[briefing-${formato}] falha ao gerar:`, erro);
+  const titulo = `Não foi possível gerar o painel em ${formato.toUpperCase()}.`;
+
+  if (request && ehNavegacao(request)) {
+    /* Sem `detalhe` na tela: a mensagem do erro pode carregar endereço interno
+       e recorte de quem chamou. O técnico fica no log da função. */
+    return new NextResponse(paginaDeFalha(titulo), {
+      status: 500,
+      headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" },
+    });
+  }
+
   return NextResponse.json(
-    {
-      erro: `Não foi possível gerar o painel em ${formato.toUpperCase()}.`,
-      detalhe: erro instanceof Error ? erro.message : String(erro),
-    },
+    { erro: titulo, detalhe: erro instanceof Error ? erro.message : String(erro) },
     { status: 500 }
   );
+}
+
+/** Tela mínima de falha — sem dependência de build, porque é servida de uma
+ *  rota de API que não passa pelo layout do portal. */
+function paginaDeFalha(titulo: string): string {
+  return `<!doctype html>
+<html lang="pt-BR">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${titulo}</title>
+<body style="margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0f1520;color:#e8edf4;font:16px/1.6 system-ui,-apple-system,Segoe UI,Roboto,sans-serif">
+  <main style="max-width:34rem;padding:2rem;text-align:center">
+    <p style="font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;color:#8fa0b8;margin:0 0 .75rem">
+      Auditoria de COP 2026
+    </p>
+    <h1 style="font-size:1.35rem;margin:0 0 1rem;color:#fff">${titulo}</h1>
+    <p style="margin:0 0 1.75rem;color:#b8c4d4">
+      O gerador não respondeu desta vez. Volte ao painel e toque em exportar de novo —
+      se insistir, exporte em PNG, que tem um segundo caminho no próprio navegador.
+    </p>
+    <a href="/cop2026/dashboard"
+       style="display:inline-block;padding:.7rem 1.4rem;border-radius:.5rem;background:#ca0202;color:#fff;text-decoration:none;font-weight:700">
+      Voltar ao painel
+    </a>
+  </main>
+</body>
+</html>`;
 }

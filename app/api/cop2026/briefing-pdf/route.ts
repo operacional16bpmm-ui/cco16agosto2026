@@ -38,6 +38,6 @@ export async function GET(request: NextRequest) {
     );
     return respostaDeArquivo(pdf, "application/pdf", `painel-cop-2026-${dataDeHoje()}.pdf`);
   } catch (erro) {
-    return respostaDeFalha(erro, "pdf");
+    return respostaDeFalha(erro, "pdf", request);
   }
 }

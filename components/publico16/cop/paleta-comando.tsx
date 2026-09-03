@@ -7,12 +7,18 @@ import { ROTULO_SUBUNIDADE, ORDEM_SUBUNIDADES, type LancamentoCop } from "@/lib/
 
 export function PaletaComando({
   lancamentos,
+  semanas,
   onSelecionarFracao,
   onSelecionarSemana,
   onExportarCsv,
   className,
 }: {
   lancamentos: LancamentoCop[];
+  /** Cotas do painel (`p.semanasBatalhao`). A lista era `[1,2,3,4]` com "240
+   *  evidências Btl" cravado em todas — número aposentado quando o rateio
+   *  semanal passou a ser por DIAS (§3-C), e que contradizia os cartões da
+   *  própria tela. Vem pronta de `calcularPainel` para não haver segunda conta. */
+  semanas: { semana: number; rotulo: string; meta: number }[];
   onSelecionarFracao: (fracao: string) => void;
   onSelecionarSemana: (semana: string) => void;
   onExportarCsv: () => void;
@@ -115,18 +121,20 @@ export function PaletaComando({
 
                 {/* Semanas Operacionais */}
                 <Command.Group heading="Semanas Operacionais" className="mt-2 px-2 py-1 text-[11px] font-bold text-ouro uppercase">
-                  {[1, 2, 3, 4].map((sem) => (
+                  {semanas.map((s) => (
                     <Command.Item
-                      key={sem}
+                      key={s.semana}
                       onSelect={() => {
-                        onSelecionarSemana(String(sem));
+                        onSelecionarSemana(String(s.semana));
                         setAberto(false);
                       }}
                       className="flex cursor-pointer items-center justify-between rounded-lg px-2.5 py-2 text-xs text-branco hover:bg-branco/10 aria-selected:bg-branco/15"
                     >
                       <div className="flex items-center gap-2">
                         <Calendar className="h-3.5 w-3.5 text-sinal-conforme" />
-                        <span>Semana {sem} (240 evidências Btl)</span>
+                        <span>
+                          {s.rotulo} ({s.meta} evidências Btl)
+                        </span>
                       </div>
                       <span className="text-[10px] text-texto-suave">Isolar semana</span>
                     </Command.Item>
