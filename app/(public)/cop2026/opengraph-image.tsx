@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { ImageResponse } from "next/og";
 
-import { META_SEMANAL_BATALHAO, META_TOTAL_BATALHAO } from "@/lib/cop2026";
+import { META_TOTAL_BATALHAO } from "@/lib/cop2026";
 import { mesCorrente } from "@/lib/cop2026-relatorios";
 
 /**
@@ -194,7 +194,7 @@ export default async function OpengraphImage() {
                   fontWeight: 700,
                 }}
               >
-                🎯 {`Meta: ${META_TOTAL_BATALHAO} Evidências (${META_SEMANAL_BATALHAO}/semana)`}
+                🎯 {`Meta: ${META_TOTAL_BATALHAO} Evidências no mês`}
               </span>
             </div>
           </div>

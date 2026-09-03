@@ -27,6 +27,8 @@ npx tsc --noEmit \
   && npm run verificar:periodo \
   && npm run verificar:lancamento \
   && npm run verificar:painel \
+  && npm run verificar:tendencia \
+  && npm run verificar:indices \
   && git add -A && git commit -m "<msg>" && npx vercel --prod --yes
 ```
 

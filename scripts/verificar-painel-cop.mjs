@@ -128,3 +128,113 @@ test("nenhum contador do painel de setembro é influenciado por lançamentos de 
       `um laço sobre \`lancamentos\` que não usa \`dados\` ou \`dadosSemFiltroDeSemana\`.\n`
   );
 });
+
+// ---------------------------------------------------------------------------
+// Escala única: meta e janela do recorte pertencem ao MESMO período
+//
+// Com `?semana=1` o painel trocava a meta para a cota da semana e mantinha a
+// janela do mês. A tela mostrava ritmo-alvo de 8,03/dia — 241 de meta semanal
+// divididos por 30 dias de calendário — e trajetória de 435,7%, "ADIANTADA",
+// ao lado do selo "Crítica · ABAIXO DA META".
+// ---------------------------------------------------------------------------
+
+const RECORTE_SETEMBRO = {
+  fracao: "todas",
+  turno: "todos",
+  semana: "todas",
+  de: "2026-09-01",
+  ate: "2026-09-30",
+  busca: "",
+  excecao: "",
+};
+
+test("com semana filtrada, a janela encolhe junto com a meta", () => {
+  const mes = calcularPainel(SETEMBRO, METAS_PADRAO_2026, RECORTE_SETEMBRO, "2026-09-03");
+  assert.equal(mes.janela.dias, 30);
+  assert.equal(mes.meta, 960);
+
+  const s1 = calcularPainel(
+    SETEMBRO,
+    METAS_PADRAO_2026,
+    { ...RECORTE_SETEMBRO, semana: "1" },
+    "2026-09-03"
+  );
+  assert.equal(s1.janela.dias, 7, "a janela da Semana 1 tem 7 dias");
+  assert.equal(s1.janela.de, "2026-09-01");
+  assert.equal(s1.janela.ate, "2026-09-07");
+  /* 225, e não 224: a meta do recorte é a SOMA das cotas das frações, cada uma
+     inteira. Ratear o agregado daria 224 e brigaria com a soma das seis linhas
+     da tabela — que é a conta que o Comando confere na mão. */
+  assert.equal(s1.meta, 225, "a cota da Semana 1 é rateada por dias");
+
+  const s4 = calcularPainel(
+    SETEMBRO,
+    METAS_PADRAO_2026,
+    { ...RECORTE_SETEMBRO, semana: "4" },
+    "2026-09-03"
+  );
+  assert.equal(s4.janela.dias, 9, "setembro não tem dia 31");
+  assert.equal(s4.janela.ate, "2026-09-30");
+  assert.equal(s4.meta, 288);
+});
+
+test("o passo diário é o mesmo em qualquer recorte de semana", () => {
+  const passos = ["todas", "1", "2", "3", "4"].map((semana) => {
+    const p = calcularPainel(
+      SETEMBRO,
+      METAS_PADRAO_2026,
+      { ...RECORTE_SETEMBRO, semana },
+      "2026-09-03"
+    );
+    // A invariante: a meta do recorte cabe na janela do recorte.
+    assert.ok(
+      Math.abs(p.metaDia * p.janela.dias - p.meta) < 0.001,
+      `meta ${p.meta} não fecha com ${p.metaDia}/dia × ${p.janela.dias} dias na semana ${semana}`
+    );
+    return p.metaDia;
+  });
+  /* O passo é praticamente o mesmo em qualquer semana. A folga de 0,25 existe
+     porque a cota de cada fração é inteira: 225/7, 224/7, 223/7 e 288/9 não dão
+     exatamente 32. Antes da correção a Semana 1 media 8,03/dia. */
+  for (const passo of passos) {
+    assert.ok(Math.abs(passo - 32) < 0.25, `passo diário fora dos 32/dia: ${passo}`);
+  }
+});
+
+test("as quatro cotas semanais somam a meta do mês, no topo e nos cartões", () => {
+  const p = calcularPainel(SETEMBRO, METAS_PADRAO_2026, RECORTE_SETEMBRO, "2026-09-03");
+  const soma = p.semanasBatalhao.reduce((s, x) => s + x.meta, 0);
+  assert.equal(soma, p.meta, "os cartões semanais não fecham a meta do mês");
+
+  // E o cartão de cada semana usa a MESMA cota que o topo passa a mostrar
+  // quando aquela semana é filtrada — era 240 de um lado e 241 do outro.
+  for (const semana of ["1", "2", "3", "4"]) {
+    const filtrado = calcularPainel(
+      SETEMBRO,
+      METAS_PADRAO_2026,
+      { ...RECORTE_SETEMBRO, semana },
+      "2026-09-03"
+    );
+    const cartao = p.semanasBatalhao.find((x) => String(x.semana) === semana);
+    assert.equal(cartao.meta, filtrado.meta, `semana ${semana}: cartão e topo discordam`);
+  }
+});
+
+test("a fração segue a escala do recorte, e não a do mês", () => {
+  const s1 = calcularPainel(
+    SETEMBRO,
+    METAS_PADRAO_2026,
+    { ...RECORTE_SETEMBRO, semana: "1" },
+    "2026-09-03"
+  );
+  const soma = s1.fracoes.reduce((s, x) => s + x.meta, 0);
+  assert.equal(soma, s1.meta, "a soma das frações tem que fechar a meta do recorte");
+
+  // Cota semanal da 1ª Cia: 195 no mês, rateada por dias na Semana 1.
+  const primeira = s1.fracoes.find((x) => x.chave === "1cia");
+  assert.ok(primeira.meta < 195, `fração ainda na escala do mês: ${primeira.meta}`);
+
+  // O desempenho semana a semana da fração continua fechando a meta MENSAL dela.
+  const somaSemanas = primeira.semanas.reduce((s, x) => s + x.meta, 0);
+  assert.equal(somaSemanas, 195);
+});

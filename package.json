@@ -14,7 +14,9 @@
     "verificar:paridade": "node --experimental-strip-types --no-warnings --import ./scripts/alias-loader.mjs scripts/verificar-paridade-cop.mjs",
     "backfill": "node --experimental-strip-types --no-warnings --import ./scripts/alias-loader.mjs scripts/backfill-planilha.mjs",
     "conferir:painel": "node --experimental-strip-types --no-warnings --import ./scripts/alias-loader.mjs scripts/conferir-painel-cop.mjs",
-    "verificar:painel": "node --experimental-strip-types --no-warnings --import ./scripts/alias-loader.mjs --test scripts/verificar-painel-cop.mjs"
+    "verificar:painel": "node --experimental-strip-types --no-warnings --import ./scripts/alias-loader.mjs --test scripts/verificar-painel-cop.mjs",
+    "verificar:tendencia": "node --experimental-strip-types --no-warnings --import ./scripts/alias-loader.mjs --test scripts/verificar-tendencia-cop.mjs",
+    "verificar:indices": "node --experimental-strip-types --no-warnings --import ./scripts/alias-loader.mjs --test scripts/verificar-indices-cop.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.123.0",

@@ -1,6 +1,11 @@
 "use client";
 
-import { calcularTendencia, metaDeAmanha, progressoDoMes } from "@/lib/cop2026-tendencia";
+import {
+  calcularTendencia,
+  metaDeAmanha,
+  progressoDoMes,
+  progressoDaJanela,
+} from "@/lib/cop2026-tendencia";
 import { cn } from "@/lib/utils";
 
 /**
@@ -111,6 +116,8 @@ export function FaixaRitmos({
   className,
   variante = "solo",
   mostrarDias = true,
+  janela,
+  rotuloPeriodo = "mês",
 }: {
   meta: number;
   total: number;
@@ -123,8 +130,14 @@ export function FaixaRitmos({
   variante?: "solo" | "embutido";
   /** O "dia X de Y" sai quando a seção já mostra o contador uma vez no cabeçalho. */
   mostrarDias?: boolean;
+  /** A janela do recorte. Com uma semana selecionada tem 7 dias, e o ritmo-alvo
+   *  passa a ser a cota da semana dividida pelos dias dela. */
+  janela?: { dias: number; decorridos: number; encerrado: boolean };
+  /** Como o período se chama no texto: "mês" ou "semana". */
+  rotuloPeriodo?: string;
 }) {
-  const { progresso: p } = progressoMesSP();
+  const { progresso: pMes } = progressoMesSP();
+  const p = janela ? progressoDaJanela(janela) : pMes;
 
   const t = calcularTendencia({
     meta,
@@ -169,7 +182,7 @@ export function FaixaRitmos({
           <span className="dados text-[9.5px] font-semibold text-slate-500">
             dia {N0.format(p.diasDecorridos)} de {N0.format(p.diasMes)} ·{" "}
             {diasRestantes === 0
-              ? "mês encerrado"
+              ? `${rotuloPeriodo} encerrado`
               : `${N0.format(diasRestantes)} dia${diasRestantes === 1 ? "" : "s"} restante${diasRestantes === 1 ? "" : "s"}`}
           </span>
         )}
@@ -178,7 +191,7 @@ export function FaixaRitmos({
       <div className="mt-2 flex flex-col gap-2">
         <Barra
           rotulo="Alvo"
-          glosa="passo normal do mês"
+          glosa={`passo normal ${rotuloPeriodo === "mês" ? "do mês" : `da ${rotuloPeriodo}`}`}
           valor={N2.format(alvo)}
           pct={100}
           cor={COR_ALVO}

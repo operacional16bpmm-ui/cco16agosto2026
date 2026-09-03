@@ -113,6 +113,9 @@ export interface CurvaFracao {
   chave: string;
   rotulo: string;
   meta: number;
+  /** Meta do MÊS. Quando o painel está filtrado por semana, `meta` é a cota da
+   *  semana e esta curva — que é mensal — precisa da outra. */
+  metaMes?: number;
   porDia?: { data: string; v: number }[];
 }
 
@@ -690,9 +693,11 @@ export function CurvaPlanoRealizado({
           <Cartao
             key={f.chave}
             rotulo={f.rotulo}
-            meta={f.meta}
+            /* Meta do MÊS: a curva é mensal, e `f.meta` já vem encolhida quando
+               o Comando isola uma semana no topo do painel. */
+            meta={f.metaMes ?? f.meta}
             pontos={curvaPlanoRealizado({
-              meta: f.meta,
+              meta: f.metaMes ?? f.meta,
               diasMes,
               diasDecorridos,
               porDia: f.porDia ?? [],

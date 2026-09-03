@@ -374,11 +374,10 @@ export function AgulhaoMetas({
   faixaRitmos,
   marcaPosicao,
   titulo = '16º BPM/M — "1º Ten PM Fernão"',
-  subtitulo = {
-    linha1: "META GLOBAL — 960 EVIDÊNCIAS",
-    linha2: "DIRETRIZ PM3-001/02/25 · AMBIENTE EXECUTIVO DE GESTÃO E CONTROLE",
-    linha3: "Distribuição Proporcional por Matriz Operacional",
-  },
+  /* Sem default escrito à mão: o rótulo tem que sair da meta que o painel está
+     mostrando. "META GLOBAL — 960 EVIDÊNCIAS" ao lado de um percentual de
+     semana foi exatamente o que pôs duas verdades no mesmo cartão. */
+  subtitulo,
 }: {
   pct: number;
   total: number;
@@ -654,11 +653,16 @@ export function RankingFracoes({
   dados,
   onSelecionar,
   mostrarTendencia = false,
+  janela,
+  rotuloPeriodo = "mês",
 }: {
   dados: LinhaFracao[];
   onSelecionar?: (chave: string) => void;
   /** Anexa o card de ritmo diário (/dia) da fração abaixo dos quadros semanais. */
   mostrarTendencia?: boolean;
+  /** Janela do recorte, para o cartão da fração usar a mesma escala do topo. */
+  janela?: { dias: number; decorridos: number; encerrado: boolean };
+  rotuloPeriodo?: string;
 }) {
   return (
     <ul className="space-y-3.5">
@@ -777,6 +781,8 @@ export function RankingFracoes({
                 total={d.feito}
                 variante="embutido"
                 mostrarDias={false}
+                janela={janela}
+                rotuloPeriodo={rotuloPeriodo}
               />
             )}
           </div>

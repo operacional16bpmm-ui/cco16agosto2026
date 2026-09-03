@@ -142,6 +142,36 @@ export function progressoDoMes(
   };
 }
 
+/**
+ * A mesma posição, medida sobre a JANELA do recorte em vez do mês fechado.
+ *
+ * Existe para o filtro de semana: quando o Comando isola a Semana 1, a meta
+ * passa a ser a cota da semana e o período de cálculo tem que passar junto.
+ * Enquanto os cartões chamavam `progressoDoMes`, a tela dividia a meta de 7
+ * dias pelos 30 do mês e anunciava ritmo-alvo de 8,03/dia com trajetória de
+ * 435,7%.
+ *
+ * Sem semana selecionada a janela É o mês, e o resultado é idêntico ao de
+ * `progressoDoMes` — nada muda para quem olha o painel inteiro.
+ */
+export function progressoDaJanela(
+  janela: { dias: number; decorridos: number; encerrado: boolean },
+  turnosPorDia = TURNOS_POR_DIA
+): ProgressoMes {
+  const diasMes = Math.max(0, Math.trunc(janela.dias));
+  const diasDecorridos = Math.min(Math.max(0, Math.trunc(janela.decorridos)), diasMes);
+  const turnosMes = diasMes * turnosPorDia;
+  const turnosDecorridos = diasDecorridos * turnosPorDia;
+  return {
+    diasMes,
+    diasDecorridos,
+    turnosMes,
+    turnosDecorridos,
+    turnosRestantes: Math.max(0, turnosMes - turnosDecorridos),
+    encerrado: janela.encerrado,
+  };
+}
+
 export interface EntradaTendencia {
   /** Meta inteira do mês para a fração (já rateada e balanceada). */
   meta: number;

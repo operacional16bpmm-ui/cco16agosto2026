@@ -666,26 +666,39 @@ export function DashboardCop({
   );
   const vBase = veredito(p);
 
+  /* Como o período ativo se chama na tela. Com uma semana selecionada, meta e
+     janela são da semana — e o texto tem que dizer isso, senão o painel escreve
+     "passo normal do mês" ao lado de uma cota de 7 dias. */
+  const rotuloPeriodo = f.semana === "todas" ? "mês" : "semana";
+  const rotuloMeta =
+    f.semana === "todas"
+      ? `META GLOBAL — ${FMT.format(p.meta)} EVIDÊNCIAS`
+      : `META DA SEMANA ${f.semana} — ${FMT.format(p.meta)} EVIDÊNCIAS`;
+
   /* Na V3 o prazo vem do CALENDARIO. O `veredito` de producao mede o que resta
      pelo numero de turnos com lancamento, e por isso anunciava "os 15 turnos
      previstos ja foram cumpridos" faltando um dia de mes — o mesmo defeito que
      a caixa TENDENCIA corrigiu no motor. Sem a prop, producao segue igual. */
+  /* Dias restantes DO RECORTE, não do mês: com a Semana 1 isolada, a falta é de
+     7 dias e dividi-la pelos 27 dias que sobram no mês pedia 6 por dia para uma
+     cota que exige 32. */
+  const diasRestantesRecorte = p.janela.diasRestantes;
   const v =
     tendencia && p.dados.length && p.pct <= 100 && p.falta > 0
       ? {
           ...vBase,
           detalhe:
-            diasRestantes > 0
+            diasRestantesRecorte > 0
               ? `Auditoria em ${PCT.format(p.pct)}% da meta. Faltam ${FMT.format(
                   p.falta
-                )} evidências em ${FMT.format(diasRestantes)} dia${
-                  diasRestantes === 1 ? "" : "s"
+                )} evidências em ${FMT.format(diasRestantesRecorte)} dia${
+                  diasRestantesRecorte === 1 ? "" : "s"
                 } — ${FMT.format(
-                  Math.ceil(p.falta / diasRestantes)
+                  Math.ceil(p.falta / diasRestantesRecorte)
                 )} por dia para fechar a meta.`
               : `Auditoria em ${PCT.format(p.pct)}% da meta. Faltam ${FMT.format(
                   p.falta
-                )} evidências e o mês se encerrou — não há mais dia para recuperar.`,
+                )} evidências e o ${rotuloPeriodo} se encerrou — não há mais dia para recuperar.`,
         }
       : vBase;
 
@@ -854,12 +867,14 @@ export function DashboardCop({
     },
     f.semana !== "todas" && {
       k: "semana",
-      t: `Semana ${f.semana} (${diasDaSemana(Number(f.semana), p.janela.ate ? Number(p.janela.ate.slice(8, 10)) : 31).replace(" a ", "–")})`,
+      /* O tamanho da 4ª semana vem do MÊS. Lendo `p.janela`, que já está
+         encolhida para a semana selecionada, o chip anunciaria "22–07". */
+      t: `Semana ${f.semana} (${diasDaSemana(Number(f.semana), p.janelaMes.ate ? Number(p.janelaMes.ate.slice(8, 10)) : 31).replace(" a ", "–")})`,
       limpar: () => definir({ semana: "todas" }),
     },
     f.turno !== "todos" && {
       k: "turno",
-      t: f.turno === "diurno" ? "Diurno" : "Noturno",
+      t: f.turno === "diurno" ? "Diurno" : f.turno === "noturno" ? "Noturno" : "Administrativo",
       limpar: () => definir({ turno: "todos" }),
     },
     (f.de || f.ate) && {
@@ -1300,7 +1315,7 @@ export function DashboardCop({
               <option value="3">Semana 3 (15 a 21)</option>
               {/* Acompanha o mês: 22 a 30 em setembro e novembro. */}
               <option value="4">
-                Semana 4 ({diasDaSemana(4, p.janela.ate ? Number(p.janela.ate.slice(8, 10)) : 31)})
+                Semana 4 ({diasDaSemana(4, p.janelaMes.ate ? Number(p.janelaMes.ate.slice(8, 10)) : 31)})
               </option>
             </select>
 
@@ -1313,6 +1328,7 @@ export function DashboardCop({
               <option value="todos">Todos os turnos</option>
               <option value="diurno">Diurno</option>
               <option value="noturno">Noturno</option>
+              <option value="administrativo">Administrativo</option>
             </select>
 
             <div className="flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-2.5 py-1 text-xs text-slate-600 shadow-xs">
@@ -1472,11 +1488,12 @@ export function DashboardCop({
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
                   Turno
                 </label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   {[
                     { id: "todos", label: "Todos" },
                     { id: "diurno", label: "Diurno" },
                     { id: "noturno", label: "Noturno" },
+                    { id: "administrativo", label: "Administrativo" },
                   ].map((t) => (
                     <button
                       key={t.id}
@@ -1633,12 +1650,25 @@ export function DashboardCop({
               meta={p.meta}
               ritmo={tendencia ? undefined : Math.ceil(p.ritmoNecessario)}
               turnosRestantes={tendencia ? undefined : p.janela.diasRestantes}
-              cartaoRitmo={tendencia ? <CartaoTrajetoria meta={p.meta} total={p.total} /> : undefined}
-              faixaRitmos={tendencia ? <FaixaRitmos meta={p.meta} total={p.total} /> : undefined}
+              cartaoRitmo={
+                tendencia ? (
+                  <CartaoTrajetoria meta={p.meta} total={p.total} janela={p.janela} />
+                ) : undefined
+              }
+              faixaRitmos={
+                tendencia ? (
+                  <FaixaRitmos
+                    meta={p.meta}
+                    total={p.total}
+                    janela={p.janela}
+                    rotuloPeriodo={rotuloPeriodo}
+                  />
+                ) : undefined
+              }
               marcaPosicao={tendencia ? `leitura atual ${PCT.format(p.pct)}%` : undefined}
               titulo={f.fracao === "todas" ? '16º BPM/M — "1º Ten PM Fernão"' : `Ritmo Operacional · ${ROTULO_SUBUNIDADE[f.fracao] ?? f.fracao}`}
               subtitulo={{
-                linha1: "META GLOBAL — 960 EVIDÊNCIAS",
+                linha1: rotuloMeta,
                 linha2: "DIRETRIZ PM3-001/02/25 · AMBIENTE EXECUTIVO DE GESTÃO E CONTROLE",
                 linha3: "Distribuição Proporcional por Matriz Operacional",
               }}
@@ -1852,7 +1882,7 @@ export function DashboardCop({
               ? `rateio proporcional ao quadro COP (570 PMs) · dia ${FMT.format(p.janela.decorridos)} de ${FMT.format(p.janela.dias)}${
                   p.janela.diasRestantes > 0
                     ? ` · ${FMT.format(p.janela.diasRestantes)} dia${p.janela.diasRestantes === 1 ? "" : "s"} restante${p.janela.diasRestantes === 1 ? "" : "s"}`
-                    : " · mês encerrado"
+                    : ` · ${rotuloPeriodo} encerrado`
                 } · clique para filtrar o painel`
               : "rateio proporcional ao quadro COP (570 PMs) · clique para filtrar o painel"
           }
@@ -1869,6 +1899,8 @@ export function DashboardCop({
               dados={p.fracoes}
               onSelecionar={(chave) => definir({ fracao: f.fracao === chave ? "todas" : chave })}
               mostrarTendencia={tendencia}
+              janela={p.janela}
+              rotuloPeriodo={rotuloPeriodo}
             />
           ) : (
             <SemDados texto="Sem metas cadastradas na aba Parâmetros." />
@@ -1887,7 +1919,7 @@ export function DashboardCop({
         <section aria-label="Plano contra realizado" className="mb-6">
           <Cartao
             titulo="Plano × realizado · dia a dia"
-            nota={`mês inteiro · dia ${FMT.format(p.janela.decorridos)} de ${FMT.format(p.janela.dias)} · independe da semana selecionada`}
+            nota={`mês inteiro · dia ${FMT.format(p.janelaMes.decorridos)} de ${FMT.format(p.janelaMes.dias)} · independe da semana selecionada`}
             ajuda={
               <p>
                 A linha azul tracejada é a meta acumulada dia a dia; a linha grossa é o que foi
@@ -1903,9 +1935,12 @@ export function DashboardCop({
               fracoes={p.fracoes}
               metaGlobal={META_TOTAL_BATALHAO}
               porDiaBatalhao={p.porDiaMes}
-              diasMes={p.janela.dias}
-              diasDecorridos={p.janela.decorridos}
-              prefixo={p.janela.de.slice(0, 7)}
+              /* Janela do MÊS, não a do recorte: esta seção é mensal por
+                 decisão do Comando e a nota abaixo do título já avisa que ela
+                 independe da semana selecionada. */
+              diasMes={p.janelaMes.dias}
+              diasDecorridos={p.janelaMes.decorridos}
+              prefixo={p.janelaMes.de.slice(0, 7)}
               /* Com uma fração filtrada, `p.fracoes` tem uma linha só e
                  `porDiaMes` é a série daquela fração: um cartão rotulado
                  "Batalhão" ali mostraria a curva de uma Cia. */

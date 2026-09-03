@@ -6,6 +6,7 @@ import {
   SUBTITULO_TRAJETORIA,
   calcularTendencia,
   progressoDoMes,
+  progressoDaJanela,
 } from "@/lib/cop2026-tendencia";
 
 /**
@@ -47,9 +48,20 @@ function hojeSP() {
   return { ano, mes, referencia: new Date(Date.UTC(ano, mes - 1, dia, 12)) };
 }
 
-export function CartaoTrajetoria({ meta, total }: { meta: number; total: number }) {
+export function CartaoTrajetoria({
+  meta,
+  total,
+  janela,
+}: {
+  meta: number;
+  total: number;
+  /* A janela do recorte. Com uma semana selecionada ela tem 7 dias, e a
+     trajetória passa a comparar a cota da semana com os dias da semana. Sem
+     ela, cai no mês — que é o que a janela devolve quando não há filtro. */
+  janela?: { dias: number; decorridos: number; encerrado: boolean };
+}) {
   const { ano, mes, referencia } = hojeSP();
-  const p = progressoDoMes(referencia, ano, mes);
+  const p = janela ? progressoDaJanela(janela) : progressoDoMes(referencia, ano, mes);
 
   // turnosMes/turnosDecorridos em DIAS: no Batalhão o ritmo é diário.
   const t = calcularTendencia({

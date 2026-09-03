@@ -85,7 +85,6 @@ export const MATRIZ_PROPORCIONAL_2026: Record<
     meta: number;
     ritmoProporcional: number;
     metaSemanalMedia: number;
-    metasSemanais: [number, number, number, number];
     rotulo: string;
   }
 > = {
@@ -96,7 +95,6 @@ export const MATRIZ_PROPORCIONAL_2026: Record<
     meta: 48,
     ritmoProporcional: 4,
     metaSemanalMedia: 12,
-    metasSemanais: [12, 12, 12, 12],
     rotulo: "Estado-Maior",
   },
   "1cia": {
@@ -106,7 +104,6 @@ export const MATRIZ_PROPORCIONAL_2026: Record<
     meta: 195,
     ritmoProporcional: 15,
     metaSemanalMedia: 48.75,
-    metasSemanais: [49, 49, 49, 48],
     rotulo: "1ª Cia",
   },
   "2cia": {
@@ -116,7 +113,6 @@ export const MATRIZ_PROPORCIONAL_2026: Record<
     meta: 180,
     ritmoProporcional: 14,
     metaSemanalMedia: 45,
-    metasSemanais: [45, 45, 45, 45],
     rotulo: "2ª Cia",
   },
   "3cia": {
@@ -126,7 +122,6 @@ export const MATRIZ_PROPORCIONAL_2026: Record<
     meta: 210,
     ritmoProporcional: 16,
     metaSemanalMedia: 52.5,
-    metasSemanais: [53, 52, 53, 52],
     rotulo: "3ª Cia",
   },
   "4cia": {
@@ -136,7 +131,6 @@ export const MATRIZ_PROPORCIONAL_2026: Record<
     meta: 180,
     ritmoProporcional: 14,
     metaSemanalMedia: 45,
-    metasSemanais: [45, 45, 45, 45],
     rotulo: "4ª Cia",
   },
   ft: {
@@ -146,16 +140,73 @@ export const MATRIZ_PROPORCIONAL_2026: Record<
     meta: 147,
     ritmoProporcional: 11,
     metaSemanalMedia: 36.75,
-    metasSemanais: [37, 37, 37, 36],
     rotulo: "Força Tática",
   },
 };
 
 export const META_TOTAL_BATALHAO = 960;
-export const META_SEMANAL_BATALHAO = 240;
 export const EFETIVO_TOTAL_BATALHAO = 570;
-export const RITMO_GLOBAL_RESTANTE = 73;
-export const TURNOS_RESTANTES_GLOBAL = 12;
+
+// ---------------------------------------------------------------------------
+// Semana operacional
+// ---------------------------------------------------------------------------
+
+/** Primeiro dia de cada semana operacional. A quarta vai até o fim do mês. */
+export const SEMANAS_INICIO = [1, 8, 15, 22] as const;
+
+export type LimitesSemana = {
+  /** Dia do mês em que a semana abre. */
+  primeiro: number;
+  /** Dia do mês em que a semana fecha. */
+  ultimo: number;
+  dias: number;
+};
+
+/**
+ * Os limites de uma semana operacional dentro de um mês concreto.
+ *
+ * A quarta é a única elástica: 22 a 28 em fevereiro, 22 a 30 em setembro, 22 a
+ * 31 nos meses cheios. As três primeiras têm sempre 7 dias.
+ */
+export function limitesDaSemana(semana: number, ultimoDiaDoMes: number): LimitesSemana {
+  const s = Math.min(4, Math.max(1, Math.trunc(semana) || 1));
+  const fimDoMes = Math.max(22, Math.trunc(ultimoDiaDoMes) || 31);
+  const primeiro = SEMANAS_INICIO[s - 1];
+  const ultimo = s === 4 ? fimDoMes : SEMANAS_INICIO[s] - 1;
+  return { primeiro, ultimo, dias: ultimo - primeiro + 1 };
+}
+
+/**
+ * Rateio da meta pelas quatro semanas, PROPORCIONAL AOS DIAS de cada uma.
+ *
+ * Antes as quatro semanas recebiam um quarto da meta cada, e a quarta cobre 9
+ * ou 10 dias: a tropa era cobrada a 34,4 por dia nas três primeiras e a 26,4 na
+ * última, para a mesma meta mensal. Rateando por dia, o passo é o mesmo em
+ * qualquer semana — que é a definição de ritmo-alvo.
+ *
+ * O resto da divisão vai para as semanas de maior fração, desempatando pela
+ * mais antiga, de modo que a soma feche a meta do mês EXATAMENTE.
+ */
+export function metasSemanaisDaMeta(
+  meta: number,
+  ultimoDiaDoMes: number
+): [number, number, number, number] {
+  const alvo = Math.max(0, Math.round(meta));
+  const dias = [1, 2, 3, 4].map((s) => limitesDaSemana(s, ultimoDiaDoMes).dias);
+  const totalDias = dias.reduce((a, b) => a + b, 0);
+  if (totalDias <= 0 || alvo === 0) return [0, 0, 0, 0];
+
+  const exatas = dias.map((d) => (alvo * d) / totalDias);
+  const base = exatas.map((v) => Math.floor(v));
+  const sobra = alvo - base.reduce((a, b) => a + b, 0);
+
+  const ordem = exatas
+    .map((v, i) => ({ i, frac: v - Math.floor(v) }))
+    .sort((a, b) => b.frac - a.frac || a.i - b.i);
+  for (let k = 0; k < sobra; k++) base[ordem[k % ordem.length].i] += 1;
+
+  return [base[0], base[1], base[2], base[3]];
+}
 
 export const METAS_PADRAO_2026: MetaSubunidade[] = [
   { subunidade: "em", efetivo: 98, evidenciasPorTurno: 2, turnos: 12, dias: 24, meta: 48 },

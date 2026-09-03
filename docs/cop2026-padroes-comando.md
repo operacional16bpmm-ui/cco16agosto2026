@@ -160,6 +160,54 @@ setembro e novembro, 22 a 31 nos demais. Não existe 31 de setembro.
 
 ---
 
+## 3-B. Filtro de semana recorta a meta E o calendário (03/09/2026)
+
+Quando o Comando isola uma semana no painel, **tudo** passa a ser daquela
+semana: meta, janela de cálculo, ritmo-alvo, trajetória, dias decorridos e as
+linhas por fração. A regra é a mesma que `janelaDoRecorte` já enunciava —
+*o período de cálculo do ritmo é sempre o do denominador da meta* — e o filtro
+de semana era o único lugar em que ela não valia.
+
+O que estava errado: a meta encolhia para a cota da semana e a janela continuava
+o mês. Em 03/09/2026, com `?semana=1`, a tela mostrava **ritmo-alvo 8,03/dia**
+(a cota de 7 dias dividida por 30 dias de calendário), **trajetória 435,7%** e o
+selo **ADIANTADA** ao lado de "Crítica · ABAIXO DA META". A faixa do topo pedia
+"6 por dia" para uma cota que exige 32, porque dividia a falta da semana pelos
+27 dias que sobravam no mês.
+
+**Zoom por data (`de`/`ate`) continua ancorado no mês, e de propósito.** A
+diferença é que a semana tem meta declarada própria e o intervalo digitado não
+tem: conferir um fim de semana não pode transformar 960 em cota de dois dias.
+
+**A curva plano × realizado segue mensal**, como fixado em 02/09. Ela lê
+`janelaMes` e `LinhaFracao.metaMes`, nunca a janela do recorte.
+
+## 3-C. Cota semanal é rateada por DIAS (03/09/2026)
+
+As quatro semanas recebiam ~240 evidências cada, mas a quarta cobre 9 ou 10
+dias. A tropa era cobrada a 34,4 por dia nas três primeiras e a 26,4 na última,
+para a mesma meta mensal.
+
+A cota agora sai de `metasSemanaisDaMeta(meta, ultimoDiaDoMes)`, proporcional
+aos dias, com o resto indo para as semanas de maior fração — a soma fecha a meta
+do mês exatamente. Em setembro o Batalhão fica em **225 · 224 · 223 · 288**, e o
+passo é 32/dia em qualquer semana.
+
+Os números não são iguais em toda parte por acaso: a meta do recorte é a **soma
+das cotas das frações**, cada uma inteira, e é por isso que a Semana 1 dá 225 e
+não os 224 do rateio do agregado. A soma das seis linhas da tabela é a conta que
+o Comando confere na mão, e é ela que manda.
+
+A constante `META_SEMANAL_BATALHAO = 240` **saiu**: era a segunda fonte que fazia
+o cartão da Semana 1 dizer 43,8% enquanto o topo dizia 43,6%.
+
+**Rede de proteção**: `npm run verificar:painel` afirma, para as quatro semanas,
+que `metaDia × janela.dias = meta` e que o cartão semanal e o topo filtrado
+mostram a mesma cota. `medirSaude` repete as duas afirmações contra o dado real,
+nas invariantes `escala-do-recorte` e `meta-semanal-divergente`.
+
+---
+
 ## 4. Ritmo necessário
 
 **Unidade fixada em 31/08/2026 e cobrada de novo em 02/09/2026** ("métrica dos
@@ -198,9 +246,10 @@ Três números que estavam na tela e **não podem voltar**:
   rateio inteiro da constante `RITMO_GLOBAL_RESTANTE = 73`. Quase cinco vezes a
   cota real. O alvo agora é `meta da fração ÷ turnos-fração do mês`.
 
-`RITMO_GLOBAL_RESTANTE` e `TURNOS_RESTANTES_GLOBAL` **saíram da tela**. A linha
-"Todos os valores são calculados a cada leitura — nenhum é fixo no código" só
-podia ser escrita depois disso.
+`RITMO_GLOBAL_RESTANTE` e `TURNOS_RESTANTES_GLOBAL` **saíram da tela** em
+02/09/2026 e **saíram do código** em 03/09/2026, quando deixaram de ser
+reexportados sem consumidor. A linha "Todos os valores são calculados a cada
+leitura — nenhum é fixo no código" só podia ser escrita depois disso.
 
 **Dia decorrido conta o dia em curso.** `progressoDoMes` contava só dias
 encerrados enquanto o realizado já incluía o que foi lançado hoje — numerador de

@@ -11,10 +11,9 @@ import {
   ROTULO_SUBUNIDADE,
   MATRIZ_PROPORCIONAL_2026,
   META_TOTAL_BATALHAO,
-  META_SEMANAL_BATALHAO,
   EFETIVO_TOTAL_BATALHAO,
-  RITMO_GLOBAL_RESTANTE,
-  TURNOS_RESTANTES_GLOBAL,
+  limitesDaSemana,
+  metasSemanaisDaMeta,
   redigirCpf,
   classificarIdentificador,
   ehIdentificadorValido,
@@ -29,10 +28,9 @@ import { TURNOS_POR_DIA } from "@/lib/cop2026-tendencia";
 export {
   MATRIZ_PROPORCIONAL_2026,
   META_TOTAL_BATALHAO,
-  META_SEMANAL_BATALHAO,
   EFETIVO_TOTAL_BATALHAO,
-  RITMO_GLOBAL_RESTANTE,
-  TURNOS_RESTANTES_GLOBAL,
+  limitesDaSemana,
+  metasSemanaisDaMeta,
 };
 
 export const FMT = new Intl.NumberFormat("pt-BR");
@@ -59,6 +57,49 @@ export function diasDaSemana(semana: number, ultimoDiaDoMes: number): string {
   if (!base) return "";
   if (semana !== 4) return base.dias;
   return `22 a ${String(Math.max(22, ultimoDiaDoMes)).padStart(2, "0")}`;
+}
+
+/**
+ * O trecho do mês que uma semana operacional ocupa, em datas ISO.
+ *
+ * Devolve o mês inteiro quando não há semana selecionada. É o que permite a
+ * `janelaDoRecorte` encolher junto com a meta, sem que nenhum consumidor
+ * precise saber que existe uma semana no meio do caminho.
+ */
+export function recorteDaSemana(
+  semana: string,
+  deMes: string,
+  ateMes: string
+): { de: string; ate: string } {
+  if (!semana || semana === "todas" || !deMes || !ateMes) return { de: deMes, ate: ateMes };
+  const n = parseInt(semana, 10);
+  if (!Number.isFinite(n) || n < 1 || n > 4) return { de: deMes, ate: ateMes };
+
+  const ultimoDiaDoMes = Number(ateMes.slice(8, 10));
+  if (!Number.isFinite(ultimoDiaDoMes)) return { de: deMes, ate: ateMes };
+
+  const { primeiro, ultimo } = limitesDaSemana(n, ultimoDiaDoMes);
+  const prefixo = deMes.slice(0, 8);
+  const dia = (d: number) => `${prefixo}${String(d).padStart(2, "0")}`;
+  return { de: dia(primeiro), ate: dia(Math.min(ultimo, ultimoDiaDoMes)) };
+}
+
+/**
+ * A cota de uma semana dentro de uma meta mensal, rateada por dias.
+ *
+ * Fonte única do número: cartão de cumprimento, cartões semanais e cartões por
+ * fração leem daqui. Antes o topo somava as cotas das frações (241) e o cartão
+ * da semana usava uma constante de 240 — a mesma semana aparecia como 43,6% e
+ * 43,8% na mesma tela.
+ */
+export function metaSemanalDe(
+  metaDoMes: number,
+  semana: string | number,
+  ultimoDiaDoMes: number
+): number {
+  const n = typeof semana === "number" ? semana : parseInt(semana, 10);
+  if (!Number.isFinite(n) || n < 1 || n > 4) return metaDoMes;
+  return metasSemanaisDaMeta(metaDoMes, ultimoDiaDoMes)[n - 1];
 }
 
 export function identificarSemana(dataIso: string | undefined): number {
@@ -163,6 +204,26 @@ export type JanelaRecorte = {
   encerrado: boolean;
 };
 
+/**
+ * O MÊS que ancora o recorte. Toda meta declarada é mensal, então é este mês —
+ * e não o intervalo que o usuário digitou — que dimensiona a cota e a 4ª
+ * semana.
+ */
+export function mesDoRecorte(f: Filtros, hoje: string = hojeBrt()): { de: string; ate: string } {
+  const ancora = f.de || f.ate || hoje;
+  const mes =
+    RELATORIOS_MENSAIS.find((m) => ancora >= m.periodo.de && ancora <= m.periodo.ate) ??
+    mesCorrente();
+  return { de: mes?.periodo.de || "", ate: mes?.periodo.ate || "" };
+}
+
+/** Quantos dias tem o mês que ancora o recorte. 31 quando não há calendário. */
+export function ultimoDiaDoMesDoRecorte(f: Filtros, hoje: string = hojeBrt()): number {
+  const { ate } = mesDoRecorte(f, hoje);
+  const dia = Number(ate.slice(8, 10));
+  return Number.isFinite(dia) && dia > 0 ? dia : 31;
+}
+
 export function janelaDoRecorte(f: Filtros, hoje: string = hojeBrt()): JanelaRecorte {
   /* A janela é o MÊS em que o recorte cai, não o recorte em si.
    *
@@ -170,13 +231,16 @@ export function janelaDoRecorte(f: Filtros, hoje: string = hojeBrt()): JanelaRec
    * para conferir um fim de semana: se a janela fosse o recorte, `metaDia`
    * viraria 960 ÷ 2 = 480 e a linha de meta do gráfico diário saltaria para
    * quinze vezes o valor certo. O período de cálculo do ritmo é sempre o do
-   * denominador da meta. */
-  const ancora = f.de || f.ate || hoje;
-  const mes = RELATORIOS_MENSAIS.find(
-    (m) => ancora >= m.periodo.de && ancora <= m.periodo.ate
-  ) ?? mesCorrente();
-  const de = mes?.periodo.de || "";
-  const ate = mes?.periodo.ate || "";
+   * denominador da meta.
+   *
+   * A SEMANA é a única exceção, e pela mesma regra: ela tem meta declarada
+   * própria (`metasSemanaisDaMeta`), então o denominador da meta muda e a
+   * janela tem que mudar junto. Enquanto não mudava, o painel dividia a meta da
+   * semana pelos dias do mês e anunciava ritmo-alvo de 8,03/dia com trajetória
+   * de 435,7% — meta de 7 dias sobre calendário de 30. Zoom por data não tem
+   * meta declarada; semana tem. */
+  const { de: deMes, ate: ateMes } = mesDoRecorte(f, hoje);
+  const { de, ate } = recorteDaSemana(f.semana, deMes, ateMes);
 
   /* Sem janela conhecida (fora do ciclo de 2026, ou recorte aberto de um lado
      só) o painel degrada para "sem base de calendário": nada de inventar 30
@@ -466,7 +530,11 @@ export type ProgressoSemana = {
 export type LinhaFracao = {
   chave: string;
   rotulo: string;
+  /** Meta do RECORTE — igual à do mês quando não há semana selecionada. */
   meta: number;
+  /** Meta do MÊS inteiro. A curva plano × realizado é mensal por decisão do
+   *  Comando e lê daqui, para não encolher junto com a aba de semana. */
+  metaMes: number;
   feito: number;
   pct: number;
   falta: number;
@@ -536,6 +604,10 @@ export function calcularPainel(
 
   const minimo = minimoDoRecorte(metas, f.fracao);
   const janela = janelaDoRecorte(f, hoje);
+  /* A janela do MÊS, sem o filtro de semana. A curva plano × realizado é do mês
+     de propósito (decisão do Maj PM em 02/09/2026): com "Sem 2" ligada ela
+     desenharia 23 dias zerados como se a fração nada tivesse produzido. */
+  const janelaMes = janelaDoRecorte({ ...f, semana: "todas" }, hoje);
   const duplicados = mapearDuplicados(lancamentos);
 
   const dados = aplicarFiltros(lancamentos, f, minimo, duplicados);
@@ -550,29 +622,42 @@ export function calcularPainel(
     duplicados
   );
 
-  // Normaliza as metas aplicando a Matriz Operacional Proporcional (960 evidências / 570 PMs)
-  const metasNormalizadas = metas.map((m) => {
-    const mat = MATRIZ_PROPORCIONAL_2026[m.subunidade];
-    const metaBase = mat ? mat.meta : m.meta;
-    // Se o filtro estiver em uma semana específica, a meta do recorte é a meta daquela semana
-    const metaAjustada =
-      f.semana !== "todas" && mat
-        ? mat.metasSemanais[parseInt(f.semana, 10) - 1]
-        : f.semana !== "todas"
-          ? Math.round(metaBase / 4)
-          : metaBase;
+  /* Último dia do MÊS que ancora o recorte — não da janela, que já pode estar
+     encolhida para a semana. É ele que dimensiona a 4ª semana. */
+  const ultimoDiaDoMes = ultimoDiaDoMesDoRecorte(f, hoje);
 
+  // Normaliza as metas aplicando a Matriz Operacional Proporcional (960 evidências / 570 PMs)
+  const metasMensais = metas.map((m) => {
+    const mat = MATRIZ_PROPORCIONAL_2026[m.subunidade];
     return {
       ...m,
-      meta: metaAjustada,
+      meta: mat ? mat.meta : m.meta,
       efetivo: mat ? mat.efetivo : m.efetivo,
     };
   });
 
-  const metasRecorte =
-    f.fracao === "todas"
-      ? metasNormalizadas
-      : metasNormalizadas.filter((m) => m.subunidade === f.fracao);
+  const soDaFracao = <T extends { subunidade: string }>(lista: T[]) =>
+    f.fracao === "todas" ? lista : lista.filter((m) => m.subunidade === f.fracao);
+
+  const metasMensaisRecorte = soDaFracao(metasMensais);
+
+  /** A cota de uma semana para o recorte inteiro: soma fração a fração, para
+   *  que topo e cartões semanais nunca discordem por arredondamento. */
+  const metaDaSemanaNoRecorte = (semana: number) =>
+    metasMensaisRecorte.reduce((s, m) => s + metaSemanalDe(m.meta, semana, ultimoDiaDoMes), 0);
+
+  /* Com uma semana selecionada, a meta do recorte é a cota daquela semana —
+     rateada por DIAS, para que o passo diário seja o mesmo em qualquer semana.
+     A janela encolhe junto, em `janelaDoRecorte`. */
+  const metasNormalizadas =
+    f.semana === "todas"
+      ? metasMensais
+      : metasMensais.map((m) => ({
+          ...m,
+          meta: metaSemanalDe(m.meta, f.semana, ultimoDiaDoMes),
+        }));
+
+  const metasRecorte = soDaFracao(metasNormalizadas);
 
   const meta = metasRecorte.reduce((s, m) => s + m.meta, 0);
   const auditores = metasRecorte.reduce((s, m) => s + m.efetivo, 0);
@@ -734,19 +819,17 @@ export function calcularPainel(
    * dois. Com a base recortada, a virada do mês zera as quatro sozinha. */
   const lancamentosSemanaisBase = dadosSemFiltroDeSemana;
 
-  /* O rótulo da 4ª semana acompanha o mês do recorte: 22 a 30 em setembro e
-     novembro, 22 a 31 nos demais. */
-  const ultimoDiaDoRecorte = janela.ate ? Number(janela.ate.slice(8, 10)) : 31;
+  /* O rótulo da 4ª semana acompanha o MÊS do recorte — 22 a 30 em setembro e
+     novembro, 22 a 31 nos demais. Vem do mês, e não de `janela.ate`, que já
+     pode estar encolhido para a semana selecionada. */
+  const ultimoDiaDoRecorte = ultimoDiaDoMes;
 
   const semanasBatalhao: ProgressoSemana[] = SEMANAS_ROTULOS.map((s) => {
     const daSemana = lancamentosSemanaisBase.filter(
       (l) => l.auditou && identificarSemana(l.data) === s.semana
     );
     const feito = daSemana.reduce((sum, l) => sum + l.videos, 0);
-    const metaSem =
-      f.fracao === "todas"
-        ? META_SEMANAL_BATALHAO
-        : (MATRIZ_PROPORCIONAL_2026[f.fracao]?.metasSemanais[s.semana - 1] ?? 60);
+    const metaSem = metaDaSemanaNoRecorte(s.semana);
     const p = metaSem > 0 ? (feito / metaSem) * 100 : 0;
     return {
       semana: s.semana,
@@ -762,12 +845,16 @@ export function calcularPainel(
 
   // ---- ranking de frações --------------------------------------------------
   const fracoes: LinhaFracao[] = metasRecorte
-    .map((m) => {
+    .map((m, i) => {
       const daFracao = dados.filter((l) => l.subunidade === m.subunidade);
       const feito = daFracao.reduce((s, l) => s + l.videos, 0);
       const lancaram = new Set(daFracao.map((l) => l.re || l.nomeGuerra).filter(Boolean)).size;
       const mat = MATRIZ_PROPORCIONAL_2026[m.subunidade];
-      const metaReal = mat ? mat.meta : m.meta;
+      /* Meta DO RECORTE: com uma semana selecionada é a cota da semana, na
+         mesma escala da janela. A meta do mês continua disponível para o que é
+         sempre mensal, como o desempenho semana a semana. */
+      const metaReal = m.meta;
+      const metaMensal = metasMensaisRecorte[i]?.meta ?? (mat ? mat.meta : m.meta);
       const p = metaReal > 0 ? (feito / metaReal) * 100 : 0;
       const fa = Math.max(0, metaReal - feito);
       /* Turnos-fração que ainda restam no período, do calendário. */
@@ -798,7 +885,7 @@ export function calcularPainel(
       const semanasFracao: ProgressoSemana[] = SEMANAS_ROTULOS.map((s) => {
         const lancsSem = todosDaFracao.filter((l) => identificarSemana(l.data) === s.semana);
         const feitoSem = lancsSem.reduce((sum, l) => sum + l.videos, 0);
-        const metaSem = mat ? mat.metasSemanais[s.semana - 1] : Math.round(metaReal / 4);
+        const metaSem = metaSemanalDe(metaMensal, s.semana, ultimoDiaDoMes);
         const pSem = metaSem > 0 ? (feitoSem / metaSem) * 100 : 0;
         return {
           semana: s.semana,
@@ -816,6 +903,7 @@ export function calcularPainel(
         chave: m.subunidade,
         rotulo: ROTULO_SUBUNIDADE[m.subunidade] ?? m.subunidade,
         meta: metaReal,
+        metaMes: metaMensal,
         feito,
         pct: p,
         falta: fa,
@@ -833,7 +921,7 @@ export function calcularPainel(
         ritmoProporcional:
           janela.turnosFracao > 0 ? metaReal / janela.turnosFracao : mat?.ritmoProporcional,
         efetivoQuadro: mat ? mat.efetivo : m.efetivo,
-        metaSemanalMedia: mat ? mat.metaSemanalMedia : metaReal / 4,
+        metaSemanalMedia: metaMensal / 4,
         semanas: semanasFracao,
         porDia: porDiaFracao,
       };
@@ -864,8 +952,12 @@ export function calcularPainel(
   };
 
   // ---- comparativos --------------------------------------------------------
-  const porTurno = ["diurno", "noturno"].map((t) => ({
-    rotulo: t === "diurno" ? "Diurno" : "Noturno",
+  /* Os três turnos que o lançamento aceita (`OPCOES_TURNO`). O comparativo
+     somava só diurno e noturno, e as evidências lançadas como Administrativo —
+     o expediente do Estado-Maior — não apareciam em lado nenhum: o gráfico não
+     fechava com o total do painel. */
+  const porTurno = ["diurno", "noturno", "administrativo"].map((t) => ({
+    rotulo: t === "diurno" ? "Diurno" : t === "noturno" ? "Noturno" : "Administrativo",
     v: dados
       .filter((l) => (l.turno || "").toLowerCase().startsWith(t))
       .reduce((s, l) => s + l.videos, 0),
@@ -1167,6 +1259,7 @@ export function calcularPainel(
     ritmoNecessario,
     /* Calendário do recorte — quem responde "quanto do mês já correu". */
     janela,
+    janelaMes,
     diasComLancamento,
     /* Evidências que não pertencem a fração nenhuma (ver acima). */
     semFracao,

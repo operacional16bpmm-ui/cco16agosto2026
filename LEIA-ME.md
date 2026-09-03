@@ -76,7 +76,7 @@ O painel exibia **"ritmo necessário: 73"** ao lado de **"faltam 415 evidências
 
 O 73 e o 12 não eram conta errada — eram **constantes escritas à mão** em
 `lib/cop2026.ts` (`RITMO_GLOBAL_RESTANTE` e `TURNOS_RESTANTES_GLOBAL`),
-congeladas numa data anterior. E o próprio `docs/cop2026-padroes-comando.md` §4,
+congeladas numa data anterior. Foram removidas do código em 03/09/2026. E o próprio `docs/cop2026-padroes-comando.md` §4,
 homologado pelo Major em 28/08, já mandava esses números virem do cálculo,
 *"nunca hardcoded"*. O código descumpria uma regra que já existia.
 

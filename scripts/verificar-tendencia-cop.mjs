@@ -20,7 +20,9 @@ import {
   turnosDoMes,
   metaDeAmanha,
   curvaPlanoRealizado,
+  progressoDaJanela,
 } from "../lib/cop2026-tendencia.ts";
+import { limitesDaSemana, metasSemanaisDaMeta } from "../lib/cop2026.ts";
 
 const perto = (a, b, tol = 0.01) =>
   assert.ok(Math.abs(a - b) <= tol, `esperado ~${b}, veio ${a}`);
@@ -239,4 +241,92 @@ test("curva descarta data de outro mês que tenha vazado na série", () => {
     prefixo: "2026-09",
   });
   assert.equal(c[0].acumulado, 40);
+});
+
+// ---------------------------------------------------------------------------
+// Semana operacional — a escala da meta e a do calendário andam juntas
+//
+// O bug que estes casos guardam: com `?semana=1` o painel trocava a meta para a
+// cota da semana e mantinha a janela do mês. Dividia 7 dias de meta por 30 dias
+// de calendário e anunciava ritmo-alvo de 8,03/dia com trajetória de 435,7%,
+// "ADIANTADA", ao lado de um selo "Crítica".
+// ---------------------------------------------------------------------------
+
+test("semana 4 é elástica: 9 dias em setembro, 10 em outubro, 7 em fevereiro", () => {
+  assert.equal(limitesDaSemana(4, 30).dias, 9);
+  assert.equal(limitesDaSemana(4, 31).dias, 10);
+  assert.equal(limitesDaSemana(4, 28).dias, 7);
+  for (const s of [1, 2, 3]) assert.equal(limitesDaSemana(s, 30).dias, 7);
+});
+
+test("as quatro cotas semanais fecham a meta do mês, exatamente", () => {
+  for (const ultimoDia of [28, 29, 30, 31]) {
+    for (const meta of [960, 195, 147, 48, 7, 0]) {
+      const cotas = metasSemanaisDaMeta(meta, ultimoDia);
+      assert.equal(
+        cotas.reduce((a, b) => a + b, 0),
+        meta,
+        `meta ${meta} em mês de ${ultimoDia} dias`
+      );
+    }
+  }
+});
+
+test("o rateio é por DIA: a semana longa recebe mais que a curta", () => {
+  const [s1, s2, s3, s4] = metasSemanaisDaMeta(960, 30);
+  assert.equal(s1, 224);
+  assert.equal(s2, 224);
+  assert.equal(s3, 224);
+  assert.equal(s4, 288);
+  // Antes, as quatro recebiam ~240 e a quarta cobria 9 dias: a tropa era
+  // cobrada a 34,4/dia nas três primeiras e a 26,4/dia na última.
+  // O passo diário é o mesmo em qualquer semana — é a definição de ritmo-alvo.
+  perto(s1 / 7, 32);
+  perto(s4 / 9, 32);
+});
+
+test("a janela da semana produz o mesmo ritmo-alvo do mês inteiro", () => {
+  const mes = calcularTendencia({
+    meta: 960,
+    realizado: 105,
+    turnosMes: 30,
+    turnosDecorridos: 3,
+  });
+  const semana = calcularTendencia({
+    meta: metasSemanaisDaMeta(960, 30)[0],
+    realizado: 105,
+    turnosMes: limitesDaSemana(1, 30).dias,
+    turnosDecorridos: 3,
+  });
+  perto(semana.ritmoAlvo, mes.ritmoAlvo);
+  // E a trajetória fica na mesma faixa, em vez dos 435,7% do denominador errado.
+  perto(semana.aderencia, mes.aderencia, 0.5);
+  assert.ok(semana.aderencia < 130, `aderência inflada: ${semana.aderencia}`);
+});
+
+test("progressoDaJanela sem filtro é idêntico ao progresso do mês", () => {
+  const mes = progressoDoMes(new Date(Date.UTC(2026, 8, 3, 12)), 2026, 9);
+  const janela = progressoDaJanela({ dias: 30, decorridos: 3, encerrado: false });
+  assert.deepEqual(janela, mes);
+});
+
+test("semana encerrada não reporta dia restante nem ritmo de recuperação", () => {
+  const p = progressoDaJanela({ dias: 7, decorridos: 7, encerrado: true });
+  assert.equal(p.turnosRestantes, 0);
+  const t = calcularTendencia({
+    meta: 224,
+    realizado: 100,
+    turnosMes: p.diasMes,
+    turnosDecorridos: p.diasDecorridos,
+  });
+  assert.equal(t.turnosRestantes, 0);
+  assert.equal(t.ritmoRecuperacao, 0);
+  assert.equal(t.deficit, 124);
+  assert.ok(t.irrecuperavel);
+});
+
+test("dia decorrido nunca escapa da janela", () => {
+  const p = progressoDaJanela({ dias: 7, decorridos: 30, encerrado: false });
+  assert.equal(p.diasDecorridos, 7);
+  assert.equal(p.turnosDecorridos, 14);
 });

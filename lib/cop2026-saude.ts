@@ -83,6 +83,33 @@ export async function medirSaude() {
     });
   }
 
+  /* ---- 3-B. meta e janela estão na mesma escala? ------------------------ */
+  /* O caminho com `?semana=N` não passa por aqui — `medirSaude` mede o mês —,
+     então o invariante é verificado nas quatro semanas de propósito. Foi este
+     par que se soltou: a meta virava a cota da semana e a janela continuava
+     mensal, e a tela anunciava ritmo-alvo de 8,03/dia e trajetória de 435,7%. */
+  for (const semana of ["1", "2", "3", "4"] as const) {
+    const ps = calcularPainel(leitura.lancamentos, leitura.metas, { ...filtros, semana }, { hoje });
+    const cabe = Math.abs(ps.metaDia * ps.janela.dias - ps.meta) < 0.01;
+    const cartao = p.semanasBatalhao.find((x) => String(x.semana) === semana);
+    if (!cabe) {
+      achados.push({
+        chave: "escala-do-recorte",
+        gravidade: "critico",
+        descricao: `Semana ${semana}: meta de ${ps.meta} contra janela de ${ps.janela.dias} dias — o passo sai ${ps.metaDia.toFixed(2)}/dia.`,
+        acao: "Conferir `janelaDoRecorte` e `metaSemanalDe`: o período de cálculo tem que ser o do denominador da meta.",
+      });
+    }
+    if (cartao && cartao.meta !== ps.meta) {
+      achados.push({
+        chave: "meta-semanal-divergente",
+        gravidade: "alto",
+        descricao: `Semana ${semana}: cartão semanal diz ${cartao.meta} e o topo filtrado diz ${ps.meta}.`,
+        acao: "Fonte única é `metaSemanalDe`; conferir `semanasBatalhao` em calcularPainel.",
+      });
+    }
+  }
+
   /* ---- 4. o mínimo é o do Batalhão? ------------------------------------- */
   if (p.minimo < 3) {
     achados.push({
