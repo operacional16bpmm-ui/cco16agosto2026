@@ -1686,7 +1686,7 @@ export function DashboardCop({
             <span className="animar-bala pointer-events-none absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-red-200/55 to-transparent" aria-hidden="true" />
             <span className="relative flex items-center gap-2">
               <span className="h-2.5 w-2.5 rounded-full bg-[#ca0202] animar-ao-vivo" aria-hidden="true" />
-              Mediana por lançamento: <strong className="dados font-black text-slate-950">{FMT.format(p.mediana)}</strong> · p90{" "}
+              Mediana por turno: <strong className="dados font-black text-slate-950">{FMT.format(p.mediana)}</strong> · p90{" "}
               <strong className="dados font-black text-slate-950">{FMT.format(p.p90)}</strong>
             </span>
             <span className="relative">
