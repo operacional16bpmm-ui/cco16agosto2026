@@ -1780,7 +1780,7 @@ export function DashboardCop({
                   {/* A cota semanal é rateada por dias e varia com o tamanho da
                       semana — 225, 224, 223 e 288 em setembro. O "240" fixo que
                       estava aqui contradizia os próprios cartões abaixo. */}
-                  Meta Semanal · {FMT.format(p.semanasBatalhao.reduce((s, x) => s + x.meta, 0))} Evidências no mês{f.fracao === "todas" ? " (Btl)" : ` (${ROTULO_SUBUNIDADE[f.fracao] ?? f.fracao})`}
+                  Metas Semanais · {FMT.format(p.semanasBatalhao.reduce((s, x) => s + x.meta, 0))} Evidências rateadas por dias{f.fracao === "todas" ? " (Btl)" : ` (${ROTULO_SUBUNIDADE[f.fracao] ?? f.fracao})`}
                 </h2>
                 <p className="text-[12.5px] text-texto-suave">
                   Divisão do ciclo de auditoria em 4 semanas operacionais · clique no card de uma semana para isolar o recorte

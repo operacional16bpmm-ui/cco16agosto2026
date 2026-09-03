@@ -149,9 +149,9 @@ const GRUPOS = [
 
 const COLUNAS: { rotulo: string; inicio?: boolean; ajuda?: string }[] = [
   { rotulo: "Peso", inicio: true, ajuda: "Cota da fração na Matriz Proporcional" },
-  { rotulo: "Meta", ajuda: "Evidências do mês inteiro" },
+  { rotulo: "Meta", ajuda: "Evidências do período selecionado" },
   { rotulo: "Realizado", ajuda: "Evidências auditadas até aqui" },
-  { rotulo: "Alvo", inicio: true, ajuda: "Passo normal para fechar a meta do mês" },
+  { rotulo: "Alvo", inicio: true, ajuda: "Passo normal para fechar a meta do período" },
   { rotulo: "Real", ajuda: "Passo efetivamente praticado até aqui" },
   { rotulo: "Recuperação", ajuda: "Passo necessário daqui em diante para zerar o déficit" },
   { rotulo: "Pressão", ajuda: "Quantas vezes a recuperação exige acima do ritmo normal" },
@@ -215,6 +215,9 @@ export function CaixaTendencia({
   const p = janela ? progressoDaJanela(janela) : progressoDoMes(referencia ?? agora, ano, mes);
 
   const diaNoMes = diaDoMes ?? p.diasDecorridos;
+  /* "no mês" / "na semana" — a preposição vem pronta para o texto não sair
+     como "14 no semana". */
+  const noPeriodo = rotuloPeriodo === "semana" ? "na semana" : `no ${rotuloPeriodo}`;
 
   const metaGlobal = fracoes.reduce((s, f) => s + f.meta, 0);
   /* O total do Batalhão soma TODAS as evidências do recorte, inclusive as de
@@ -758,7 +761,7 @@ export function CaixaTendencia({
         {/* ---------- meta acumulada por turno ---------- */}
         <div className="border-t-2 border-slate-200 px-5 py-4 sm:px-6">
           <span className="dados text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
-            Meta acumulada por turno · {N0.format(p.turnosMes)} turnos no {rotuloPeriodo}
+            Meta acumulada por turno · {N0.format(p.turnosMes)} turnos {noPeriodo}
           </span>
           <p className="mt-1 text-[12px] leading-snug text-slate-500">
             O ritmo-alvo é fracionário e se acumula turno a turno. A produção real é sempre
@@ -810,7 +813,7 @@ export function CaixaTendencia({
         <div className="grid grid-cols-1 gap-x-7 gap-y-2 border-t border-slate-200 px-5 py-3.5 text-[12px] leading-snug text-slate-500 sm:grid-cols-2 sm:px-6">
           <p>
             <strong className="font-black uppercase tracking-wide text-slate-700">Produção</strong>{" "}
-            — cota da fração na Matriz Proporcional, meta do mês e o que já foi auditado.
+            — cota da fração na Matriz Proporcional, meta do período e o que já foi auditado.
           </p>
           <p>
             <strong className="font-black uppercase tracking-wide text-slate-700">
@@ -820,16 +823,16 @@ export function CaixaTendencia({
             <span style={{ color: COR.real }}>real</span> é o praticado;{" "}
             <span style={{ color: COR.recuperacao }}>recuperação</span> é o que resta fazer no tempo
             que sobra, e <strong>pressão</strong> mostra quantas vezes isso está acima do normal. A
-            fração mede por turno de serviço — 2 por dia, {N0.format(p.turnosMes)} no {rotuloPeriodo}, inclusive
+            fração mede por turno de serviço — 2 por dia, {N0.format(p.turnosMes)} {noPeriodo}, inclusive
             o Estado-Maior, que cobre dia e tarde por DEJEM. O Batalhão roda{" "}
-            {N0.format(turnosDiaBatalhao)} turnos-fração por dia ({N0.format(turnosMesBatalhao)} no
-            mês) e por isso se mede por DIA: dividir a meta global pelo total de turnos misturaria
+            {N0.format(turnosDiaBatalhao)} turnos-fração por dia ({N0.format(turnosMesBatalhao)}{" "}
+            {noPeriodo}) e por isso se mede por DIA: dividir a meta global pelo total de turnos misturaria
             turnos de frações distintas num denominador só, e o resultado não se compara com a cota
             de fração nenhuma.
           </p>
           <p>
             <strong className="font-black uppercase tracking-wide text-slate-700">Trajetória</strong>{" "}
-            — responde se, a esta altura do mês, o resultado está no prazo. Régua própria
+            — responde se, a esta altura do período, o resultado está no prazo. Régua própria
             (ADIANTADA → EM TRAJETÓRIA → ATRASADA → DÉFICIT SEVERO), que não se confunde com a de
             cumprimento da meta.
           </p>
