@@ -3,14 +3,18 @@
  *
  * Sem isto, a área técnica do admin não tem o que mostrar e o envelhecimento
  * fica invisível: rotina que morre não emite erro, só para de aparecer. Foi
- * exatamente assim que as 7 rotinas agendadas do vigia nasceram mortas em
- * agosto sem ninguém perceber.
+ * assim que as 7 rotinas agendadas do vigia nasceram mortas em agosto sem
+ * ninguém notar.
+ *
+ * Passa por `/api/cop2026/backup` (POST) com o `CCO16_BACKUP_TOKEN`, e não pela
+ * service key: anotar "terminei" não justifica carregar uma chave que ignora
+ * RLS. Mesma razão do GET da mesma rota.
  *
  *   node scripts/registrar-execucao.mjs <nome> <ok|falha> [detalhe] [duracaoMs]
  *
- * Falha silenciosa por decisão: se o registro não puder ser gravado, isso NÃO
- * pode derrubar a esteira nem o backup. O prejuízo de não registrar é uma linha
- * a menos numa tela; o de abortar um deploy ou um dump é bem maior.
+ * Falha silenciosa por decisão: se o registro não gravar, isso NÃO pode
+ * derrubar a esteira nem o backup. Uma linha a menos numa tela custa menos que
+ * um deploy ou um dump abortado.
  */
 const [, , nome, resultado, detalhe, duracao] = process.argv;
 
@@ -19,34 +23,27 @@ if (!nome || !resultado) {
   process.exit(2);
 }
 
-const URL_BASE = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const CHAVE = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const BASE = (process.env.CCO16_BACKUP_URL ?? "https://portal-cco16.vercel.app").replace(/\/$/, "");
+const TOKEN = process.env.CCO16_BACKUP_TOKEN;
 
-if (!URL_BASE || !CHAVE) {
-  console.warn("[registrar-execucao] sem credencial no ambiente — nada gravado.");
+if (!TOKEN) {
+  console.warn("[registrar-execucao] sem CCO16_BACKUP_TOKEN — nada gravado.");
   process.exit(0);
 }
 
-const corpo = {
-  nome,
-  ok: resultado === "ok",
-  detalhe: detalhe ? String(detalhe).slice(0, 500) : null,
-  duracao_ms: Number.isFinite(Number(duracao)) ? Math.round(Number(duracao)) : null,
-};
-
 try {
-  const r = await fetch(`${URL_BASE}/rest/v1/cop_rotina_execucao`, {
+  const r = await fetch(`${BASE}/api/cop2026/backup`, {
     method: "POST",
-    headers: {
-      apikey: CHAVE,
-      Authorization: `Bearer ${CHAVE}`,
-      "Content-Type": "application/json",
-      Prefer: "return=minimal",
-    },
-    body: JSON.stringify(corpo),
+    headers: { Authorization: `Bearer ${TOKEN}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      nome,
+      ok: resultado === "ok",
+      detalhe: detalhe || null,
+      duracao_ms: Number(duracao) || null,
+    }),
   });
-  if (!r.ok) throw new Error(`HTTP ${r.status} ${await r.text()}`);
-  console.log(`[registrar-execucao] ${nome}: ${corpo.ok ? "ok" : "falha"}`);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  console.log(`[registrar-execucao] ${nome}: ${resultado}`);
 } catch (erro) {
   console.warn(`[registrar-execucao] não gravou (${erro.message}) — seguindo assim mesmo.`);
 }
