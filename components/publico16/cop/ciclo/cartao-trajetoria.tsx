@@ -2,11 +2,12 @@
 
 import {
   COR_TRAJETORIA,
+  FMT_CONTAGEM,
   ROTULO_TRAJETORIA,
   SUBTITULO_TRAJETORIA,
   calcularTendencia,
-  progressoDoMes,
   progressoDaJanela,
+  progressoDoMes,
 } from "@/lib/cop2026-tendencia";
 
 /**
@@ -34,7 +35,7 @@ import {
  * do veto a 960 ÷ 360 = 2,67.
  */
 
-const N0 = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 0 });
+const N0 = FMT_CONTAGEM;
 const N1 = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 });
 
 function hojeSP() {

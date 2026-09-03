@@ -29,6 +29,7 @@ npx tsc --noEmit \
   && npm run verificar:paridade \
   && npm run verificar:painel \
   && npm run verificar:tendencia \
+  && npm run verificar:unidades \
   && npm run verificar:indices \
   && npm run verificar:excecoes \
   && npm run verificar:seguranca \
@@ -38,6 +39,17 @@ npx tsc --noEmit \
 **Nada de `git add -A`.** Outras sessões editam este mesmo working tree ao mesmo
 tempo; `-A` publica o trabalho pela metade de quem estiver do lado. Adicione
 somente os arquivos que você tocou, pelo nome.
+
+**`verificar:unidades`** guarda a régua de APRESENTAÇÃO (`lib/cop2026-tendencia.ts`):
+como ritmo e contagem de período chegam à tela. Em 03/09/2026 o briefing executivo
+anunciou "54 dias restantes" (eram 54 turnos-fração, 27 dias) porque passava
+`Painel.turnosRestantes` para a mesma prop em que o dashboard passa
+`janela.diasRestantes`; e o ritmo de recuperação saía com `Math.ceil` — 31,67
+virava 32, o mesmo número do ritmo-alvo do mês, e a tela mandava acelerar para o
+passo já praticado. **Ritmo é taxa: `fmtRitmo`/`fmtPorDia`/`fmtPorTurno`, duas
+casas, nunca `Math.ceil`. Contagem de tempo leva o substantivo junto: `fmtDias`
+para dias, `fmtTurnos` para turnos-fração.** O teste varre `app/`, `components/`
+e `lib/` atrás de quem voltou a formatar por conta própria.
 
 **`verificar:excecoes`** guarda a fonte única de "o que é uma exceção"
 (`excecoesPorFracao`, em `lib/cop2026-metricas.ts`). Até 03/09/2026 essa conta

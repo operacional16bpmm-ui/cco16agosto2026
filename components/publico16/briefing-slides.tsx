@@ -51,6 +51,7 @@ import {
   nivelPorCumprimento,
   type Nivel,
 } from "@/lib/cop2026-metricas";
+import { fmtDias, fmtPorTurno, fmtRitmo } from "@/lib/cop2026-tendencia";
 import { type RelatorioMes } from "@/lib/cop2026-relatorios";
 import { DiretrizEmFoco } from "@/components/publico16/diretriz-em-foco";
 import { AgulhaoMetas } from "@/components/publico16/cop/graficos";
@@ -134,7 +135,11 @@ export function BriefingSlides({
   const v = veredito(p);
   const nivel: Nivel = p.nivelGeral;
   const auditoresTotal = metas.reduce((s, m) => s + m.efetivo, 0);
-  const ritmo = Math.ceil(p.ritmoNecessario);
+  /* Ritmo é taxa, não contagem: duas casas, sem `Math.ceil`. Arredondado para
+     cima, o ritmo de recuperação (855 ÷ 27 = 31,67) virava 32 — o mesmo número
+     do ritmo-ALVO do mês (960 ÷ 30 = 32) — e o telão mandava acelerar para o
+     passo que já estava sendo praticado. Régua em `cop2026-tendencia.ts`. */
+  const ritmo = p.ritmoNecessario;
   const foraRotulos = useMemo(
     () => new Set(p.foraDeControle.map((d) => d.data)),
     [p.foraDeControle]
@@ -272,7 +277,7 @@ export function BriefingSlides({
               total={p.total}
               meta={p.meta}
               ritmo={ritmo}
-              turnosRestantes={p.turnosRestantes}
+              diasRestantes={p.janela.diasRestantes}
               titulo='16º BPM/M — "1º Ten PM Fernão"'
               subtitulo={{
                 linha1: `META GLOBAL — ${FMT.format(p.meta)} EVIDÊNCIAS`,
@@ -299,13 +304,14 @@ export function BriefingSlides({
                 i={2}
                 rotulo="Ritmo necessário"
                 valor={ritmo}
+                casas={2}
                 nivel="atencao"
                 /* O Batalhão se mede POR DIA; por turno-fração é a medida da
                    fração. Esta peça dizia "68/turno · para fechar em 13
                    turno(s)" — o modelo antigo, que o Comando mandou corrigir
                    em 02/09/2026. */
                 sufixo="/dia"
-                nota={`para fechar em ${FMT.format(p.janela.diasRestantes)} dia(s)`}
+                nota={`para fechar em ${fmtDias(p.janela.diasRestantes)}`}
                 icone={<TrendingUp size={13} />}
               />
               <Kpi
@@ -320,7 +326,8 @@ export function BriefingSlides({
                 i={4}
                 rotulo="Média por dia"
                 valor={p.mediaDia}
-                nota={`meta de ${FMT.format(Math.round(p.metaDia))} por dia`}
+                casas={2}
+                nota={`meta de ${fmtRitmo(p.metaDia)} por dia`}
                 icone={<Activity size={13} />}
               />
             </div>
@@ -395,7 +402,7 @@ export function BriefingSlides({
                     { r: "Feito", d: `${FMT.format(f.feito)} / ${FMT.format(f.meta)}` },
                     { r: "Faltam", d: FMT.format(f.falta) },
                     { r: "Efetivo", d: `${FMT.format(f.lancaram)} / ${FMT.format(f.efetivo)}` },
-                    { r: "Ritmo", d: `${FMT.format(Math.ceil(f.ritmoNecessario))}/turno` },
+                    { r: "Ritmo", d: fmtPorTurno(f.ritmoNecessario) },
                   ].map((c) => (
                     <div key={c.r}>
                       <dt className={`${T.rotulo} text-white/40`}>{c.r}</dt>
@@ -411,7 +418,7 @@ export function BriefingSlides({
             A meta de cada fração é proporcional ao seu efetivo — quem tem mais policiais
             responde por mais evidências. {criticas[0]?.rotulo} está no menor índice do
             Batalhão ({PCT.format(criticas[0]?.pct ?? 0)}%) e precisa de{" "}
-            {FMT.format(Math.ceil(criticas[0]?.ritmoNecessario ?? 0))} evidências por turno para
+            {fmtRitmo(criticas[0]?.ritmoNecessario ?? 0)} evidências por turno para
             fechar o ciclo.
           </Leitura>
         </div>
@@ -680,7 +687,7 @@ export function BriefingSlides({
               i={4}
               rotulo="Dias com lançamento"
               valor={p.diasComLancamento}
-              nota={`de ${FMT.format(p.janela.decorridos)} dias corridos`}
+              nota={`de ${fmtDias(p.janela.decorridos)} corridos`}
               icone={<CalendarRange size={13} />}
             />
             <Kpi
@@ -875,7 +882,7 @@ export function BriefingSlides({
                 cor: "#d97706",
                 selo: "Recuperação do saldo",
                 titulo: `Ritmo de ${FMT.format(ritmo)} por dia`,
-                desc: `Faltam ${FMT.format(p.falta)} evidências em ${FMT.format(p.janela.diasRestantes)} dia(s). Concentrar o reforço em ${criticas.map((f) => f.rotulo).join(", ")}.`,
+                desc: `Faltam ${FMT.format(p.falta)} evidências em ${fmtDias(p.janela.diasRestantes)}. Concentrar o reforço em ${criticas.map((f) => f.rotulo).join(", ")}.`,
               },
               {
                 n: "3",
@@ -908,7 +915,7 @@ export function BriefingSlides({
                   </span>
                   <Barra pct={f.pct} nivel={f.nivel} altura="h-2" i={k} />
                   <span className={`${T.dado} shrink-0 text-white/70`}>
-                    faltam {FMT.format(f.falta)} · {FMT.format(Math.ceil(f.ritmoNecessario))}/turno ·{" "}
+                    faltam {FMT.format(f.falta)} · {fmtPorTurno(f.ritmoNecessario)} ·{" "}
                     {FMT.format(f.lancaram)} de {FMT.format(f.efetivo)} lançaram
                   </span>
                 </li>

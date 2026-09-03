@@ -19,6 +19,8 @@ import { META_TOTAL_BATALHAO } from "@/lib/cop2026";
 import { COR_FAIXA } from "@/components/publico16/cop/graficos";
 import {
   COR_TRAJETORIA,
+  FMT_CONTAGEM,
+  FMT_RITMO,
   ROTULO_TRAJETORIA,
   SUBTITULO_TRAJETORIA,
   TURNOS_POR_DIA,
@@ -82,8 +84,9 @@ const NEUTRO = "#475569";
 const EIXO = { fontSize: 10, fill: "#55535e" };
 const GRID = "#1d1d1d1f";
 
-const N2 = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const N0 = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 0 });
+/** Régua única de ritmo — ver `cop2026-tendencia.ts`. */
+const N2 = FMT_RITMO;
+const N0 = FMT_CONTAGEM;
 
 const TOOLTIP = {
   contentStyle: {

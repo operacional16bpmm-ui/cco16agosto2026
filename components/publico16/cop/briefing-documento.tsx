@@ -25,6 +25,7 @@ import {
   FaixaBand,
   RotuloFaixa,
 } from "@/components/publico16/cop/documento-cop";
+import { fmtPorDia, fmtRitmo } from "@/lib/cop2026-tendencia";
 import type { RelatorioMes } from "@/lib/cop2026-relatorios";
 
 const POR_QUE_AUDITAMOS = [
@@ -146,7 +147,7 @@ export function BriefingDocumento({
               {[
                 { r: "Dias com lançamento", v: `${FMT.format(p.diasComLancamento)}/${FMT.format(p.janela.decorridos)}` },
                 { r: "Dias restantes", v: FMT.format(p.janela.diasRestantes) },
-                { r: "Ritmo necessário", v: `${FMT.format(Math.ceil(p.ritmoNecessario))}/dia` },
+                { r: "Ritmo necessário", v: fmtPorDia(p.ritmoNecessario) },
                 { r: "Saldo", v: FMT.format(p.falta) },
               ].map((k) => (
                 <div key={k.r} className="rounded-xl border border-slate-200 bg-[#fafbfc] p-4">
@@ -197,7 +198,7 @@ export function BriefingDocumento({
                       <strong className="text-[#07182d]">{fr.rotulo}</strong> em{" "}
                       {PCT.format(fr.pct)}% da meta ({SUBTITULO_NIVEL[fr.nivel]}) — faltam{" "}
                       {FMT.format(fr.falta)} evidências, exigindo{" "}
-                      {FMT.format(Math.ceil(fr.ritmoNecessario))} por turno restante.
+                      {fmtRitmo(fr.ritmoNecessario)} por turno-fração restante.
                     </span>
                   </li>
                 ))}

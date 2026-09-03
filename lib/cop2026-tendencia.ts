@@ -18,6 +18,71 @@
 /** Cada fração cobre diurno + noturno. */
 export const TURNOS_POR_DIA = 2;
 
+/* ===========================================================================
+ * RÉGUA DE APRESENTAÇÃO — como ritmo e contagem de período chegam à tela.
+ *
+ * Fonte única, pelo mesmo motivo que a classificação por faixa tem uma só em
+ * `cop2026-metricas.ts`: enquanto cada superfície formatava por conta própria,
+ * o mesmo número saía diferente em telas que o Comando lê lado a lado.
+ *
+ * Dois erros foram ao ar em 03/09/2026, os dois por falta desta régua:
+ *
+ * 1. UNIDADE DE PERÍODO. O briefing executivo passava `Painel.turnosRestantes`
+ *    (54 turnos-fração) para a prop do velocímetro que imprime "dias
+ *    restantes", enquanto o dashboard passava `janela.diasRestantes` (27) para
+ *    a MESMA prop. A capa anunciava "54 dias restantes" ao lado do alerta que
+ *    dizia "em 27 dias". Turno-fração e dia nunca podem ser formatados pela
+ *    mesma função anônima: aqui cada um leva o seu substantivo junto.
+ *
+ * 2. ARREDONDAMENTO DO RITMO. O ritmo de recuperação (855 ÷ 27 = 31,67) saía
+ *    com `Math.ceil` no briefing e no veredito — virava 32 — e com duas casas
+ *    na faixa de ritmos. Como o ritmo-ALVO do mês é exatamente 960 ÷ 30 = 32,
+ *    o arredondamento fazia recuperação e alvo colidirem no mesmo "32": a tela
+ *    afirmava que era preciso acelerar para o passo que já estava sendo
+ *    praticado. Ritmo é taxa, não contagem — arredonda em DUAS CASAS, sempre,
+ *    e nunca para cima.
+ *
+ * Regra de uso: nenhum componente cria `Intl.NumberFormat` para ritmo nem
+ * escreve "dia(s)"/"turno(s)" à mão. `scripts/verificar-unidades-cop.mjs`
+ * reprova o build quando isso reaparece.
+ * =========================================================================== */
+
+/** Ritmo é taxa: duas casas, nunca `Math.ceil`. */
+export const FMT_RITMO = new Intl.NumberFormat("pt-BR", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+/** Contagem é inteiro: dias, turnos, evidências. */
+export const FMT_CONTAGEM = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 0 });
+
+/** "31,67" — o número do ritmo, sem unidade. Para quando a unidade já é rótulo. */
+export function fmtRitmo(valor: number): string {
+  return FMT_RITMO.format(Number.isFinite(valor) ? valor : 0);
+}
+
+/** "31,67/dia" — a unidade do BATALHÃO. */
+export function fmtPorDia(valor: number): string {
+  return `${fmtRitmo(valor)}/dia`;
+}
+
+/** "3,25/turno" — a unidade da FRAÇÃO, que roda 2 turnos por dia. */
+export function fmtPorTurno(valor: number): string {
+  return `${fmtRitmo(valor)}/turno`;
+}
+
+/** "27 dias" · "1 dia". Só aceita valor que veio de `diasRestantes`/`decorridos`. */
+export function fmtDias(quantidade: number): string {
+  const n = Math.max(0, Math.round(Number.isFinite(quantidade) ? quantidade : 0));
+  return `${FMT_CONTAGEM.format(n)} ${n === 1 ? "dia" : "dias"}`;
+}
+
+/** "54 turnos-fração" · "1 turno-fração". Nunca sai sob a palavra "dia". */
+export function fmtTurnos(quantidade: number): string {
+  const n = Math.max(0, Math.round(Number.isFinite(quantidade) ? quantidade : 0));
+  return `${FMT_CONTAGEM.format(n)} ${n === 1 ? "turno-fração" : "turnos-fração"}`;
+}
+
 /** Limiares de aderência à trajetória (IAT, em %). */
 export const IAT_ADIANTADO = 105;
 export const IAT_NA_TRAJETORIA = 95;

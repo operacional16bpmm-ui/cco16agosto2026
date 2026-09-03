@@ -39,6 +39,7 @@ import {
 import { AlertCircle } from "lucide-react";
 import type { CSSProperties } from "react";
 import { FaixaRitmos } from "@/components/publico16/cop/ciclo/faixa-ritmos";
+import { fmtDias, fmtPorTurno, fmtRitmo, fmtTurnos } from "@/lib/cop2026-tendencia";
 import { COR_NIVEL, Selo } from "./primitivos";
 import { cn } from "@/lib/utils";
 
@@ -370,7 +371,7 @@ export function AgulhaoMetas({
   total,
   meta,
   ritmo,
-  turnosRestantes,
+  diasRestantes,
   cartaoRitmo,
   faixaRitmos,
   marcaPosicao,
@@ -384,7 +385,12 @@ export function AgulhaoMetas({
   total: number;
   meta: number;
   ritmo?: number;
-  turnosRestantes?: number;
+  /** DIAS que faltam para fechar o período — nunca turnos-fração. O nome
+   *  anterior era `turnosRestantes` e o rótulo abaixo dizia "dias restantes":
+   *  o dashboard passava dias (27) e o briefing passava turnos (54) para a
+   *  mesma prop, e a capa do briefing anunciou "54 dias restantes" ao lado do
+   *  alerta que dizia "em 27 dias". Ver a régua em `cop2026-tendencia.ts`. */
+  diasRestantes?: number;
   /** Substitui o cartao "Ritmo necessario". Sem ele, nada muda. */
   cartaoRitmo?: React.ReactNode;
   /** Faixa em largura inteira sob as duas caixas — a comparacao de ritmos que
@@ -565,13 +571,13 @@ export function AgulhaoMetas({
               Ritmo necessário
             </span>
             <span className="pulso-faixa-texto mt-1.5 text-5xl font-black leading-none tracking-tight sm:text-6xl" style={{ color: "var(--faixa)" }}>
-              {FMT.format(ritmo)}
+              {fmtRitmo(ritmo)}
             </span>
             {/* O Batalhão se mede POR DIA. Este cartão dizia "68 evidências/turno
                 · 13 turnos restantes", que era o modelo anterior à Matriz
                 Proporcional e não fechava com o resto da tela. */}
             <span className="mt-2 text-[10px] font-bold leading-tight text-slate-600">evidências/dia</span>
-            <span className="text-[10px] font-semibold leading-tight text-slate-500">· {FMT.format(turnosRestantes ?? 0)} dias restantes</span>
+            <span className="text-[10px] font-semibold leading-tight text-slate-500">· {fmtDias(diasRestantes ?? 0)} restantes</span>
           </div>
         )}
       </div>
@@ -729,7 +735,7 @@ export function RankingFracoes({
                     ) : (
                       <>
                         Faltam <strong className="dados font-black text-[#ca0202]">{FMT.format(d.falta)}</strong> (
-                        {FMT.format(d.ritmoProporcional ?? Math.ceil(d.ritmoNecessario))}/turno proporcional em {FMT.format(d.turnosRestantes)} rest.)
+                        {fmtPorTurno(d.ritmoProporcional ?? d.ritmoNecessario)} proporcional em {fmtTurnos(d.turnosRestantes)})
                       </>
                     )
                   ) : (

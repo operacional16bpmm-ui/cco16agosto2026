@@ -1,10 +1,13 @@
 import {
+  FMT_CONTAGEM,
+  FMT_RITMO,
   ORDEM_PRIORIDADE,
   ROTULO_DISPERSAO,
   ROTULO_PRIORIDADE,
   ROTULO_REGULARIDADE,
   ROTULO_TRAJETORIA,
   SUBTITULO_TRAJETORIA,
+  TURNOS_POR_DIA,
   alertaLote,
   calcularTendencia,
   capacidadeExcedente,
@@ -15,13 +18,12 @@ import {
   indiceEquilibrio,
   marcosMetaAcumulada,
   prioridadeAcao,
-  progressoDoMes,
   progressoDaJanela,
+  progressoDoMes,
   quinzenasIniciadas,
   regularidadeProducao,
   semanasIniciadas,
   turnosDoMes,
-  TURNOS_POR_DIA,
   type ClasseEquilibrio,
   type Prioridade,
   type SituacaoTrajetoria,
@@ -58,8 +60,9 @@ const COR = {
   verde: "#16a34a",
 } as const;
 
-const N2 = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const N0 = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 0 });
+/** Régua única de ritmo — ver `cop2026-tendencia.ts`. */
+const N2 = FMT_RITMO;
+const N0 = FMT_CONTAGEM;
 const P1 = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 });
 
 const MESES_ATE_DEZEMBRO = [

@@ -23,7 +23,13 @@ import {
 } from "@/lib/cop2026";
 import { diasEntre, hojeBrt } from "@/lib/cop2026-ciclo";
 import { RELATORIOS_MENSAIS, mesCorrente } from "@/lib/cop2026-relatorios";
-import { TURNOS_POR_DIA, semanasIniciadas } from "@/lib/cop2026-tendencia";
+import {
+  TURNOS_POR_DIA,
+  fmtDias,
+  fmtRitmo,
+  fmtTurnos,
+  semanasIniciadas,
+} from "@/lib/cop2026-tendencia";
 
 export {
   MATRIZ_PROPORCIONAL_2026,
@@ -1625,9 +1631,13 @@ export function veredito(p: Painel): { titulo: string; detalhe: string; nivel: N
         p.janela.dias
       )} dias já se encerrou.`
     : dias > 0
-      ? `Faltam ${FMT.format(p.falta)} evidências em ${FMT.format(dias)} dia${
-          dias === 1 ? "" : "s"
-        } — ${FMT.format(Math.ceil(p.ritmoNecessario))} por dia para fechar a meta.`
+      ? /* `fmtRitmo`, nunca `Math.ceil`: com 855 em 27 dias a recuperação é
+           31,67 e o ritmo-ALVO do mês é 32,00. Arredondado para cima os dois
+           viravam "32", e esta frase — que o briefing projeta em telão — mandava
+           acelerar para o passo que já estava sendo praticado. */
+        `Faltam ${FMT.format(p.falta)} evidências em ${fmtDias(dias)} — ${fmtRitmo(
+          p.ritmoNecessario
+        )} por dia para fechar a meta.`
       : `Faltam ${FMT.format(p.falta)} evidências e hoje é o último dia do período — ${FMT.format(
           Math.ceil(p.falta)
         )} precisam entrar até o fim do expediente.`;
@@ -1656,10 +1666,10 @@ export function conclusaoRitmo(p: Painel): string {
   const ultimo = p.porDia[p.porDia.length - 1];
   const comparativo =
     ultimo.v >= p.mediaDia
-      ? `acima da média diária de ${FMT.format(Math.round(p.mediaDia))}`
-      : `abaixo da média diária de ${FMT.format(Math.round(p.mediaDia))}`;
+      ? `acima da média diária de ${fmtRitmo(p.mediaDia)}`
+      : `abaixo da média diária de ${fmtRitmo(p.mediaDia)}`;
   const atipicos = p.foraDeControle.length
-    ? ` ${p.foraDeControle.length} dia(s) ficaram fora da faixa normal e merecem verificação.`
+    ? ` ${fmtDias(p.foraDeControle.length)} ficaram fora da faixa normal e merecem verificação.`
     : " Nenhum dia saiu da faixa normal de variação.";
   return `Último dia (${ultimo.rotulo}): ${FMT.format(ultimo.v)} evidências, ${comparativo}.${atipicos}`;
 }
@@ -1692,7 +1702,7 @@ export function conclusaoFunil(p: Painel): string {
      dava percentual menor do que o real. */
   const auditados = p.funil[1]?.v || 1;
   const comIds = p.funil[3]?.v ?? 0;
-  return `De ${FMT.format(auditados)} turno(s) com auditoria lançada, ${FMT.format(
+  return `De ${fmtTurnos(auditados)} com auditoria lançada, ${FMT.format(
     comIds
   )} (${PCT.format(
     (comIds / auditados) * 100

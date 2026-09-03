@@ -1,10 +1,13 @@
 "use client";
 
 import {
+  FMT_CONTAGEM,
+  FMT_RITMO,
   calcularTendencia,
+  fmtDias,
   metaDeAmanha,
-  progressoDoMes,
   progressoDaJanela,
+  progressoDoMes,
 } from "@/lib/cop2026-tendencia";
 import { cn } from "@/lib/utils";
 
@@ -27,8 +30,9 @@ import { cn } from "@/lib/utils";
  * Maj PM em 31/08/2026). Nada aqui é fixo no código.
  */
 
-const N2 = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const N0 = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 0 });
+/** Régua única de ritmo — ver `cop2026-tendencia.ts`. */
+const N2 = FMT_RITMO;
+const N0 = FMT_CONTAGEM;
 const N1 = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 });
 
 const COR_ALVO = "#2563eb";
@@ -161,7 +165,12 @@ export function FaixaRitmos({
   const real = t.ritmoReal;
   const pctReal = real === null || alvo <= 0 ? 0 : (real / alvo) * 100;
   const faltaPorDia = real === null ? null : Math.max(0, alvo - real);
-  const diasRestantes = t.turnosRestantes;
+  /* Dias vêm do PROGRESSO da janela, não de `t.turnosRestantes`: os campos
+     `turnos*` de `Tendencia` carregam a unidade que o chamador entregou — aqui
+     são dias, no ranking por fração são turnos-fração — e ler a contagem de
+     tempo por ali é como o velocímetro do briefing acabou anunciando "54 dias
+     restantes" onde faltavam 27. Ver a régua em `cop2026-tendencia.ts`. */
+  const diasRestantes = Math.max(0, p.diasMes - p.diasDecorridos);
   /** No último dia (≤1) a recuperação por dia dispara para 15–20× e lê como
    *  pânico. Aí vale mais o déficit absoluto do que o ritmo. */
   const ultimoDia = t.deficit > 0 && !t.irrecuperavel && diasRestantes <= 1;
@@ -184,7 +193,7 @@ export function FaixaRitmos({
             dia {N0.format(p.diasDecorridos)} de {N0.format(p.diasMes)} ·{" "}
             {diasRestantes === 0
               ? `${rotuloPeriodo} encerrado`
-              : `${N0.format(diasRestantes)} dia${diasRestantes === 1 ? "" : "s"} restante${diasRestantes === 1 ? "" : "s"}`}
+              : `${fmtDias(diasRestantes)} restante${diasRestantes === 1 ? "" : "s"}`}
           </span>
         )}
       </div>

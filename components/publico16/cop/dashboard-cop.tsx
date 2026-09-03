@@ -46,7 +46,7 @@ import { CartaoTrajetoria } from "@/components/publico16/cop/ciclo/cartao-trajet
 import { FaixaRitmos } from "@/components/publico16/cop/ciclo/faixa-ritmos";
 import { CaixaTendencia } from "@/components/publico16/cop/ciclo/caixa-tendencia";
 import { CurvaPlanoRealizado } from "@/components/publico16/cop/ciclo/curva-plano";
-import { progressoDoMes } from "@/lib/cop2026-tendencia";
+import { fmtDias, fmtRitmo, progressoDoMes } from "@/lib/cop2026-tendencia";
 import {
   MATRIZ_PROPORCIONAL_2026,
   META_TOTAL_BATALHAO,
@@ -714,10 +714,8 @@ export function DashboardCop({
             diasRestantesRecorte > 0
               ? `Auditoria em ${PCT.format(p.pct)}% da meta. Faltam ${FMT.format(
                   p.falta
-                )} evidências em ${FMT.format(diasRestantesRecorte)} dia${
-                  diasRestantesRecorte === 1 ? "" : "s"
-                } — ${FMT.format(
-                  Math.ceil(p.falta / diasRestantesRecorte)
+                )} evidências em ${fmtDias(diasRestantesRecorte)} — ${fmtRitmo(
+                  p.falta / diasRestantesRecorte
                 )} por dia para fechar a meta.`
               : `Auditoria em ${PCT.format(p.pct)}% da meta. Faltam ${FMT.format(
                   p.falta
@@ -971,8 +969,8 @@ export function DashboardCop({
          mão em `lib/cop2026.ts` — números que nunca fechavam com os dados e que
          desmentiam a própria linha do painel ("nenhum é fixo no código"). */
       rotulo: tendencia ? "Ritmo de recuperação" : "Ritmo necessário",
-      valor: FMT.format(Math.ceil(p.ritmoNecessario)),
-      nota: `evidências/dia · ${FMT.format(p.janela.diasRestantes)} dia${p.janela.diasRestantes === 1 ? "" : "s"} restante${p.janela.diasRestantes === 1 ? "" : "s"}`,
+      valor: fmtRitmo(p.ritmoNecessario),
+      nota: `evidências/dia · ${fmtDias(p.janela.diasRestantes)} restante${p.janela.diasRestantes === 1 ? "" : "s"}`,
       foto: "/media/reel-operacao.jpg",
       icone: <TrendingUp size={22} strokeWidth={2.4} aria-hidden />,
     },
@@ -1679,8 +1677,8 @@ export function DashboardCop({
               pct={p.pct}
               total={p.total}
               meta={p.meta}
-              ritmo={tendencia ? undefined : Math.ceil(p.ritmoNecessario)}
-              turnosRestantes={tendencia ? undefined : p.janela.diasRestantes}
+              ritmo={tendencia ? undefined : p.ritmoNecessario}
+              diasRestantes={tendencia ? undefined : p.janela.diasRestantes}
               cartaoRitmo={
                 tendencia ? (
                   <CartaoTrajetoria meta={p.meta} total={p.total} janela={p.janela} />
