@@ -719,7 +719,11 @@ export function BriefingSlides({
                 rot: `Abaixo do mínimo de ${p.minimo}`,
                 q: p.abaixo,
                 nivel: (p.abaixo > 0 ? "atencao" : "conforme") as Nivel,
-                nota: "auditou, mas não alcançou a cota do Batalhão",
+                /* Diz TURNO por extenso: este cartão conta turno, e o mapa logo
+                   abaixo conta lançamento. Sem o rótulo, os dois números
+                   parecem discordar quando na verdade medem coisas diferentes —
+                   a régua do mínimo é por turno, decisão do Comando. */
+                nota: "turnos que auditaram, mas não alcançaram a cota do Batalhão",
                 href: "/cop2026/dashboard?excecao=abaixo",
               },
               {

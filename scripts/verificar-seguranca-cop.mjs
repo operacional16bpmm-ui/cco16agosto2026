@@ -34,7 +34,20 @@ const CHAVE_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
  * próprio repositório — assim a rede cresce sozinha quando alguém acrescenta
  * tabela, em vez de envelhecer numa constante que ninguém lembra de atualizar.
  */
-const PREFIXOS_FECHADOS = ["cop_", "cop2026_", "dejem_", "usuarios_", "p2_", "p3_"];
+const PREFIXOS_FECHADOS = [
+  "cop_",
+  "cop2026_",
+  "dejem_",
+  "usuarios_",
+  "p2_",
+  /* p4_ e p5_ entraram em 03/09/2026: `p4_efetivo` guarda os 570 policiais do
+     Batalhão com RE e nome, e é a tabela que alimenta a rota pública de ficha
+     por RE. Estava fora da lista na primeira versão desta rede — hoje responde
+     401, mas uma `p4_` nova nasceria sem ninguém olhando. */
+  "p3_",
+  "p4_",
+  "p5_",
+];
 
 /**
  * Tabelas criadas fora de migration — `create table` avulso no console do

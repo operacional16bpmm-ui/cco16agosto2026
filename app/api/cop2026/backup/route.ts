@@ -51,6 +51,10 @@ const TABELAS = new Set([
   "dejem_jornadas",
   "dejem_log_presenca",
   "dejem_benchmark_gc",
+  /* O ROSTER. Sem ele, restaurar o banco devolve os lançamentos e não devolve
+     a quem eles pertencem: `identificarPorRe` deixa de resolver RE → fração e
+     todo lançamento novo vira órfão. Ficou de fora da primeira lista. */
+  "p4_efetivo",
 ]);
 
 const PAGINA_MAX = 1000;
