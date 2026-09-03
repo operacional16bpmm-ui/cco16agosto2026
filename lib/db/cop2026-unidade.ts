@@ -222,6 +222,20 @@ export async function fracaoDaSubunidade(
  * Devolve `null` sem banco — o rodapé cai para o texto curto de sempre em vez
  * de sumir. Nenhuma tela pode depender desta consulta para renderizar.
  */
+/**
+ * `16.BPM/M` → `16º BPM/M`.
+ *
+ * O DEJEM grava com ponto e sem espaço; a I-7-PM escreve com ordinal. O nome
+ * cru fica no banco (é a chave de conferência contra a fonte) e a correção é só
+ * de exibição — documento oficial não sai com "16.BPM/M".
+ */
+export function nomeInstitucional(nome: string): string {
+  return nome
+    .replace(/^(\d+)\s*[.ºo°]?\s*(BPM|BAEP|GB|BPRV|BPAMB|BPTRAN|BPCHQ)\b/i, "$1º $2")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export const hierarquiaDaInstalacao = cache(
   async (): Promise<{ batalhao: string; comando: string | null } | null> => {
     const cod = batalhaoDaInstalacao();
@@ -243,7 +257,7 @@ export const hierarquiaDaInstalacao = cache(
           .maybeSingle();
         comando = (pai?.cpa_nome as string | null) ?? (pai?.nome as string | null) ?? null;
       }
-      return { batalhao: String(data.nome), comando };
+      return { batalhao: nomeInstitucional(String(data.nome)), comando };
     }, null);
   }
 );
