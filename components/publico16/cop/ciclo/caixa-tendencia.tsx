@@ -220,6 +220,11 @@ export function CaixaTendencia({
   const noPeriodo = rotuloPeriodo === "semana" ? "na semana" : `no ${rotuloPeriodo}`;
 
   const metaGlobal = fracoes.reduce((s, f) => s + f.meta, 0);
+  /* A meta do MÊS, para o que é mensal por natureza: a conferência da Matriz
+     Proporcional e o calendário até dezembro. Com uma semana selecionada,
+     `f.meta` é a cota da semana — a conferência acusava "as cotas somam 288 e
+     não 960" e o calendário projetava dezembro com a cota de nove dias. */
+  const metaMensalGlobal = fracoes.reduce((s, f) => s + (f.metaMes ?? f.meta), 0);
   /* O total do Batalhão soma TODAS as evidências do recorte, inclusive as de
      quem não declarou a fração. Somando só as linhas da tabela, esta caixa
      anunciava "Realizado 65" ao lado do KPI "EVIDÊNCIAS AUDITADAS 87" no topo
@@ -272,7 +277,7 @@ export function CaixaTendencia({
   const turnosMesBatalhao = turnosDiaBatalhao * p.diasMes;
 
   const equilibrio = indiceEquilibrio(linhas.map((l) => l.t.aderencia));
-  const soma = conferirSomaCotas(fracoes.map((x) => x.meta), 960);
+  const soma = conferirSomaCotas(fracoes.map((x) => x.metaMes ?? x.meta), 960);
   const filaDeAcao = [...linhas]
     .filter((l) => l.prioridade !== "NORMAL" && l.prioridade !== "REDISTRIBUICAO")
     .sort(
@@ -733,7 +738,7 @@ export function CaixaTendencia({
                           m.mes === mes ? "font-black text-slate-900" : "text-slate-600"
                         }`}
                       >
-                        {N2.format(f.meta / turnosDoMes(ano, m.mes))}
+                        {N2.format((f.metaMes ?? f.meta) / turnosDoMes(ano, m.mes))}
                       </td>
                     ))}
                   </tr>
@@ -749,7 +754,7 @@ export function CaixaTendencia({
                         m.mes === mes ? "text-slate-900" : "text-slate-600"
                       }`}
                     >
-                      {N2.format(metaGlobal / diasDoMes(ano, m.mes))}
+                      {N2.format(metaMensalGlobal / diasDoMes(ano, m.mes))}
                     </td>
                   ))}
                 </tr>
