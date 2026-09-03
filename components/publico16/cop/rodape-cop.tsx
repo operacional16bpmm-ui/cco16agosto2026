@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { ClipboardList, Fingerprint, Lock, Scale, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { hierarquiaDaInstalacao } from "@/lib/db/cop2026-unidade";
 import { EQUIPE } from "@/components/publico16/creditos";
 
 /**
@@ -111,7 +112,7 @@ export function AssinaturaDesenvolvimento({ className }: { className?: string })
   );
 }
 
-export function RodapeCop({
+export async function RodapeCop({
   /** Frase própria da página. */
   nota,
   /** Casa com o max-w do cabeçalho da página. */
@@ -120,6 +121,14 @@ export function RodapeCop({
   nota?: string;
   largura?: string;
 }) {
+  /* `cache()` por trás: o rodapé aparece em 19 superfícies e a consulta roda uma
+     vez por requisição, não uma por rodapé. Sem banco devolve null e a linha cai
+     para o texto curto — nenhuma tela deixa de renderizar por causa disto. */
+  const h = await hierarquiaDaInstalacao();
+  const cadeia = h
+    ? ["PMESP", h.comando, h.batalhao].filter(Boolean).join(" · ")
+    : "PMESP · 16º BPM/M";
+
   return (
     /* tema-vitrine: as páginas da COP rodam sob .tema-institucional, que redefine
        --branco para grafite e --ouro para o vermelho PM. Numa faixa azul-noite
@@ -163,8 +172,15 @@ export function RodapeCop({
               <p className="font-serif text-base font-bold uppercase leading-tight tracking-wide text-ouro sm:text-lg">
                 Portal CCO-16
               </p>
+              {/* CADEIA DE COMANDO, e não só o batalhão. Relatório de auditoria
+                  de COP circula impresso, fora do sistema que sabe o contexto —
+                  e com o segundo batalhão no ar, "16º BPM/M" sozinho deixa de
+                  identificar de quem é a folha. Sai do cadastro de Unidades,
+                  não de constante: batalhão que muda de CPA muda aqui junto. */}
               <p className="mt-1.5 text-[12.5px] leading-relaxed text-branco/70">
-                Auditoria de COP 2026 · 16º BPM/M
+                Auditoria de COP 2026
+                <br />
+                <span className="text-branco/85">{cadeia}</span>
                 <br />
                 Uso restrito ao serviço.
               </p>

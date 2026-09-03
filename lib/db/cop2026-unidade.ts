@@ -12,6 +12,8 @@
  * renomear uma unidade não quebre o histórico dela. Fora da área técnica do
  * admin, nenhuma tela mostra código.
  */
+import { cache } from "react";
+
 import { createAdminClient } from "@/lib/supabase/admin";
 import { supabaseConfigurado } from "@/lib/preview";
 
@@ -204,6 +206,47 @@ export async function fracaoDaSubunidade(
     return (data?.cod as string | undefined) ?? null;
   }, null);
 }
+
+/**
+ * A cadeia de comando desta instalação, para assinar as superfícies:
+ * **PMESP → CPA/M-5 → 16º BPM/M**.
+ *
+ * O rodapé dizia só "16º BPM/M". Assim que o segundo batalhão entrar, um
+ * relatório impresso sem a cadeia não diz de quem é — e relatório de auditoria
+ * de COP circula em papel, fora do sistema que sabe o contexto.
+ *
+ * `cache()` do React: o rodapé aparece em 19 superfícies e sem isto cada página
+ * pagaria duas consultas só para escrever um cabeçalho. Uma vez por requisição
+ * basta, e o dado praticamente não muda.
+ *
+ * Devolve `null` sem banco — o rodapé cai para o texto curto de sempre em vez
+ * de sumir. Nenhuma tela pode depender desta consulta para renderizar.
+ */
+export const hierarquiaDaInstalacao = cache(
+  async (): Promise<{ batalhao: string; comando: string | null } | null> => {
+    const cod = batalhaoDaInstalacao();
+    return seguro(async () => {
+      const { data, error } = await createAdminClient()
+        .from("cop_unidade")
+        .select("nome, cod_pai")
+        .eq("cod", cod)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) return null;
+
+      let comando: string | null = null;
+      if (data.cod_pai) {
+        const { data: pai } = await createAdminClient()
+          .from("cop_unidade")
+          .select("nome, cpa_nome")
+          .eq("cod", data.cod_pai)
+          .maybeSingle();
+        comando = (pai?.cpa_nome as string | null) ?? (pai?.nome as string | null) ?? null;
+      }
+      return { batalhao: String(data.nome), comando };
+    }, null);
+  }
+);
 
 /** Contagem por tipo, para a área técnica do admin. */
 export async function resumoDaDimensao(): Promise<{

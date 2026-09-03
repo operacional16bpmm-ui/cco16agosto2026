@@ -264,8 +264,29 @@ function paraLancamentoCop(l: LinhaBanco, indice: number): LancamentoCop {
  * vínculo, também o que está pendente de confirmação — ver
  * `exigeVinculoConfirmado()` em lib/db/cop2026-auditor.ts.
  */
+/**
+ * ISOLAMENTO ENTRE UNIDADES — por que é aqui e não em RLS.
+ *
+ * A tentação natural é escrever política de RLS em `cop_auditoria_lancamento` e
+ * declarar o problema resolvido. **Não funciona neste sistema**: a aplicação lê
+ * e escreve com a chave `service_role`, e `service_role` ignora RLS por
+ * definição. Uma política ali seria teatro — passaria em revisão e não isolaria
+ * nada. RLS aqui serve para o que já serve: negar tudo para a chave pública,
+ * que é o que `verificar:seguranca` afirma a cada deploy.
+ *
+ * O isolamento de verdade é este filtro, no único portão por onde a leitura
+ * passa. Enquanto houver um batalhão só, `unidade` vem indefinido e nada muda —
+ * a costura fica pronta sem alterar comportamento hoje.
+ *
+ * `unidade_cod is null` entra junto de propósito: é o histórico anterior à
+ * migration 029 e os órfãos sem fração declarada. Excluí-los faria o painel do
+ * 16º perder lançamento sem avisar — exatamente a classe de erro que o Comando
+ * cobrou em 02/09/2026.
+ */
 export async function lerLancamentosDoBanco(opcoes?: {
   incluirPendentes?: boolean;
+  /** Prefixo do batalhão (5 dígitos). Ausente = sem recorte, comportamento atual. */
+  unidade?: string;
 }): Promise<{ lancamentos: LancamentoCop[]; erro: string | null }> {
   if (!supabaseConfigurado()) return { lancamentos: [], erro: null };
   try {
@@ -279,6 +300,12 @@ export async function lerLancamentosDoBanco(opcoes?: {
       .limit(20_000);
 
     if (!opcoes?.incluirPendentes) consulta = consulta.eq("vinculo_pendente", false);
+
+    if (opcoes?.unidade && /^\d{5}$/.test(opcoes.unidade)) {
+      consulta = consulta.or(
+        `unidade_cod.like.${opcoes.unidade}%,unidade_cod.is.null`
+      );
+    }
 
     const { data, error } = await consulta;
     if (error) throw new Error(error.message);
