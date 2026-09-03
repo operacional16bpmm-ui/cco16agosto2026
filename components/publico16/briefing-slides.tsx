@@ -542,7 +542,7 @@ export function BriefingSlides({
           </div>
 
           <div className="grid gap-2.5 lg:grid-cols-2">
-            <Bloco i={4} icone={<BarChart3 size={15} />} titulo="Evidências por lançamento">
+            <Bloco i={4} icone={<BarChart3 size={15} />} titulo="Evidências por turno de serviço">
               <ColunasQualidade dados={p.histograma} />
               <Leitura>{conclusaoQualidade(p)}</Leitura>
             </Bloco>

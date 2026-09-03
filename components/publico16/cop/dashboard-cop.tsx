@@ -2182,7 +2182,7 @@ export function DashboardCop({
 
           <Grupo ativo={aba === "qualidade"}>
               <Cartao
-                titulo="Evidências por lançamento"
+                titulo="Evidências por turno de serviço"
                 nota={`quantos lançamentos trouxeram 0, 1, 2… evidências (mínimo: ${p.minimo})`}
                 conclusao={conclusaoQualidade(p)}
                 ajuda={
@@ -2570,7 +2570,7 @@ export function DashboardCop({
               "Conformidade",
               `Percentual de lançamentos que trouxeram ${p.minimo} ou mais evidências — o mínimo determinado pelo Batalhão (a Diretriz PM3-001/02/25 pede 2).`,
             ],
-            ["Mediana", "O valor do meio: metade dos lançamentos ficou acima dele, metade abaixo. Não se deixa distorcer por um recorde isolado."],
+            ["Mediana", "O valor do meio: metade dos turnos de serviço ficou acima dele, metade abaixo. Não se deixa distorcer por um recorde isolado."],
             ["p90", "O patamar alcançado pelos 10% mais produtivos."],
             ["±3σ (carta de controle)", "A faixa de variação normal do próprio Batalhão. Dia fora dela é atípico e merece verificação — não é, por si só, falta."],
             ["Pareto", "Ordenação do maior para o menor produtor, com o acumulado. Mostra se a auditoria depende de poucos."],

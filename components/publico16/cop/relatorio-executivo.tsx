@@ -342,7 +342,7 @@ export function RelatorioExecutivo({
             <div className="grid gap-4 lg:grid-cols-[1.1fr_1fr]">
               <div className="rounded-xl border border-slate-200 bg-[#fafbfc] p-4">
                 <p className="mb-3 text-[12px] font-bold uppercase tracking-wide text-[#15304c]/60">
-                  Evidências por lançamento
+                  Evidências por turno de serviço
                 </p>
                 <div className="space-y-1.5">
                   {p.histograma.map((h) => (
