@@ -142,7 +142,11 @@ export function BriefingSlides({
   const comIds = p.dados.filter((l) => l.idsMidia.trim()).length;
   const taxaIds = p.dados.length ? (comIds / p.dados.length) * 100 : 0;
   const engajamento = auditoresTotal > 0 ? (p.ativos / auditoresTotal) * 100 : 0;
-  const desvios = p.naoAuditou + p.abaixo;
+  /* Vem do motor, não da soma dos cartões: `naoAuditou + abaixo` deixava
+     `semIds` de fora e o rodapé anunciava "0 desvio(s)" com 8 pendentes na
+     mesma tela. Somar os três também estaria errado — eles se sobrepõem.
+     Ver `excecoesPorFracao` em lib/cop2026-metricas.ts. */
+  const desvios = p.excecoes.totalPendencia;
   /* As frações que puxam a meta para baixo. É delas que sai o plano de ação —
      cobrar "o Batalhão" não move nada, cobrar a fração move. */
   const criticas = [...p.fracoes].sort((a, b) => a.pct - b.pct).slice(0, 3);
@@ -740,13 +744,15 @@ export function BriefingSlides({
           </div>
 
           <Bloco i={3} icone={<Layers size={15} />} titulo="Onde as exceções se concentram">
+            {/* As linhas vêm prontas do motor. A do "Sem fração declarada" só
+                aparece quando existe órfão: numa base limpa ela seria uma barra
+                zerada permanente, e o Comando leria como fração de verdade. */}
             <ul className="space-y-2">
-              {p.fracoes.map((f, k) => {
-                const daFracao = p.dados.filter((l) => l.subunidade === f.chave);
-                const ex =
-                  daFracao.filter((l) => !l.auditou).length +
-                  daFracao.filter((l) => l.auditou && l.videos < p.minimo).length;
-                const base = Math.max(1, daFracao.length);
+              {[
+                ...p.excecoes.linhas,
+                ...(p.excecoes.orfaos.total > 0 ? [p.excecoes.orfaos] : []),
+              ].map((f, k) => {
+                const base = Math.max(1, f.total);
                 return (
                   <li key={f.chave} className="flex items-center gap-2.5">
                     <span className="w-24 shrink-0 truncate text-[12.5px] text-white/80 sm:w-28">
@@ -757,22 +763,24 @@ export function BriefingSlides({
                         className="bf-barra h-full rounded-full"
                         style={{
                           ...atraso(k, 55),
-                          width: `${Math.min(100, (ex / base) * 100)}%`,
+                          width: `${Math.min(100, (f.comPendencia / base) * 100)}%`,
                           background: INST.vermelhoClaro,
                         }}
                       />
                     </div>
                     <span className={`${T.dado} w-24 shrink-0 text-right text-white/60`}>
-                      {FMT.format(ex)} de {FMT.format(daFracao.length)}
+                      {FMT.format(f.comPendencia)} de {FMT.format(f.total)}
                     </span>
                   </li>
                 );
               })}
             </ul>
             <Leitura>
-              {FMT.format(desvios)} desvio(s) em {FMT.format(p.dados.length)} lançamento(s) — a lista
-              nominal, com a justificativa registrada por cada policial, fica no painel de controle,
-              onde se filtra e se cobra fração a fração.
+              {FMT.format(desvios)} lançamento(s) com pendência em{" "}
+              {FMT.format(p.excecoes.totalLancamentos)} — conta cada lançamento uma vez, mesmo que
+              ele acumule motivos: não auditou, ficou abaixo do mínimo de {FMT.format(p.minimo)} ou
+              não informou o ID da mídia. A lista nominal, com a justificativa registrada por cada
+              policial, fica no painel de controle, onde se filtra e se cobra fração a fração.
             </Leitura>
           </Bloco>
         </div>

@@ -8,7 +8,7 @@
  * para quem quiser manusear a base viva.
  */
 import { ExternalLink } from "lucide-react";
-import { FMT } from "@/lib/cop2026-metricas";
+import { FMT, temPendencia } from "@/lib/cop2026-metricas";
 import {
   ORDEM_SUBUNIDADES,
   ROTULO_SUBUNIDADE,
@@ -27,6 +27,8 @@ type LinhaFracaoDados = {
   evidencias: number;
   abaixo: number;
   semIds: number;
+  /** Lançamentos com ao menos um motivo, contados uma vez só. */
+  comPendencia: number;
 };
 
 function consolidarPorFracao(dados: LancamentoCop[], minimo: number): LinhaFracaoDados[] {
@@ -43,8 +45,14 @@ function consolidarPorFracao(dados: LancamentoCop[], minimo: number): LinhaFraca
         evidencias: 0,
         abaixo: 0,
         semIds: 0,
+        comPendencia: 0,
       };
     linha.lancamentos += 1;
+    /* `temPendencia` é a MESMA função que o briefing usa. As colunas ao lado
+       continuam abrindo por motivo (um lançamento pode acumular dois), mas o
+       total com pendência tem de fechar entre os dois documentos — foi a
+       divergência entre eles que o Comando cobrou em 02/09/2026. */
+    if (temPendencia(l, minimo)) linha.comPendencia += 1;
     if (l.auditou) {
       linha.auditaram += 1;
       linha.evidencias += l.videos;
@@ -147,7 +155,11 @@ export function RelatorioDadosDocumento({
                 <th className="py-2 pr-3 font-bold">Auditaram</th>
                 <th className="py-2 pr-3 font-bold">Evidências</th>
                 <th className="py-2 pr-3 font-bold">Abaixo</th>
-                <th className="py-2 font-bold">Sem IDs</th>
+                <th className="py-2 pr-3 font-bold">Sem IDs</th>
+                {/* Não é a soma das duas anteriores: um lançamento pode estar
+                    nas duas e conta uma vez. É este o número que fecha com o
+                    briefing. */}
+                <th className="py-2 font-bold">Com pendência</th>
               </tr>
             </thead>
             <tbody>
@@ -158,7 +170,8 @@ export function RelatorioDadosDocumento({
                   <td className="py-1.5 pr-3 font-mono text-[#15304c]/80">{FMT.format(fr.auditaram)}</td>
                   <td className="py-1.5 pr-3 font-mono font-bold text-[#07182d]">{FMT.format(fr.evidencias)}</td>
                   <td className="py-1.5 pr-3 font-mono text-[#d97706]">{FMT.format(fr.abaixo)}</td>
-                  <td className="py-1.5 font-mono text-[#d97706]">{FMT.format(fr.semIds)}</td>
+                  <td className="py-1.5 pr-3 font-mono text-[#d97706]">{FMT.format(fr.semIds)}</td>
+                  <td className="py-1.5 font-mono font-bold text-[#ca0202]">{FMT.format(fr.comPendencia)}</td>
                 </tr>
               ))}
             </tbody>

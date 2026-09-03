@@ -26,11 +26,29 @@ npx tsc --noEmit \
   && npm run verificar:dado-pessoal \
   && npm run verificar:periodo \
   && npm run verificar:lancamento \
+  && npm run verificar:paridade \
   && npm run verificar:painel \
   && npm run verificar:tendencia \
   && npm run verificar:indices \
-  && git add -A && git commit -m "<msg>" && npx vercel --prod --yes
+  && npm run verificar:excecoes \
+  && npm run verificar:seguranca \
+  && git commit -m "<msg>" && npx vercel --prod --yes
 ```
+
+**Nada de `git add -A`.** Outras sessões editam este mesmo working tree ao mesmo
+tempo; `-A` publica o trabalho pela metade de quem estiver do lado. Adicione
+somente os arquivos que você tocou, pelo nome.
+
+**`verificar:excecoes`** guarda a fonte única de "o que é uma exceção"
+(`excecoesPorFracao`, em `lib/cop2026-metricas.ts`). Até 03/09/2026 essa conta
+existia escrita três vezes, com respostas diferentes — o briefing anunciava
+"8 sem IDs" e mostrava 0 em todas as barras. Se você precisar do número de
+exceções em qualquer superfície nova, **chame a função**; não refaça o `filter`.
+
+**`verificar:seguranca`** pergunta, com a chave pública do site, quantas linhas
+cada tabela do domínio devolve — todas têm de responder zero. É a rede que teria
+pego no primeiro dia as duas tabelas de backup abertas à internet. Riscos aceitos
+ficam na constante `RISCO_ACEITO`, com data e autor; sem isso, o teste falha.
 
 **`verificar:painel` é obrigatório** — é a rede que impede o bug de recorte que
 o Comando apontou em 02/09/2026 (semanas somando o mês anterior, quinzena com

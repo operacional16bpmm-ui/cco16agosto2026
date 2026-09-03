@@ -16,7 +16,9 @@
     "conferir:painel": "node --experimental-strip-types --no-warnings --import ./scripts/alias-loader.mjs scripts/conferir-painel-cop.mjs",
     "verificar:painel": "node --experimental-strip-types --no-warnings --import ./scripts/alias-loader.mjs --test scripts/verificar-painel-cop.mjs",
     "verificar:tendencia": "node --experimental-strip-types --no-warnings --import ./scripts/alias-loader.mjs --test scripts/verificar-tendencia-cop.mjs",
-    "verificar:indices": "node --experimental-strip-types --no-warnings --import ./scripts/alias-loader.mjs --test scripts/verificar-indices-cop.mjs"
+    "verificar:indices": "node --experimental-strip-types --no-warnings --import ./scripts/alias-loader.mjs --test scripts/verificar-indices-cop.mjs",
+    "verificar:excecoes": "node --experimental-strip-types --no-warnings --import ./scripts/alias-loader.mjs --test scripts/verificar-excecoes-cop.mjs",
+    "verificar:seguranca": "node --experimental-strip-types --no-warnings --import ./scripts/alias-loader.mjs --test scripts/verificar-seguranca-cop.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.123.0",

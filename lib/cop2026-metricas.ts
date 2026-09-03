@@ -514,6 +514,109 @@ export function nivelPorCumprimento(pct: number, temDados: boolean): Nivel {
 }
 
 // ---------------------------------------------------------------------------
+// Exceções por fração — FONTE ÚNICA
+// ---------------------------------------------------------------------------
+
+/**
+ * "O QUE É UMA EXCEÇÃO", em um lugar só.
+ *
+ * Até 03/09/2026 esta conta existia escrita TRÊS vezes, com respostas
+ * diferentes: aqui (`naoAuditou` / `abaixo` / `semIds`), dentro do bloco "Onde
+ * as exceções se concentram" do briefing e outra vez no Relatório de Dados. A
+ * cópia do briefing ignorava `semIds` — o cartão anunciava "8 sem IDs de mídia"
+ * e o mapa logo abaixo mostrava 0 em todas as frações, com o rodapé fechando em
+ * "0 desvio(s) em 21 lançamento(s)". Foi o que o Major apontou em 02/09/2026 às
+ * 07:50 ("não aparece no gráfico a inconsistência das oito").
+ *
+ * O `AGENTS.md` já proibia isso ("nenhum componente deve reclassificar por
+ * conta própria"); remendar ponto a ponto faria a quarta cópia nascer. Todo
+ * consumidor chama esta função e nenhum recalcula.
+ *
+ * CONTAGEM DISTINTA, e é o detalhe que faz a diferença: os três motivos se
+ * SOBREPÕEM. Quem auditou abaixo do mínimo E não informou o ID cai em dois
+ * deles. Somar `naoAuditou + abaixo + semIds` inflaria o número, faria a barra
+ * passar de 100% da própria fração e desmentiria o cartão de cima. Por isso o
+ * predicado é um OR sobre o lançamento, e não uma soma de contadores.
+ *
+ * UNIDADE: **lançamento**. É a régua do denominador deste bloco ("N de M
+ * lançamentos daquela fração"). O cartão "Abaixo do mínimo" do topo continua
+ * contando TURNO, que é a régua institucional do mínimo — são perguntas
+ * diferentes e cada superfície diz qual está usando. Unificar as duas mudaria
+ * um número que a Coordenadoria já validou, e é decisão do Comando.
+ *
+ * ÓRFÃOS: lançamento sem `subunidade` declarada não casa com fração nenhuma e
+ * saía de todas as barras, embora continuasse no total do rodapé — as barras
+ * somavam 17 onde o rodapé dizia 21. Ele volta como linha própria, conforme
+ * `docs/cop2026-padroes-comando.md` § "Evidência sem fração aparece; não some
+ * nem soma calada".
+ */
+export type ExcecoesLinha = {
+  chave: string;
+  rotulo: string;
+  /** Lançamentos do recorte pertencentes a esta fração. */
+  total: number;
+  /** Quantos deles têm ao menos um motivo de exceção. Nunca maior que `total`. */
+  comPendencia: number;
+};
+
+export type ExcecoesPorFracao = {
+  linhas: ExcecoesLinha[];
+  /** Lançamentos sem fração declarada — não entram em `linhas`. */
+  orfaos: ExcecoesLinha;
+  /** Soma de `comPendencia` das linhas + órfãos. É o número do rodapé. */
+  totalPendencia: number;
+  /** Soma de `total` das linhas + órfãos. Fecha com o tamanho da base. */
+  totalLancamentos: number;
+};
+
+/** Um lançamento tem pendência? Binário, e cobre os três motivos sem duplicar. */
+export function temPendencia(l: LancamentoCop, minimo: number): boolean {
+  if (!l.auditou) return true;
+  if (l.videos < minimo) return true;
+  return !l.idsMidia.trim();
+}
+
+export function excecoesPorFracao(
+  dados: LancamentoCop[],
+  fracoes: { chave: string; rotulo: string }[],
+  minimo: number
+): ExcecoesPorFracao {
+  const conhecidas = new Set(fracoes.map((f) => f.chave));
+
+  const linhas: ExcecoesLinha[] = fracoes.map((f) => {
+    const daFracao = dados.filter((l) => l.subunidade === f.chave);
+    return {
+      chave: f.chave,
+      rotulo: f.rotulo,
+      total: daFracao.length,
+      comPendencia: daFracao.filter((l) => temPendencia(l, minimo)).length,
+    };
+  });
+
+  /* Órfão é o que não casa com NENHUMA fração da tela — inclui tanto a
+     subunidade vazia quanto a que veio escrita fora do vocabulário. Com filtro
+     de fração ligado, `fracoes` tem uma linha só e o resto do recorte já foi
+     removido por `aplicarFiltros`; não sobra órfão fantasma. */
+  const semFracao = dados.filter((l) => !conhecidas.has(l.subunidade));
+  const orfaos: ExcecoesLinha = {
+    chave: "__sem_fracao__",
+    rotulo: "Sem fração declarada",
+    total: semFracao.length,
+    comPendencia: semFracao.filter((l) => temPendencia(l, minimo)).length,
+  };
+
+  const soma = (f: (x: ExcecoesLinha) => number) =>
+    linhas.reduce((s, x) => s + f(x), 0) + f(orfaos);
+
+  return {
+    linhas,
+    orfaos,
+    totalPendencia: soma((x) => x.comPendencia),
+    totalLancamentos: soma((x) => x.total),
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Painel
 // ---------------------------------------------------------------------------
 export type ProgressoSemana = {
@@ -1277,6 +1380,9 @@ export function calcularPainel(
     /* Ponto de atenção — recorte de tempo ver acima. */
     atencao,
     fracoes,
+    /* Calculado AQUI, dentro do portão, e nunca no componente: é a superfície
+       que se contradizia sozinha antes de 03/09/2026. Ver `excecoesPorFracao`. */
+    excecoes: excecoesPorFracao(dados, fracoes, minimo),
     semanasBatalhao,
     porTurno,
     porFuncao,
