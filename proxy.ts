@@ -89,6 +89,16 @@ const ROTAS_PUBLICAS = [
      põe o gate na primeira linha do handler, ou move a entrada para a lista
      restrita. */
   "/api/cop2026/saude",
+  /* Exportação para o backup diário do pc2. Passa aqui porque o gate dela é
+     BEARER, não sessão: quem chama é um systemd timer às 03h05, que não tem
+     conta Google e nunca terá. O handler exige `CCO16_BACKUP_TOKEN` na primeira
+     linha e responde 503 se a variável não existir — rota de despejo aberta
+     seria a pior superfície do sistema inteiro.
+
+     Diferente de `/api/cop2026/saude`, aqui NÃO existe subrota, e não deve
+     existir: a lista casa por prefixo e qualquer `/api/cop2026/backup/algo`
+     nasceria aberta. O que a rota exporta é lista fechada no servidor. */
+  "/api/cop2026/backup",
   // A Diretriz da COP é norma aberta à tropa e fica embutida na /cop2026;
   // sem esta exceção o leitor de PDF cairia no login.
   "/documentos/diretriz-pm3-001-02-25.pdf",
