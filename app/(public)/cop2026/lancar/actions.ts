@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
-import { validarLancamento, type EntradaLancamento } from "@/lib/cop2026-lancamento";
+import { lerEvidencias, validarLancamento, type EntradaLancamento } from "@/lib/cop2026-lancamento";
 import { MOTIVOS_ABAIXO_DO_MINIMO } from "@/lib/cop2026";
 import { MINIMO_PADRAO } from "@/lib/cop2026-metricas";
 import { ESTADO_INICIAL, type LancamentoState } from "./estado";
@@ -38,7 +38,8 @@ export async function enviarLancamentoAction(
   const texto = (campo: string) => String(formData.get(campo) ?? "").trim();
 
   const auditou = texto("auditou") === "sim";
-  const quantidadeDeclarada = Number.parseInt(texto("quantidadeDeclarada") || "0", 10);
+  const quantidadeTexto = texto("quantidadeDeclarada");
+  const quantidadeDeclarada = Number.parseInt(quantidadeTexto || "0", 10);
   const camposId = formData.getAll("identificador").map((v) => String(v));
   const detalhe = texto("justificativa");
   const motivo = texto("motivoAbaixoMinimo");
@@ -47,8 +48,14 @@ export async function enviarLancamentoAction(
      mínimo, e precisa vir da lista fechada — refeito no servidor porque o UI
      bloqueia, mas server action é endpoint público (C-4). Envie um motivo fora
      da lista pelo curl e ele cai aqui. */
-  const idsInformados = camposId.filter((v) => v.trim()).length;
-  const quantidadeEfetiva = quantidadeDeclarada > 0 ? quantidadeDeclarada : idsInformados;
+  /* Conta EVIDÊNCIA VÁLIDA, não campo preenchido: `lerEvidencias` é a mesma
+     função que o formulário usa para decidir se exige o motivo. Contar campo
+     bruto fazia o servidor achar "3" onde o cliente via "2" (um CPF colado
+     entre dois IDs bons), concluir que não precisava de motivo e gravar a
+     justificativa SEM o motivo que o auditor foi obrigado a escolher — com o
+     comprovante na tela ainda exibindo o motivo como se tivesse sido salvo. */
+  const evidenciasValidas = lerEvidencias(camposId).evidencias.length;
+  const quantidadeEfetiva = quantidadeTexto ? quantidadeDeclarada : evidenciasValidas;
   const abaixoDoMinimo = auditou && quantidadeEfetiva < MINIMO_PADRAO;
   const precisaDeMotivo = !auditou || abaixoDoMinimo;
   const motivoValido = MOTIVOS_ABAIXO_DO_MINIMO.includes(

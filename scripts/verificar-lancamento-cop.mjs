@@ -235,3 +235,25 @@ test("Turno fora da lista fechada não passa", () => {
   const r = validarLancamento({ ...BASE, turno: "de manhã" }, AGORA);
   assert.equal(r.ok, false);
 });
+
+/* ------------------------------------------- gate do motivo padronizado */
+
+/**
+ * O formulário decide "precisa de motivo?" por `lerEvidencias().evidencias`, e
+ * a server action tem que decidir pela MESMA conta. Enquanto ela contava campo
+ * preenchido, um campo recusado (CPF, RE, número solto) inflava o total: o
+ * auditor era obrigado a escolher o motivo na tela, o servidor concluía que
+ * não precisava e gravava a justificativa SEM ele — com o comprovante ainda
+ * exibindo o motivo como se tivesse sido salvo.
+ */
+test("campo recusado não conta como evidência no gate do motivo", () => {
+  const doisValidosMaisLixo = [
+    "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6",
+    "13934852785",
+    "f6e5d4c3b2a1f6e5d4c3b2a1f6e5d4c3",
+  ];
+  const { evidencias, recusas } = lerEvidencias(doisValidosMaisLixo);
+  assert.equal(evidencias.length, 2, "o CPF não pode entrar na contagem");
+  assert.equal(recusas.length, 1);
+  assert.equal(recusas[0].motivo, "cpf");
+});
