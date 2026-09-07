@@ -657,8 +657,12 @@ export function temPendencia(
 ): boolean {
   if (!l.auditou) return true;
   const abaixo = turnosAbaixo ? turnosAbaixo.has(chaveDoTurno(l)) : l.videos < minimo;
-  if (abaixo) return true;
-  return !l.idsMidia.trim();
+  /* Falta de identificador SAIU da conta em 07/09/2026, por decisão de Comando.
+     Pendência aqui é só o que atrasa a meta: não auditou, ou auditou abaixo do
+     mínimo. Quem declarou e não informou ID entregou o serviço — a divergência
+     do identificador é apurada em `/cop2026/admin/divergencias` e não reprova
+     ninguém nesta contagem, que é a que alimenta o rodapé do briefing. */
+  return abaixo;
 }
 
 export function excecoesPorFracao(
@@ -1433,16 +1437,14 @@ export function calcularPainel(
      estreitar por motivo errado — dois envios do mesmo turno "perdiam" um
      degrau que nunca existiu. A primeira etapa fica em lançamentos de
      propósito: é o que entrou pela porta. */
-  const turnosComIdValido = [
-    ...somarPorTurno(
-      dados.filter((l) => separarIdentificadores(l.idsMidia).some(ehIdentificadorValido))
-    ).keys(),
-  ].length;
+  /* A etapa "Turnos com identificador em formato válido" saiu em 07/09/2026,
+     por decisão de Comando: o formato do identificador não reprova mais nada em
+     tela de desempenho. O funil mede CUMPRIMENTO; a divergência de ID é apurada
+     e listada em `/cop2026/admin/divergencias`. */
   const funil = [
     { etapa: "Lançamentos recebidos", v: dados.length },
     { etapa: "Turnos com auditoria lançada", v: turnosAuditados },
     { etapa: `Turnos com ≥ ${minimo} evidências`, v: turnosConformes },
-    { etapa: "Turnos com identificador em formato válido", v: turnosComIdValido },
     { etapa: "Conferidos na plataforma", v: 0 },
   ];
 
@@ -1697,16 +1699,17 @@ export function conclusaoDistribuicao(p: Painel): string {
 }
 
 export function conclusaoFunil(p: Painel): string {
-  /* Denominador é o TURNO desde 03/09/2026, como o resto do funil: comparar
-     turnos com identificador contra lançamentos recebidos misturava réguas e
-     dava percentual menor do que o real. */
+  /* Denominador é o TURNO desde 03/09/2026, como o resto do funil: misturar
+     turno com lançamento recebido dava percentual menor do que o real.
+     Desde 07/09/2026 a leitura é de CUMPRIMENTO do mínimo, não de formato de
+     identificador — ver o comentário do `funil`. */
   const auditados = p.funil[1]?.v || 1;
-  const comIds = p.funil[3]?.v ?? 0;
+  const conformes = p.funil[2]?.v ?? 0;
   return `De ${fmtTurnos(auditados)} com auditoria lançada, ${FMT.format(
-    comIds
+    conformes
   )} (${PCT.format(
-    (comIds / auditados) * 100
-  )}%) trouxeram identificador em formato válido — sem o ID, a evidência não é rastreável na conferência.`;
+    (conformes / auditados) * 100
+  )}%) alcançaram o mínimo de evidências do Batalhão.`;
 }
 
 export function conclusaoHorario(p: Painel): string {

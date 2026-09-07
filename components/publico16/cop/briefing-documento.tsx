@@ -165,7 +165,6 @@ export function BriefingDocumento({
               {[
                 { r: "Taxa de conformidade", v: `${PCT.format(p.taxaConf)}%` },
                 { r: "Abaixo do mínimo", v: FMT.format(p.abaixo) },
-                { r: "Sem IDs de mídia", v: FMT.format(p.semIds) },
                 { r: "Não auditaram", v: FMT.format(p.naoAuditou) },
               ].map((k) => (
                 <div key={k.r} className="rounded-xl border border-slate-200 bg-[#fafbfc] p-4">

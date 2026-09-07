@@ -120,17 +120,17 @@ export async function medirSaude() {
     });
   }
 
-  /* ---- 5. identificador legítimo mutilado pela redação de CPF ----------- */
-  const RE_UUID_REDIGIDO = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\[CPF removido\]/i;
-  const mutilados = leitura.lancamentos.filter((l) => RE_UUID_REDIGIDO.test(l.idsMidia)).length;
-  if (mutilados > 0) {
-    achados.push({
-      chave: "uuid-mutilado",
-      gravidade: "alto",
-      descricao: `${mutilados} identificador(es) de gravação com o miolo apagado pela redação de CPF.`,
-      acao: "`redigirCpf` já é token-aware; registros gravados ANTES da correção precisam ser reparados no banco.",
-    });
-  }
+  /* ---- 5. (vago) ---------------------------------------------------------
+   * Aqui morava `uuid-mutilado`. DECISÃO DE COMANDO, 07/09/2026: nada
+   * relacionado ao identificador informado pelo auditor alarma mais — nem aqui,
+   * nem no dashboard, nem no briefing, nem nos relatórios. O que o auditor
+   * DECLARA é o que vale para a meta, qualquer que seja o número que ele digite
+   * no campo de ID. As divergências continuam sendo apuradas e passaram a viver
+   * numa tela só: `/cop2026/admin/divergencias`.
+   *
+   * O que segue abaixo (CPF em campo público) NÃO é a mesma coisa e por isso
+   * fica: não se trata de validar o identificador do auditor, e sim de impedir
+   * que dado pessoal de terceiro apareça na tela do Comando. */
 
   /* ---- 6. CPF que escapou da redação ------------------------------------
    * A varredura é POR TOKEN e ignora identificador válido — a mesma regra do
@@ -153,15 +153,9 @@ export async function medirSaude() {
     });
   }
 
-  /* ---- 7. mesma mídia contada duas vezes -------------------------------- */
-  if (p.comIdDuplicado > 0) {
-    achados.push({
-      chave: "id-duplicado",
-      gravidade: "medio",
-      descricao: `${p.comIdDuplicado} lançamento(s) com identificador já auditado por outro (${p.idsDuplicadosNoRecorte} ID distintos no recorte).`,
-      acao: "Cobrar a retirada de um dos lados na planilha — a mídia está contando duas vezes contra a meta.",
-    });
-  }
+  /* ---- 7. (vago) — ID repetido também saiu do alarme --------------------
+   * Mesma decisão do item 5: `comIdDuplicado` continua sendo calculado e
+   * aparece na lista de divergências do admin, mas não vira achado nem selo. */
 
   /* ---- 8. a MESMA linha vindo de duas fontes ----------------------------
    * `lerComBanco` mescla planilha (antes do corte) + banco, e quem separa as
@@ -203,14 +197,10 @@ export async function medirSaude() {
       acao: "Mover COP2026_CORTE_BANCO para o início do mês já importado. Corte e backfill andam no mesmo passo.",
     });
   }
-  if (indistinguiveis > 0) {
-    achados.push({
-      chave: "sem-id-indistinguivel",
-      gravidade: "alto",
-      descricao: `${indistinguiveis} lançamento(s) do mesmo RE e turno sem nenhum identificador aceito — impossíveis de distinguir entre si e de conferir.`,
-      acao: "Ver os `recusas` em `payload_bruto`: o auditor digitou data+sequência (`numero_solto`) no lugar do ID da gravação, ou a redação de CPF comeu o miolo. Contam para a meta e ninguém consegue auditar a mídia.",
-    });
-  }
+  /* `indistinguiveis` NÃO vira achado (decisão de Comando de 07/09/2026): sem
+   * ID aceito o lançamento continua valendo pelo que foi declarado, e a
+   * divergência é listada em `/cop2026/admin/divergencias`. O contador segue
+   * exportado porque é ele que alimenta aquela tela. */
 
   /* ---- 9. leitura lenta ------------------------------------------------- */
   if (msLeitura > 15_000) {
@@ -269,6 +259,8 @@ export async function medirSaude() {
       totalNaPlanilha: p.totalNaPlanilha,
       idsDuplicadosDistintos: p.idsDuplicadosNoRecorte,
       linhasEmDobro,
+      /* Contador, não alarme: alimenta `/cop2026/admin/divergencias`. */
+      semIdIndistinguivel: indistinguiveis,
     },
     /* Só o essencial de cada fração — o suficiente para a tela mostrar onde
        agir sem virar um segundo dashboard. */

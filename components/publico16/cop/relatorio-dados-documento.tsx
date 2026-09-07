@@ -26,7 +26,6 @@ type LinhaFracaoDados = {
   auditaram: number;
   evidencias: number;
   abaixo: number;
-  semIds: number;
   /** Lançamentos com ao menos um motivo, contados uma vez só. */
   comPendencia: number;
 };
@@ -48,7 +47,6 @@ function consolidarPorFracao(dados: LancamentoCop[], minimo: number): LinhaFraca
         auditaram: 0,
         evidencias: 0,
         abaixo: 0,
-        semIds: 0,
         comPendencia: 0,
       };
     linha.lancamentos += 1;
@@ -68,7 +66,6 @@ function consolidarPorFracao(dados: LancamentoCop[], minimo: number): LinhaFraca
         turnosContados.add(turno);
         linha.abaixo += 1;
       }
-      if (!l.idsMidia.trim()) linha.semIds += 1;
     }
     mapa.set(chave, linha);
   }
@@ -144,7 +141,6 @@ export function RelatorioDadosDocumento({
             { r: "Auditaram", v: FMT.format(totalAuditaram) },
             { r: "Não auditaram", v: FMT.format(p.naoAuditou) },
             { r: "Evidências", v: FMT.format(p.total) },
-            { r: "Sem IDs", v: FMT.format(p.semIds) },
             { r: "Com parte", v: FMT.format(p.partes) },
           ].map((k) => (
             <div key={k.r} className="rounded-xl border border-slate-200 bg-[#fafbfc] p-4">
@@ -166,7 +162,6 @@ export function RelatorioDadosDocumento({
                 <th className="py-2 pr-3 font-bold">Auditaram</th>
                 <th className="py-2 pr-3 font-bold">Evidências</th>
                 <th className="py-2 pr-3 font-bold">Abaixo</th>
-                <th className="py-2 pr-3 font-bold">Sem IDs</th>
                 {/* Não é a soma das duas anteriores: um lançamento pode estar
                     nas duas e conta uma vez. É este o número que fecha com o
                     briefing. */}
@@ -181,7 +176,6 @@ export function RelatorioDadosDocumento({
                   <td className="py-1.5 pr-3 font-mono text-[#15304c]/80">{FMT.format(fr.auditaram)}</td>
                   <td className="py-1.5 pr-3 font-mono font-bold text-[#07182d]">{FMT.format(fr.evidencias)}</td>
                   <td className="py-1.5 pr-3 font-mono text-[#d97706]">{FMT.format(fr.abaixo)}</td>
-                  <td className="py-1.5 pr-3 font-mono text-[#d97706]">{FMT.format(fr.semIds)}</td>
                   <td className="py-1.5 font-mono font-bold text-[#ca0202]">{FMT.format(fr.comPendencia)}</td>
                 </tr>
               ))}
@@ -207,7 +201,6 @@ export function RelatorioDadosDocumento({
                 <th className="py-2 pr-3 font-bold">Evid.</th>
                 <th className="py-2 pr-3 font-bold">Média</th>
                 <th className="py-2 pr-3 font-bold">Abaixo</th>
-                <th className="py-2 font-bold">Sem IDs</th>
               </tr>
             </thead>
             <tbody>
@@ -220,7 +213,6 @@ export function RelatorioDadosDocumento({
                   <td className="py-1.5 pr-3 font-mono font-bold text-[#07182d]">{FMT.format(a.videos)}</td>
                   <td className="py-1.5 pr-3 font-mono text-[#15304c]/80">{a.media.toFixed(1)}</td>
                   <td className="py-1.5 pr-3 font-mono text-[#d97706]">{FMT.format(a.abaixo)}</td>
-                  <td className="py-1.5 font-mono text-[#d97706]">{FMT.format(a.semIds)}</td>
                 </tr>
               ))}
             </tbody>

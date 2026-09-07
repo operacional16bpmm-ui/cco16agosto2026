@@ -15,7 +15,6 @@ import {
   AlertCircle,
   AlertTriangle,
   CheckCircle2,
-  FileWarning,
   ScrollText,
   UserX,
 } from "lucide-react";
@@ -549,7 +548,6 @@ export function RelatorioExecutivo({
                     <th className="py-2 pr-3 font-bold">Evid.</th>
                     <th className="py-2 pr-3 font-bold">Média</th>
                     <th className="py-2 pr-3 font-bold">Abaixo</th>
-                    <th className="py-2 pr-3 font-bold">Sem IDs</th>
                     <th className="py-2 font-bold">Situação</th>
                   </tr>
                 </thead>
@@ -563,7 +561,6 @@ export function RelatorioExecutivo({
                       <td className="py-1.5 pr-3 font-mono font-bold text-[#07182d]">{FMT.format(a.videos)}</td>
                       <td className="py-1.5 pr-3 font-mono text-[#15304c]/80">{a.media.toFixed(1)}</td>
                       <td className="py-1.5 pr-3 font-mono text-[#d97706]">{FMT.format(a.abaixo)}</td>
-                      <td className="py-1.5 pr-3 font-mono text-[#d97706]">{FMT.format(a.semIds)}</td>
                       <td className="py-1.5">
                         <RotuloFaixa nivel={a.nivel} />
                       </td>
@@ -596,13 +593,6 @@ export function RelatorioExecutivo({
                 itens={p.abaixoLista}
                 mostrarVideos
                 mostrarJustificativa
-              />
-              <TabelaExcecao
-                titulo="Sem os IDs das mídias"
-                icone={<FileWarning className="h-4 w-4 text-[#d97706]" />}
-                vazio="Todos os lançamentos informaram os IDs das mídias."
-                itens={p.semIdsLista}
-                mostrarVideos
               />
               <TabelaExcecao
                 titulo="Quantidade inválida na planilha"

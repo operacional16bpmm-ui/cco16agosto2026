@@ -144,8 +144,6 @@ export function BriefingSlides({
     () => new Set(p.foraDeControle.map((d) => d.data)),
     [p.foraDeControle]
   );
-  const comIds = p.dados.filter((l) => l.idsMidia.trim()).length;
-  const taxaIds = p.dados.length ? (comIds / p.dados.length) * 100 : 0;
   const engajamento = auditoresTotal > 0 ? (p.ativos / auditoresTotal) * 100 : 0;
   /* Vem do motor, não da soma dos cartões: `naoAuditou + abaixo` deixava
      `semIds` de fora e o rodapé anunciava "0 desvio(s)" com 8 pendentes na
@@ -610,26 +608,13 @@ export function BriefingSlides({
             </Bloco>
 
             <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-1">
+              {/* Os KPIs "Com IDs de mídia" e "Sem identificação" saíram em
+                  07/09/2026, por decisão de Comando: o identificador não reprova
+                  mais nada em tela de desempenho, e o que vale é o que o auditor
+                  declarou. As divergências vivem em
+                  `/cop2026/admin/divergencias`. */}
               <Kpi
                 i={1}
-                rotulo="Com IDs de mídia"
-                valor={taxaIds}
-                casas={1}
-                sufixo="%"
-                nivel={nivelPorCumprimento(taxaIds, p.dados.length > 0)}
-                nota={`${FMT.format(comIds)} de ${FMT.format(p.dados.length)} lançamentos`}
-                icone={<CheckCircle2 size={13} />}
-              />
-              <Kpi
-                i={2}
-                rotulo="Sem identificação"
-                valor={p.semIds}
-                nivel={p.semIds > 0 ? "atencao" : "conforme"}
-                nota="evidência sem ID não se reconfere"
-                icone={<AlertTriangle size={13} />}
-              />
-              <Kpi
-                i={3}
                 rotulo="Partes instruídas"
                 valor={p.partes}
                 nota="lançamentos com número de Parte"
@@ -733,13 +718,8 @@ export function BriefingSlides({
                 nota: "turnos que auditaram, mas não alcançaram a cota do Batalhão",
                 href: "/cop2026/dashboard?excecao=abaixo",
               },
-              {
-                rot: "Sem IDs de mídia",
-                q: p.semIds,
-                nivel: (p.semIds > 0 ? "atencao" : "conforme") as Nivel,
-                nota: "sem o ID a evidência não é rastreável na conferência",
-                href: "/cop2026/dashboard?excecao=semids",
-              },
+              /* O cartão "Sem IDs de mídia" saiu em 07/09/2026 junto com os KPIs
+                 de identificador: exceção aqui é sobre CUMPRIMENTO. */
             ].map((e, k) => (
               <Link key={e.rot} href={e.href} className="block">
                 <Cartao nivel={e.nivel} i={k} className="p-4 transition-colors hover:bg-white/[0.1]">

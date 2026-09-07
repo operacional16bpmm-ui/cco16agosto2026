@@ -30,7 +30,6 @@ import {
   ArrowUpDown,
   CheckCircle2,
   Download,
-  FileWarning,
   Filter,
   Loader2,
   Printer,
@@ -1047,31 +1046,15 @@ export function DashboardCop({
       v: p.abaixo,
       icone: <TrendingUp size={16} aria-hidden />,
     },
-    {
-      chave: "semids" as const,
-      rotulo: "Auditaram sem informar IDs de mídia",
-      v: p.semIds,
-      icone: <FileWarning size={16} aria-hidden />,
-    },
-    {
-      // Caso diferente do de cima: aqui a pessoa informou alguma coisa, e o que
-      // informou não é identificador da plataforma — número solto, número da
-      // ocorrência, endereço colado. Cobra-se correção, não preenchimento.
-      chave: "idinvalido" as const,
-      rotulo: "Informaram ID fora do formato da plataforma",
-      v: p.comIdInvalido,
-      icone: <FileWarning size={16} aria-hidden />,
-    },
-    {
-      // Terceiro caso, distinto dos dois de cima: o ID está certo e já foi
-      // lançado por outro auditor. A mesma mídia soma duas vezes contra a meta
-      // e nenhuma exceção acusava — apareceu em 02/09/2026 com o mesmo ID
-      // lançado pela 4ª Cia num dia e por outra auditora no seguinte.
-      chave: "duplicado" as const,
-      rotulo: "Lançaram ID já auditado por outro",
-      v: p.comIdDuplicado,
-      icone: <FileWarning size={16} aria-hidden />,
-    },
+    // As três exceções de IDENTIFICADOR saíram daqui em 07/09/2026, por decisão
+    // de Comando: sem ID, ID fora do formato e ID já lançado por outro.
+    //
+    // A régua passou a ser uma só — vale o que o auditor DECLAROU, qualquer que
+    // seja o número que ele tenha digitado no campo de ID. As divergências
+    // continuam apuradas e vivem numa tela única, `/cop2026/admin/divergencias`,
+    // para o Comando cobrar correção fora da tela de desempenho. O que ficou
+    // aqui é o que mede CUMPRIMENTO: quem não auditou e quem ficou abaixo do
+    // mínimo.
   ];
 
   const tabela = useMemo(() => {

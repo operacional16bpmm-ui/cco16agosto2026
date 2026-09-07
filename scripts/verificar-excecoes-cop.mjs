@@ -104,7 +104,9 @@ test("as barras + órfãos fecham com a base — ninguém some no meio", () => {
     "a soma das linhas não bate com o tamanho da base"
   );
   assert.equal(r.orfaos.total, 2, "lançamento sem fração declarada tem de ter linha própria");
-  assert.equal(r.orfaos.comPendencia, 1);
+  /* Era 1 até 07/09/2026, pelo órfão sem ID (id 8). Sem-ID deixou de ser
+     pendência por decisão de Comando, e o outro órfão (id 7) sempre foi limpo. */
+  assert.equal(r.orfaos.comPendencia, 0);
 });
 
 test("o rodapé é a soma das barras, e não um contador paralelo", () => {
@@ -113,8 +115,11 @@ test("o rodapé é a soma das barras, e não um contador paralelo", () => {
     r.linhas.reduce((s, l) => s + l.comPendencia, 0) + r.orfaos.comPendencia;
   assert.equal(r.totalPendencia, somaDasBarras);
 
-  // em: 1 (não auditou) · 1cia: 3 · 2cia: 0 · órfãos: 1
-  assert.equal(r.totalPendencia, 5);
+  /* em: 1 (não auditou) · 1cia: 2 (id 3 e id 5, ambos abaixo do mínimo) ·
+     2cia: 0 · órfãos: 0.
+     Era 5 até 07/09/2026: contava também o id 4 (só sem ID) e o id 8 (órfão sem
+     ID). O id 5 continua contando, mas pelo mínimo, não pelo identificador. */
+  assert.equal(r.totalPendencia, 3);
 });
 
 test("o mínimo é do TURNO: dois envios no mesmo turno somam", () => {
@@ -162,7 +167,17 @@ test("o cartão e o filtro do cartão devolvem o mesmo tamanho", () => {
   );
 });
 
-test("semIds entra na conta — a regressão que o Major apontou", () => {
+test("sem-ID NÃO é pendência — decisão de Comando de 07/09/2026", () => {
+  /* Este teste travava o contrário até 07/09/2026 ("semIds entra na conta"),
+     porque em 02/09 o rodapé anunciava "0 desvio(s)" com 8 sem-ID na tela.
+     A regra mudou na origem, não no código: vale o que o auditor DECLAROU,
+     qualquer que seja o número digitado no campo de ID. Quem declarou e não
+     informou identificador entregou o serviço e não pode contar como desvio em
+     tela de desempenho — a divergência é apurada e listada em
+     `/cop2026/admin/divergencias`, e só lá.
+
+     Fica travado nos dois sentidos de propósito: se alguém reintroduzir sem-ID
+     na contagem, este teste cai antes de o número chegar ao Comando. */
   const soSemIds = [
     lanc({ id: 10, subunidade: "em", idsMidia: "" }),
     lanc({ id: 11, subunidade: "em", idsMidia: "   " }),
@@ -170,9 +185,14 @@ test("semIds entra na conta — a regressão que o Major apontou", () => {
   const r = excecoesPorFracao(soSemIds, FRACOES, MINIMO);
   assert.equal(
     r.totalPendencia,
-    2,
-    "sem-ID voltou a ficar de fora: é exatamente o bug de 02/09/2026"
+    0,
+    "sem-ID voltou a contar como desvio: contraria a decisão de 07/09/2026"
   );
+
+  /* E quem, além de não informar ID, ficou abaixo do mínimo continua contando —
+     pelo mínimo, que é o motivo legítimo. */
+  const abaixoESemId = [lanc({ id: 12, subunidade: "em", videos: 1, idsMidia: "" })];
+  assert.equal(excecoesPorFracao(abaixoESemId, FRACOES, MINIMO).totalPendencia, 1);
 });
 
 test("o Painel expõe a mesma conta que a função pura", () => {
