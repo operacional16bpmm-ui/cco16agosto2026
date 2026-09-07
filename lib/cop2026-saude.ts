@@ -169,18 +169,41 @@ export async function medirSaude() {
    * corte NÃO for movido junto para o início de agosto, cada linha de agosto
    * entra duas vezes e todo relatório daquele mês dobra. A assinatura é
    * registro byte-idêntico: dois auditores nunca produzem isso por acaso. */
-  const impressao = new Map<string, number>();
+  const impressao = new Map<string, { n: number; comConteudo: boolean }>();
   for (const l of leitura.lancamentos) {
     const k = `${l.re}|${l.data}|${l.turno}|${l.videos}|${l.idsMidia}`;
-    impressao.set(k, (impressao.get(k) ?? 0) + 1);
+    const atual = impressao.get(k);
+    // Duplicata que CONTA contra a meta é a que traz evidência junto. A que vem
+    // com 0 vídeo e nenhum ID é lançamento vazio repetido: polui a contagem de
+    // lançamentos, mas não move um número que o Comando lê.
+    const comConteudo = l.videos > 0 || l.idsMidia.trim() !== "";
+    impressao.set(k, { n: (atual?.n ?? 0) + 1, comConteudo });
   }
-  const linhasEmDobro = [...impressao.values()].filter((n) => n > 1).length;
-  if (linhasEmDobro > 0) {
+  const repetidas = [...impressao.values()].filter((x) => x.n > 1);
+  const linhasEmDobro = repetidas.length;
+  const emDobroComConteudo = repetidas.filter((x) => x.comConteudo).length;
+  const emDobroVazias = linhasEmDobro - emDobroComConteudo;
+
+  /* Separado em dois de propósito (07/09/2026). Antes era um alerta crítico só,
+   * e depois que o corte do banco foi movido para 2026-08-01 ele CONTINUOU
+   * crítico por causa de um único caso: nove lançamentos de "não auditei" do
+   * mesmo RE no mesmo turno, vindos do backfill. Alerta crítico que fica ligado
+   * por um caso que não move número nenhum é exatamente como se ensina a tropa
+   * a ignorar alerta crítico. */
+  if (emDobroComConteudo > 0) {
     achados.push({
       chave: "fonte-duplicada",
       gravidade: "critico",
-      descricao: `${linhasEmDobro} registro(s) idêntico(s) na base — planilha e banco servindo o mesmo período.`,
+      descricao: `${emDobroComConteudo} registro(s) idêntico(s) COM evidência — planilha e banco servindo o mesmo período.`,
       acao: "Mover COP2026_CORTE_BANCO para o início do mês já importado. Corte e backfill andam no mesmo passo.",
+    });
+  }
+  if (emDobroVazias > 0) {
+    achados.push({
+      chave: "lancamento-vazio-repetido",
+      gravidade: "medio",
+      descricao: `${emDobroVazias} lançamento(s) sem evidência repetido(s) no mesmo turno pelo mesmo RE.`,
+      acao: "Não move a meta (0 vídeo), mas infla a contagem de lançamentos. Conferir na origem antes de excluir: apagar no banco sem apagar na fonte quebra o gate de paridade.",
     });
   }
 
