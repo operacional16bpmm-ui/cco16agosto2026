@@ -875,7 +875,7 @@ export default async function VitrinePage() {
                   </h3>
                   <p className="mt-2 flex-1 text-sm leading-relaxed text-texto-suave">
                     Lance a auditoria do dia e acompanhe, ao vivo, a meta de cada companhia. Mínimo
-                    de 3 evidências auditadas por turno, com os IDs das mídias.
+                    de 3 evidências auditadas por turno.
                   </p>
                   <span className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-vermelho">
                     Abrir o painel &rarr;

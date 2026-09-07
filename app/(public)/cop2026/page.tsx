@@ -39,7 +39,7 @@ import { identidadeCop } from "@/lib/db/cop2026-autorizados";
 // link, então fala no imperativo e diz o que a pessoa tem a fazer, não o que a
 // página é. A imagem do cartão vem de opengraph-image.tsx, ao lado.
 const CHAMADA =
-  "Lance a sua auditoria do dia e acompanhe, ao vivo, a meta de cada companhia. Mínimo de 3 evidências auditadas por turno, com os IDs das mídias, conforme determinação do Batalhão sobre a Diretriz PM3-001/02/25.";
+  "Lance a sua auditoria do dia e acompanhe, ao vivo, a meta de cada companhia. Mínimo de 3 evidências auditadas por turno, conforme determinação do Batalhão sobre a Diretriz PM3-001/02/25.";
 
 export const metadata: Metadata = {
   title: "Auditoria de COP 2026 · 16º BPM/M",
@@ -89,7 +89,7 @@ function BlocoPlanilha({ lidoEm, erro }: { lidoEm?: string; erro?: string }) {
           este número" é informação, não link. */}
       <div className="mb-6 flex flex-wrap items-center justify-end gap-4">
         <span className={CLASSE_CARIMBO}>
-          <RefreshCw size={10} /> {lidoEm ? `leitura de ${lidoEm}` : "lendo a planilha…"}
+          <RefreshCw size={10} /> {lidoEm ? `leitura de ${lidoEm}` : "lendo os dados…"}
         </span>
       </div>
 
@@ -97,7 +97,7 @@ function BlocoPlanilha({ lidoEm, erro }: { lidoEm?: string; erro?: string }) {
         <div className="mb-6 flex items-start gap-3 rounded-xl border border-vermelho/35 bg-vermelho/[0.07] p-4">
           <AlertTriangle size={16} className="mt-0.5 shrink-0 text-vermelho" />
           <div>
-            <p className="text-sm font-bold text-branco">A planilha não respondeu</p>
+            <p className="text-sm font-bold text-branco">A base não respondeu</p>
             <p className="mt-0.5 text-sm text-branco/60">
               {erro} Se persistir, confira se ela continua publicada na web para quem tem o
               endereço.
@@ -343,8 +343,8 @@ export default async function Cop2026Page({
 
           <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-slate-300">
             Cada auditor lança a sua auditoria ao fim do turno, com no mínimo três
-            evidências e os IDs das mídias. O acompanhamento da meta de cada
-            companhia é atualizado a cada minuto.
+            evidências. O acompanhamento da meta de cada companhia é atualizado a
+            cada minuto.
           </p>
 
           <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">

@@ -251,7 +251,7 @@ export function BriefingSlides({
           </div>
 
           <p className={`bf-entra ${T.apoio} text-white/40`} style={atraso(6)}>
-            Dados lidos ao vivo da planilha corporativa · {lidoEm}
+            Dados lidos ao vivo da base da auditoria · {lidoEm}
           </p>
         </div>
       ),

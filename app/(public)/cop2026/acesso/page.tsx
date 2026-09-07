@@ -72,8 +72,8 @@ export default async function AcessoCopPage({
           <p className="mt-3 text-[14.5px] leading-relaxed text-texto-suave">
             O Dashboard de controle e o Briefing executivo são de uso restrito aos oficiais e praças
             designados para o acompanhamento da auditoria. O acesso usa a{" "}
-            <strong className="text-branco">mesma conta Google</strong> que recebeu as abas
-            restritas da planilha.
+            <strong className="text-branco">mesma conta Google</strong> cadastrada na relação de
+            autorizados do Batalhão.
           </p>
 
           {negado && (
@@ -92,7 +92,7 @@ export default async function AcessoCopPage({
                   <>
                     A conta <strong className="dados">{negado}</strong> não está na relação de
                     autorizados. Se você deveria estar, procure o Estado-Maior do Batalhão — a
-                    inclusão é a mesma do compartilhamento da planilha.
+                    inclusão é feita pela administração do Portal, na hora.
                   </>
                 )}
               </span>

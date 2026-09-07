@@ -77,8 +77,9 @@ export default async function LancarPage() {
             Lançamento da auditoria do turno
           </h1>
           <p className="mt-3 text-[14px] leading-relaxed text-texto-suave">
-            Um lançamento por policial, por data e por turno. Informe o identificador de cada
-            gravação auditada — é ele que prova a auditoria e o que o Comando confere.
+            Um lançamento por policial, por data e por turno. Vale a quantidade que você declarar.
+            Informe o identificador de cada gravação quando tiver — é ele que permite reconferir a
+            mídia depois.
           </p>
         </div>
 

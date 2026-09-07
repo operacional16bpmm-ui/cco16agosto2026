@@ -203,7 +203,11 @@ export function MarcoCiclo({ urlFormulario, hoje }: { urlFormulario: string; hoj
   const parametros = [
     { rotulo: "Evidências por turno", valor: "3", nota: "mínimo obrigatório" },
     { rotulo: "Turnos no período", valor: "15", nota: "escala 12x36" },
-    { rotulo: "Contador da meta", valor: "0%", nota: "reiniciado no dia 1º" },
+    /* NUNCA um percentual aqui. Ate 07/09/2026 este cartao trazia "0%" FIXO no
+       codigo: a landing publica anunciava 0% de cumprimento enquanto o painel
+       do Comando mostrava 37,4%. Metrica mora no dashboard (decisao de
+       26/08/2026); o que esta pagina informa e a REGRA do contador. */
+    { rotulo: "Contagem da meta", valor: "Mensal", nota: "zera no dia 1º" },
   ];
 
   return (
@@ -238,8 +242,8 @@ export function MarcoCiclo({ urlFormulario, hoje }: { urlFormulario: string; hoj
                   23h59. São meses diferentes — daí `fechando`, e não
                   `ciclo.mes`, que é o do título. */}
               {ciclo.estado === "vespera"
-                ? `O período de ${(fechando ?? ciclo.mes).rotulo.toLowerCase()} encerra hoje às 23h59 e o relatório entra em consolidação. A partir da meia-noite a contagem recomeça: três evidências auditadas por turno, com os IDs das mídias, todo dia de serviço.`
-                : `A contagem de ${ciclo.mes.rotulo.toLowerCase()} corre desde o dia 1º e nada do período anterior é aproveitado. São três evidências auditadas por turno, com os IDs das mídias, todo dia de serviço.`}
+                ? `O período de ${(fechando ?? ciclo.mes).rotulo.toLowerCase()} encerra hoje às 23h59 e o relatório entra em consolidação. A partir da meia-noite a contagem recomeça: três evidências auditadas por turno, todo dia de serviço.`
+                : `A contagem de ${ciclo.mes.rotulo.toLowerCase()} corre desde o dia 1º e nada do período anterior é aproveitado. São três evidências auditadas por turno, todo dia de serviço.`}
             </p>
 
             {/* Trilha dos dias + a mesma informação escrita: a arte não pode ser
