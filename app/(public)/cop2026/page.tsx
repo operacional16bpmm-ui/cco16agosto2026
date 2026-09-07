@@ -383,7 +383,7 @@ export default async function Cop2026Page({
               { rotulo: "Evidências por turno", valor: "3", nota: "mínimo obrigatório", icon: FileCheck2 },
               { rotulo: "Turnos no período", valor: "15", nota: "escala 12x36", icon: CalendarDays },
               { rotulo: "Lançamento", valor: "Diário", nota: "ao fim do turno", icon: BarChart3 },
-              { rotulo: "Atualização", valor: "60s", nota: "leitura da planilha", icon: RefreshCw },
+              { rotulo: "Atualização", valor: "60s", nota: "leitura da base", icon: RefreshCw },
             ].map((item) => (
               <div key={item.rotulo} className="rounded-xl border border-white/10 bg-white/[0.055] p-4 shadow-[0_8px_20px_rgba(0,0,0,0.12)] backdrop-blur-sm">
                 <dt className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-white/55">
