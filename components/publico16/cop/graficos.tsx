@@ -860,7 +860,13 @@ export function QuadroSemanalBatalhao({
             </div>
 
             <p className="mt-4 text-xs font-bold text-slate-700 sm:text-[13px]">
-              {s.falta > 0 ? (
+              {/* Semana que ainda nao comecou nao e desempenho ruim. Ate
+                  07/09/2026 as semanas futuras apareciam como "0%" com "Faltam N
+                  p/ meta" em vermelho: no dia 7 de 30, tres dos quatro cards do
+                  Comando liam como fracasso de algo que nao aconteceu. */}
+              {!s.aberta ? (
+                <span className="font-black text-slate-500">Ainda não começou</span>
+              ) : s.falta > 0 ? (
                 <>
                   Faltam <strong className="dados font-black text-[#ca0202]">{FMT.format(s.falta)}</strong> p/ meta
                 </>

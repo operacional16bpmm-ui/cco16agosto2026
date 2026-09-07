@@ -720,6 +720,9 @@ export type ProgressoSemana = {
   pct: number;
   falta: number;
   nivel: Nivel;
+  /** A semana já começou? Semana futura não é desempenho ruim — é semana que
+   *  não aconteceu, e o card precisa dizer isso em vez de "0%". */
+  aberta: boolean;
 };
 
 export type LinhaFracao = {
@@ -1080,6 +1083,7 @@ export function calcularPainel(
       /* Semana que já abriu tem base de cálculo, mesmo com zero feito: é
          FAIXA CRÍTICA, e não "não aferível". Ver `semanasAbertas`. */
       nivel: nivelPorCumprimento(p, metaSem > 0 && s.semana <= semanasAbertas),
+      aberta: s.semana <= semanasAbertas,
     };
   });
 
@@ -1136,6 +1140,7 @@ export function calcularPainel(
           pct: pSem,
           falta: Math.max(0, metaSem - feitoSem),
           nivel: nivelPorCumprimento(pSem, metaSem > 0 && s.semana <= semanasAbertas),
+          aberta: s.semana <= semanasAbertas,
         };
       });
 
