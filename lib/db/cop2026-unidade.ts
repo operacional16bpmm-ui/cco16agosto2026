@@ -189,10 +189,10 @@ export async function opcoesDeFracao(codBatalhao: string): Promise<OpcaoUnidade[
     .map((o) =>
       // Na fração mapeada quem manda é o rótulo do painel ("Estado-Maior",
       // "1ª Cia"): "16.BPM/M 1.CIA PM TERRITORIAL" é o nome do DEJEM, não o
-      // que o Comando lê no relatório.
+      // que o Comando lê no relatório. Nas outras, ao menos o ordinal entra.
       o.subunidade && ROTULO_SUBUNIDADE[o.subunidade]
         ? { ...o, nome: ROTULO_SUBUNIDADE[o.subunidade] }
-        : o
+        : { ...o, nome: nomeDeFracao(o.nome) }
     )
     .sort((a, b) => {
       const ia = ORDEM_SUBUNIDADES.indexOf(a.subunidade as (typeof ORDEM_SUBUNIDADES)[number]);
@@ -413,6 +413,22 @@ export async function fracaoDaSubunidade(
  * cru fica no banco (é a chave de conferência contra a fonte) e a correção é só
  * de exibição — documento oficial não sai com "16.BPM/M".
  */
+/**
+ * `1.CIA PM ADM` → `1ª Cia PM ADM`, `CIA F TAT` → `Cia Força Tática`.
+ *
+ * Vale para os batalhões que ainda não têm o de-para com o vocabulário do
+ * painel: sem isto o seletor oferece o nome cru do DEJEM, todo em caixa alta e
+ * com o ponto no lugar do ordinal, e o cartão exibe uma sigla sem sentido
+ * ("1.C"). O nome cru continua no banco — a correção é só de exibição.
+ */
+export function nomeDeFracao(nome: string): string {
+  return nome
+    .replace(/\b(\d+)\s*[.ºo°]?\s*CIA\b/gi, "$1ª Cia")
+    .replace(/\bCIA\s+F\s+TAT\b/gi, "Cia Força Tática")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export function nomeInstitucional(nome: string): string {
   return nome
     .replace(/^(\d+)\s*[.ºo°]?\s*(BPM|BAEP|GB|BPRV|BPAMB|BPTRAN|BPCHQ)\b/i, "$1º $2")

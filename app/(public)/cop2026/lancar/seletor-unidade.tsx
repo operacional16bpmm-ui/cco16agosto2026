@@ -50,12 +50,22 @@ function IconeFracao({ subunidade }: { subunidade: string | null }) {
   return <Users size={22} aria-hidden />;
 }
 
-/** Sigla curta do cartão: "EM", "FT", "1ª"… — o que se lê de relance. */
+/**
+ * Sigla curta do cartão: "EM", "FT", "1ª"… — o que se lê de relance.
+ *
+ * As três últimas linhas existem para os batalhões que ainda não têm o de-para
+ * com o vocabulário do painel: lá o nome vem do DEJEM ("1ª Cia PM ADM",
+ * "Cia Força Tática ADM") e o corte cego devolvia "1.C", que não é sigla de
+ * nada.
+ */
 function siglaDaFracao(o: OpcaoUnidade): string {
   if (o.subunidade === "em") return "EM";
   if (o.subunidade === "ft") return "FT";
   const n = o.nome.match(/(\d+)\s*ª/);
-  return n ? `${n[1]}ª` : o.nome.slice(0, 3).toUpperCase();
+  if (n) return `${n[1]}ª`;
+  if (/f\s*t[áa]t|for[çc]a\s+t[áa]tica/i.test(o.nome)) return "FT";
+  if (/^em\b/i.test(o.nome)) return "EM";
+  return o.nome.slice(0, 3).toUpperCase();
 }
 
 export function SeletorUnidade({
