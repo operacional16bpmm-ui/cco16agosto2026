@@ -18,6 +18,7 @@ import {
   IconeLancar,
   IconeMetas,
   IconePainel,
+  IconeProblema,
   IconeRelatorios,
   IconeSaude,
   IconeTrilha,
@@ -75,6 +76,22 @@ const NAVEGACAO: Atalho[] = [
     destaque: true,
   },
   { href: "/cop2026/dashboard", rotulo: "Painel", Icone: IconePainel },
+  {
+    /* Relatar problema do sistema — na barra, e não em cada tela. O Fabrício
+       pediu em 08/09/2026 que o botão vermelho estivesse na home, no Painel E
+       na Planilha; a barra vive no layout de `/cop2026` e já está nas três,
+       além de qualquer tela nova. Repeti-lo por página produziria três textos
+       e dois destinos desatualizados — e este é o botão que não pode falhar
+       quando alguém precisar dele às 22h de um domingo.
+       `destaque` porque ele é ação primária do módulo, como o lançamento: as
+       duas coisas que a tropa faz aqui são registrar auditoria e avisar que o
+       sistema caiu. */
+    href: "/cop2026/inconsistencias",
+    rotulo: "Relatar problemas do sistema",
+    curto: "Problema",
+    Icone: IconeProblema,
+    destaque: true,
+  },
   { href: "/cop2026/briefing", rotulo: "Briefing", Icone: IconeBriefing },
   {
     /* Fica na linha PÚBLICA, e não com as telas de administração, por
@@ -124,6 +141,15 @@ const ADMINISTRACAO: Atalho[] = [
     rotulo: "Divergências",
     curto: "Diverg.",
     Icone: IconeDivergencias,
+  },
+  {
+    /* A apuração dos relatos de indisponibilidade fica na linha de
+       ADMINISTRAÇÃO, e não na pública: a fração relata (botão vermelho, aberto
+       a todos) e o Comando trata (aqui). São dois públicos e duas telas. */
+    href: "/cop2026/admin/inconsistencias",
+    rotulo: "Inconsistências",
+    curto: "Inconsist.",
+    Icone: IconeProblema,
   },
   { href: "/cop2026/admin/saude", rotulo: "Saúde", Icone: IconeSaude },
 ];

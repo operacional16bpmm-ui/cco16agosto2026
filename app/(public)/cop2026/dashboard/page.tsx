@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DashboardCop } from "@/components/publico16/cop/dashboard-cop";
+import { QuadroInconsistencias } from "@/components/publico16/cop/quadro-inconsistencias";
 import { NavegacaoCop } from "@/components/publico16/cop/navegacao-cop";
 import { RodapeCop } from "@/components/publico16/cop/rodape-cop";
 import { lerAuditoriaCop2026 } from "@/lib/cop2026-leitura";
@@ -7,6 +8,7 @@ import { lerFiltros } from "@/lib/cop2026-metricas";
 import { janelaAtencaoDias } from "@/lib/cop2026-config-atencao";
 import { cicloAcabou, fimDoCicloCadastrado, mesCorrente } from "@/lib/cop2026-relatorios";
 import { ehAdminCop } from "@/lib/cop2026-acesso";
+import { listarRelatos, resumirPorFracao } from "@/lib/db/cop2026-inconsistencia";
 import { identidadeCop } from "@/lib/db/cop2026-autorizados";
 
 /**
@@ -50,12 +52,26 @@ export default async function DashboardPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const [{ lancamentos, metas, erro, lidoEm }, sp, acesso, janelaAtencao] = await Promise.all([
-    lerAuditoriaCop2026(),
-    searchParams,
-    identidadeCop(),
-    janelaAtencaoDias(),
-  ]);
+  const [{ lancamentos, metas, erro, lidoEm }, sp, acesso, janelaAtencao, relatos] =
+    await Promise.all([
+      lerAuditoriaCop2026(),
+      searchParams,
+      identidadeCop(),
+      janelaAtencaoDias(),
+      /* Relatos do MÊS CORRENTE, e não do ciclo inteiro: todo o resto do painel
+         é do mês, e somar a indisponibilidade de agosto ao quadro de setembro
+         daria à fração um álibi que não é dela. Sem mês âncora a chamada vai
+         sem recorte e a lista degrada para os últimos registros — o mesmo
+         caminho que `calcularPainel` toma quando o calendário acaba. */
+      listarRelatos(
+        mesCorrente()
+          ? {
+              desde: `${mesCorrente()!.periodo.de}T00:00:00-03:00`,
+              ate: `${mesCorrente()!.periodo.ate}T23:59:59-03:00`,
+            }
+          : undefined
+      ),
+    ]);
 
   /* `auditoresPorQuinzena` já vem calculado dentro do `Painel`, sobre o
      recorte — quem monta a página não toca em `lancamentos` direto. Era por
@@ -112,6 +128,17 @@ export default async function DashboardPage({
           janelaAtencaoDias={janelaAtencao}
           modoBriefing={modoBriefing}
         />
+        {/* Inconsistências das frações — dentro do <main> e ANTES do rodapé,
+            para entrar no PNG do briefing e na impressão junto com o resto do
+            painel. O número de auditoria sem este contexto mente: quem ficou
+            sem sistema e avisou tem o atraso explicado; quem não avisou, não. */}
+        <section aria-label="Inconsistências do sistema" className="mx-auto mt-6 max-w-[1400px] px-3.5 sm:px-5">
+          <QuadroInconsistencias
+            relatos={relatos}
+            resumo={resumirPorFracao(relatos)}
+            rotuloPeriodo={mesCorrente()?.rotulo ?? "no período"}
+          />
+        </section>
       </main>
 
       {!modoBriefing && (

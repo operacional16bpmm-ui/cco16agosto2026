@@ -27,6 +27,7 @@ import { calcularPainel, filtrosDoMesCorrente } from "@/lib/cop2026-metricas";
 import { mesCorrente } from "@/lib/cop2026-relatorios";
 import { QuadroRankingCias } from "@/components/publico16/cop/quadro-ranking-cias";
 import { BotaoAdmin } from "@/components/publico16/cop/botao-admin";
+import { BotaoProblema } from "@/components/publico16/cop/botao-problema";
 import { ehAdminCop } from "@/lib/cop2026-acesso";
 import { identidadeCop } from "@/lib/db/cop2026-autorizados";
 
@@ -367,6 +368,12 @@ export default async function Cop2026Page({
               <BarChart3 className="h-[18px] w-[18px] text-white/60" />
               Dashboard de metas
             </a>
+            {/* O botão vermelho na altura do olho, ao lado das outras duas
+                ações da home. Ele também vive na BarraCop, que está em todas
+                as telas do módulo — aqui ele aparece INTEIRO porque a home é
+                onde alguém que acabou de descobrir a queda entra primeiro, e
+                um ícone de 74px na barra não compete com o hero. */}
+            <BotaoProblema />
             <a
               href="/cop2026/briefing"
               className="group inline-flex min-h-12 items-center justify-center gap-2.5 rounded-xl border border-white/15 bg-white/[0.06] px-5 py-3.5 text-[15px] font-bold text-slate-200 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/35 hover:bg-white/[0.12] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"

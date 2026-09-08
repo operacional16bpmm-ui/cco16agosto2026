@@ -37,7 +37,6 @@ import {
   SlidersHorizontal,
   Target,
   TrendingUp,
-  Users,
   X,
 } from "lucide-react";
 import { domToPng } from "modern-screenshot";
@@ -45,7 +44,13 @@ import { CartaoTrajetoria } from "@/components/publico16/cop/ciclo/cartao-trajet
 import { FaixaRitmos } from "@/components/publico16/cop/ciclo/faixa-ritmos";
 import { CaixaTendencia } from "@/components/publico16/cop/ciclo/caixa-tendencia";
 import { CurvaPlanoRealizado } from "@/components/publico16/cop/ciclo/curva-plano";
-import { fmtDias, fmtRitmo, progressoDoMes } from "@/lib/cop2026-tendencia";
+import {
+  ROTULO_TRAJETORIA,
+  calcularTendencia,
+  fmtDias,
+  fmtRitmo,
+  progressoDoMes,
+} from "@/lib/cop2026-tendencia";
 import {
   MATRIZ_PROPORCIONAL_2026,
   META_TOTAL_BATALHAO,
@@ -250,7 +255,15 @@ const MODO_BRIEFING_CSS = `
 .modo-briefing .overflow-x-auto,
 .modo-briefing .overflow-auto { overflow: visible !important; }
 
+/* COMO LER — o detalhe da conta fica recolhido na tela e ABERTO onde nao ha
+   clique: PNG do briefing e folha impressa. O bloco existe sempre no DOM
+   (ver ComoLer em primitivos.tsx) justamente para que estas duas linhas
+   consigam revela-lo; com renderizacao condicional nao haveria o que revelar.
+   O botao de abrir some junto, porque botao em imagem so confunde. */
+.modo-briefing .como-ler-detalhe { display: block !important; }
+
 @media print {
+  .como-ler-detalhe { display: block !important; }
   /* A4 DEITADO, declarado aqui e não só na chamada do Puppeteer: o globals.css
      traz um @page com size A4 portrait para o Ctrl+P do navegador, e essa
      declaracao VENCE a flag landscape do gerador — o PDF saia em pe, com a
@@ -913,6 +926,25 @@ export function DashboardCop({
     f.busca && { k: "busca", t: `"${f.busca}"`, limpar: () => definir({ busca: "" }) },
   ].filter(Boolean) as { k: string; t: string; limpar: () => void }[];
 
+  /* TRAJETÓRIA no lugar de "Auditores ativos" — decisão do Fabrício em
+     08/09/2026 ("no lugar do auditores, colocar trajetória"). Cumprimento e
+     trajetória são réguas DIFERENTES e o painel só tinha a primeira em
+     destaque: 411% da meta e "atrasado em relação ao previsto até aqui" podem
+     conviver, e era exatamente essa leitura que faltava na altura do olho.
+     O número de auditores não sumiu — desceu para a barra-resumo, ao lado dos
+     dias decorridos, onde responde "quem esteve em campo" sem disputar espaço
+     com a leitura de meta.
+     `calcularTendencia` é fonte única: a mesma régua da FaixaRitmos, da
+     CaixaTendencia e da tabela por fração. Nenhum componente calcula o seu. */
+  const trajetoria = calcularTendencia({
+    meta: p.meta,
+    realizado: p.total,
+    turnosMes: p.janela.dias,
+    turnosDecorridos: p.janela.decorridos,
+    encerrado: p.janela.encerrado,
+  });
+  const saldoTraj = Math.round(trajetoria.saldoTrajetoria);
+
   const kpis = [
     {
       rotulo: "Cumprimento da meta",
@@ -935,17 +967,16 @@ export function DashboardCop({
       icone: <Target size={18} aria-hidden />,
     },
     {
-      rotulo: "Auditores ativos",
-      valor: `${FMT.format(p.ativos)}/${FMT.format(p.auditores)}`,
-      /* Dois números por decisão do Comando em 03/09/2026: o primeiro é quem
-         participou do controle (mede alcance da ferramenta), o segundo é quem
-         de fato auditou. Antes só existia o primeiro, e quem respondia "não
-         auditei" entrava como auditor ativo. */
-      nota: `${PCT.format(p.auditores ? (p.ativos / p.auditores) * 100 : 0)}% do efetivo designado · ${FMT.format(
-        p.ativosAuditando
-      )} auditaram`,
+      rotulo: "Trajetória",
+      /* A ADERÊNCIA, e não o cumprimento: realizado ÷ o que já deveria estar
+         feito a esta altura. É o número que responde "estamos no prazo?" —
+         pergunta diferente de "quanto da meta já foi". */
+      valor: trajetoria.aderencia === null ? "—" : `${PCT.format(trajetoria.aderencia)}%`,
+      nota: `${ROTULO_TRAJETORIA[trajetoria.situacao]} · previsto até aqui ${FMT.format(
+        Math.round(trajetoria.metaAcumulada)
+      )} · saldo ${saldoTraj >= 0 ? "+" : "−"}${FMT.format(Math.abs(saldoTraj))}`,
       foto: "/media/foto-oficial.jpg",
-      icone: <Users size={18} aria-hidden />,
+      icone: <TrendingUp size={18} aria-hidden />,
     },
     {
       /* Unidade é TURNO, não lançamento — o auditor que fez 2 envios no
@@ -1721,6 +1752,19 @@ export function DashboardCop({
                 de {FMT.format(p.janela.decorridos)}
               </span>
             )}
+            {/* Auditores desceu do cartão de KPI para cá em 08/09/2026, quando
+                TRAJETÓRIA tomou aquele lugar. Os dois números da decisão do
+                Comando de 03/09/2026 continuam inteiros: quem participou do
+                controle e, dentro desses, quem de fato auditou. */}
+            <span className="relative">
+              Auditores ativos:{" "}
+              <strong className="dados font-black text-slate-950">{FMT.format(p.ativos)}</strong> de{" "}
+              {FMT.format(p.auditores)} designados ·{" "}
+              <strong className="dados font-black text-slate-950">
+                {FMT.format(p.ativosAuditando)}
+              </strong>{" "}
+              auditaram
+            </span>
             <span className="relative">
               Partes confeccionadas: <strong className="dados font-black text-slate-950">{FMT.format(p.partes)}</strong>
             </span>

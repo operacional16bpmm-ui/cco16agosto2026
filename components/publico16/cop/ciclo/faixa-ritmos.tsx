@@ -5,10 +5,10 @@ import {
   FMT_RITMO,
   calcularTendencia,
   fmtDias,
-  metaDeAmanha,
   progressoDaJanela,
   progressoDoMes,
 } from "@/lib/cop2026-tendencia";
+import { ComoLer } from "@/components/publico16/cop/primitivos";
 import { cn } from "@/lib/utils";
 
 /**
@@ -58,6 +58,7 @@ function Barra({
   pct,
   cor,
   tracejado,
+  unidade = "/dia",
 }: {
   rotulo: string;
   glosa: string;
@@ -66,6 +67,11 @@ function Barra({
   cor: string;
   /** Marca o trecho vazio como "o que falta", em vez de deixá-lo neutro. */
   tracejado?: string;
+  /** Unidade impressa ao lado do número. O REAL usa "em média/dia" e não
+   *  "/dia": ele é a média dos dias decorridos, não a produção de hoje —
+   *  distinção que o Fabrício cobrou em 08/09/2026 ("é a média diária, não é
+   *  o que está fazendo no dia; ele não consegue medir assim"). */
+  unidade?: string;
 }) {
   return (
     <div className="flex w-full flex-col gap-1">
@@ -86,7 +92,7 @@ function Barra({
           >
             {valor}
           </span>
-          <span className="text-[8.5px] font-bold text-slate-500">/dia</span>
+          <span className="text-[8.5px] font-bold text-slate-500">{unidade}</span>
         </span>
       </div>
 
@@ -151,15 +157,14 @@ export function FaixaRitmos({
     encerrado: p.encerrado,
   });
 
-  /* "Sempre a recuperação dia seguinte" — Coordenadoria Operacional, 02/09/2026.
-     O ritmo de recuperação responde "se eu diluir o que falta pelos dias que
-     sobram"; a ordem do dia é outra pergunta, e é esta. */
-  const amanha = metaDeAmanha({
-    meta,
-    realizado: total,
-    turnosMes: p.diasMes,
-    turnosDecorridos: p.diasDecorridos,
-  });
+  /* O cartão AMANHÃ saiu daqui em 08/09/2026, por decisão do Fabrício na
+     reunião de revisão do painel ("e aqui, esse amanhã a gente tira, beleza?").
+     Ele havia entrado em 02/09/2026 a pedido da Coordenadoria Operacional
+     ("sempre a recuperação dia seguinte") — a decisão nova é posterior e vence.
+     O raciocínio dele: com o Batalhão adiantado, a cota de amanhã não informa
+     nada que o ALVO e o REAL já não digam. `metaDeAmanha` continua exportada em
+     `cop2026-tendencia.ts`, com teste, para o dia em que o Comando pedir de
+     volta — o que saiu foi a exibição, não o cálculo. */
 
   const alvo = t.ritmoAlvo;
   const real = t.ritmoReal;
@@ -208,8 +213,9 @@ export function FaixaRitmos({
         />
         <Barra
           rotulo="Real"
-          glosa="praticado até aqui"
+          glosa="praticado até aqui, em média"
           valor={real === null ? "—" : N2.format(real)}
+          unidade="em média/dia"
           pct={pctReal}
           cor={COR_REAL}
           tracejado={
@@ -228,40 +234,27 @@ export function FaixaRitmos({
         do alvo — mesma régua, mesma unidade.
       </p>
 
-      {!amanha.ultimo && p.diasDecorridos > 0 && (
-        <div className="mt-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 rounded-lg border-2 border-slate-300 bg-slate-50 px-2.5 py-1.5">
-          <span className="flex flex-col leading-tight">
-            <span className="text-[9.5px] font-black uppercase tracking-[0.1em] text-slate-800">
-              Amanhã
-            </span>
-            <span className="text-[9px] font-semibold text-slate-500">
-              {amanha.divida > 0
-                ? `cota ${N2.format(amanha.cota)} + dívida ${N0.format(Math.round(amanha.divida))}`
-                : `cota do dia · ${N0.format(Math.round(amanha.agio))} de folga`}
-            </span>
-          </span>
-          <span className="flex items-baseline gap-1">
-            <span
-              className="dados text-[17px] font-black leading-none tabular-nums"
-              style={{ color: amanha.alvo > amanha.cota ? COR_RECUP : COR_ALVO }}
-            >
-              {N2.format(amanha.alvo)}
-            </span>
-            <span className="text-[8.5px] font-bold text-slate-500">/dia seguinte</span>
-          </span>
-        </div>
-      )}
-
       {t.deficit > 0 && (
         <div
           className="mt-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 rounded-lg border-2 px-2.5 py-1.5"
           style={{ borderColor: `color-mix(in srgb, ${COR_RECUP} 45%, white)`, background: "#fdf0f0" }}
         >
-          <span
-            className="text-[9.5px] font-black uppercase tracking-[0.1em]"
-            style={{ color: COR_RECUP }}
-          >
-            Recuperação
+          {/* Texto na frente do número, pedido do Fabrício em 08/09/2026: o
+              rótulo sozinho não diz de onde sai a recuperação, e quem lê o
+              painel confundia com um terceiro ritmo comparável ao ALVO e ao
+              REAL. A glosa é a definição que ele deu, em palavra de comando —
+              "resultado do acumulado entre o real e o alvo da média dos dias
+              anteriores". */}
+          <span className="flex min-w-0 flex-col leading-tight">
+            <span
+              className="text-[9.5px] font-black uppercase tracking-[0.1em]"
+              style={{ color: COR_RECUP }}
+            >
+              Recuperação
+            </span>
+            <span className="text-[9px] font-semibold text-slate-500">
+              o atraso acumulado até aqui, diluído nos dias que restam
+            </span>
           </span>
           {t.irrecuperavel ? (
             <span className="text-[10px] font-bold text-slate-700">
@@ -302,6 +295,62 @@ export function FaixaRitmos({
           )}
         </div>
       )}
+
+      {/* O manual do quadro, embaixo do quadro — e em todos os meios. Ver a
+          nota de `ComoLer` em primitivos.tsx. */}
+      <ComoLer
+        titulo="Tendência · ritmo diário"
+        className="mt-3 pt-2.5"
+        resumo={
+          <>
+            O <strong>alvo</strong> é quanto o Batalhão precisa auditar por dia para fechar a meta
+            {rotuloPeriodo === "mês" ? " do mês" : ` da ${rotuloPeriodo}`}. O{" "}
+            <strong>real</strong> é a média que vem sendo feita por dia até aqui — não é a
+            produção de hoje. Real acima do alvo é estar adiantado.
+          </>
+        }
+        calculo={
+          <ul className="list-disc space-y-1 pl-4">
+            <li>
+              <strong>Alvo</strong> = meta do período ÷ dias do período.
+            </li>
+            <li>
+              <strong>Real</strong> = evidências já auditadas ÷ dias decorridos. É uma{" "}
+              <em>média</em>: um dia forte e um dia parado dão o mesmo real de dois dias medianos.
+            </li>
+            <li>
+              A porcentagem compara os dois na mesma régua: real ÷ alvo. Acima de 100% o Batalhão
+              está à frente do passo normal.
+            </li>
+            {t.deficit > 0 && (
+              <li>
+                <strong>Recuperação</strong> = o que falta para a meta ÷ dias que ainda restam. Ela
+                não é um terceiro ritmo: é o preço de ter ficado atrás.
+              </li>
+            )}
+          </ul>
+        }
+        exemplo={
+          real === null ? undefined : (
+            <>
+              Alvo <strong className="dados">{N2.format(alvo)}</strong> e real{" "}
+              <strong className="dados">{N2.format(real)}</strong> por dia:{" "}
+              {pctReal >= 100 ? (
+                <>
+                  o Batalhão está fazendo{" "}
+                  <strong className="dados">{N1.format(Math.min(pctReal, 999))}%</strong> do passo
+                  normal — mantido esse ritmo, a meta fecha antes do fim do período.
+                </>
+              ) : (
+                <>
+                  faltam <strong className="dados">{N2.format(Math.max(0, alvo - real))}</strong>{" "}
+                  evidências por dia para voltar ao passo normal.
+                </>
+              )}
+            </>
+          )
+        }
+      />
     </div>
   );
 }

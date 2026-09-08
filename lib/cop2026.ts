@@ -25,6 +25,8 @@
  * segunda fonte de classificação.
  */
 
+import { funcaoNormalizada, nomeProprio, postoNormalizado } from "@/lib/cop2026-nomes";
+
 export const PLANILHA_ID = "11tdaTRSSf-K-y13rIg3hmHCGmyOeWFhkBfRbCqKF1Bg";
 
 /**
@@ -602,9 +604,16 @@ export function extrairLancamentos(linhas: string[][]): LancamentoCop[] {
       turno: bruto.turno ?? "",
       enviadoEm: carimbo(bruto.enviadoEm ?? ""),
       re: bruto.re ?? "",
-      nomeGuerra: bruto.nomeGuerra ?? "",
-      posto: bruto.posto ?? "",
-      funcao: bruto.funcao ?? "",
+      /* CORRETOR DE CAIXA na porta de entrada, exatamente como a redação de
+         CPF logo acima e pela mesma razão: estes três campos alimentam ao
+         mesmo tempo o painel, o briefing, o relatório impresso, a planilha e o
+         CSV. Normalizar num lugar só é o que garante que uma superfície nova
+         não nasça com `FULANO DE TAL` no meio de uma coluna em caixa mista.
+         Pedido do Fabrício em 08/09/2026. O RE não passa por aqui — é chave, e
+         chave não se embeleza. Ver `lib/cop2026-nomes.ts`. */
+      nomeGuerra: nomeProprio(bruto.nomeGuerra ?? ""),
+      posto: postoNormalizado(bruto.posto ?? ""),
+      funcao: funcaoNormalizada(bruto.funcao ?? ""),
       subunidade: chaveSubunidade(bruto.subunidade),
       auditou,
       videos: auditou ? quantidade.videos : 0,

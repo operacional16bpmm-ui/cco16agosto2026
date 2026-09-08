@@ -37,10 +37,12 @@ import {
   type Nivel,
 } from "@/lib/cop2026-metricas";
 import { AlertCircle } from "lucide-react";
+import Link from "next/link";
 import type { CSSProperties } from "react";
 import { FaixaRitmos } from "@/components/publico16/cop/ciclo/faixa-ritmos";
 import { fmtDias, fmtPorTurno, fmtRitmo, fmtTurnos } from "@/lib/cop2026-tendencia";
 import { COR_NIVEL, Selo } from "./primitivos";
+import { IconePlanilha } from "@/components/publico16/cop/icones-cop";
 import { cn } from "@/lib/utils";
 
 const VERM = "#ca0202";
@@ -676,10 +678,30 @@ export function RankingFracoes({
       {dados.map((d) => (
         <li key={d.chave}>
           <div className="w-full rounded-2xl border-2 border-slate-300/85 bg-gradient-to-r from-[#ffffff] via-[#f8fafc] to-[#edf3f8] p-4 text-left shadow-[0_2px_10px_rgba(15,23,42,0.04)]">
+            {/* A PLANILHA NA FRENTE DO NOME — pedido do Fabrício em 08/09/2026
+                ("primeira Cia planilha, segunda Cia planilha, terceira Cia
+                planilha, só para ele apresentar a planilha"). Leva à Planilha
+                de Lançamentos já filtrada por esta fração.
+
+                Fica FORA do <button>, e não dentro do cabeçalho junto do nome:
+                âncora dentro de botão é HTML inválido e, na prática, o clique
+                no link acabaria disparando também o filtro do painel — o
+                superior clicaria para abrir a planilha e a tela mudaria embaixo
+                dele. Daí a linha em flex com o botão ao lado. */}
+            <div className="flex items-start gap-2.5">
+              <Link
+                href={`/cop2026/admin/lancamentos?fracao=${encodeURIComponent(d.chave)}`}
+                title={`Abrir a Planilha de Lançamentos da ${d.rotulo}`}
+                aria-label={`Abrir a Planilha de Lançamentos da ${d.rotulo}`}
+                className="mt-0.5 inline-flex shrink-0 items-center gap-1.5 rounded-lg border-2 border-slate-300 bg-white px-2 py-1.5 text-[11px] font-black uppercase tracking-wide text-slate-700 shadow-xs transition-colors hover:border-vermelho/50 hover:text-vermelho"
+              >
+                <IconePlanilha />
+                <span className="hidden sm:inline">Planilha</span>
+              </Link>
             <button
               type="button"
               onClick={() => onSelecionar?.(d.chave)}
-              className="w-full text-left focus-visible:outline-2 focus-visible:outline-vermelho"
+              className="min-w-0 flex-1 text-left focus-visible:outline-2 focus-visible:outline-vermelho"
               aria-label={`Filtrar por ${d.rotulo} — ${PCT.format(d.pct)}% da meta`}
             >
               <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
@@ -746,6 +768,7 @@ export function RankingFracoes({
                 </span>
               </div>
             </button>
+            </div>
 
             {/* Evolução semana a semana da Cia */}
             {d.semanas && d.semanas.length > 0 && (

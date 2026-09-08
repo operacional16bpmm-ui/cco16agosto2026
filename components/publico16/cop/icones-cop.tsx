@@ -131,6 +131,30 @@ export function IconeDivergencias(p: Props) {
   );
 }
 
+/** Problema do sistema — o triângulo de advertência com a antena cortada: não
+ *  é "erro do usuário", é a plataforma que parou de responder. */
+export function IconeProblema(p: Props) {
+  return (
+    <Svg {...p}>
+      <path d="M12 3.4 2.9 19.2h18.2L12 3.4Z" />
+      <path d="M12 9.6v4.2" />
+      <circle cx="12" cy="16.4" r=".6" fill="currentColor" stroke="none" />
+    </Svg>
+  );
+}
+
+/** Planilha da fração — a grade com a primeira coluna cheia: é a lista de
+ *  lançamentos daquela Cia, não um relatório. Menor que o IconeLancamentos
+ *  porque aqui ele vive dentro de um botão de 11px na linha da fração. */
+export function IconePlanilha(p: Props) {
+  return (
+    <Svg size={p.size ?? 14} className={p.className}>
+      <rect x="3.2" y="4.2" width="17.6" height="15.6" rx="1.8" />
+      <path d="M3.2 9h17.6M9 9v10.8" />
+    </Svg>
+  );
+}
+
 /** Lançamentos — a planilha: cabeçalho preenchido e a grade das linhas. */
 export function IconeLancamentos(p: Props) {
   return (

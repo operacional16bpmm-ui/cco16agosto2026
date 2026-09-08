@@ -6,6 +6,7 @@ import { ehAdminCop } from "@/lib/cop2026-acesso";
 import { identidadeCop } from "@/lib/db/cop2026-autorizados";
 import { identificadoresCompartilhados, listarParaManejo } from "@/lib/db/cop2026-lancamentos";
 import { cadeiaDasFracoes } from "@/lib/db/cop2026-unidade";
+import { ORDEM_SUBUNIDADES } from "@/lib/cop2026";
 import { CabecalhoAdmin } from "../cabecalho-admin";
 import { PainelLancamentos, type LinhaLancamento } from "./painel-lancamentos";
 
@@ -35,7 +36,21 @@ export const dynamic = "force-dynamic";
  * própria Server Action — esconder o botão nunca foi controle de acesso, e por
  * isso o `ehAdmin` daqui só decide o que aparece.
  */
-export default async function AdminLancamentosPage() {
+export default async function AdminLancamentosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ fracao?: string }>;
+}) {
+  /* `?fracao=1cia` — o atalho que cada Cia usa para "apresentar a planilha
+     dela", pedido do Fabrício em 08/09/2026 ("primeira Cia planilha, segunda
+     Cia planilha, terceira Cia planilha, só para ele apresentar a planilha").
+     O link nasce no quadro Onde Agir do painel; aqui ele só semeia o filtro
+     que a tela já tinha. Valor fora da lista é ignorado — query suja abre a
+     planilha inteira, nunca uma tela vazia sem explicação. */
+  const { fracao } = await searchParams;
+  const fracaoInicial =
+    fracao && (ORDEM_SUBUNIDADES as readonly string[]).includes(fracao) ? fracao : "todas";
+
   const sessao = await identidadeCop();
   const ehAdmin = ehAdminCop(sessao?.email);
 
@@ -61,6 +76,7 @@ export default async function AdminLancamentosPage() {
 
       <main>
         <PainelLancamentos
+        fracaoInicial={fracaoInicial}
           itens={itens as unknown as LinhaLancamento[]}
           erro={erro}
           compartilhados={compartilhados}

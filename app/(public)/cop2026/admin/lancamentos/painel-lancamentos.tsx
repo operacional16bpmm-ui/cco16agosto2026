@@ -121,12 +121,17 @@ export function PainelLancamentos({
   compartilhados,
   cadeias,
   ehAdmin,
+  fracaoInicial = "todas",
 }: {
   itens: LinhaLancamento[];
   erro: string | null;
   compartilhados: { id: string; res: string[]; ocorrencias: number }[];
   cadeias: Record<string, Cadeia>;
   ehAdmin: boolean;
+  /** Semeado por `?fracao=` — o atalho "apresentar a planilha da minha Cia".
+   *  Só o valor INICIAL: a partir daí o seletor manda, e trocar de fração na
+   *  tela não precisa recarregar a página. */
+  fracaoInicial?: string;
 }) {
   const [excluir, acaoExcluir] = useActionState(excluirLancamentoAction, vazio);
   const [reclass, acaoReclass] = useActionState(reclassificarAction, vazio);
@@ -137,7 +142,7 @@ export function PainelLancamentos({
   const [fDe, setFDe] = useState("");
   const [fAte, setFAte] = useState("");
   const [fTurno, setFTurno] = useState("todos");
-  const [fFracao, setFFracao] = useState("todas");
+  const [fFracao, setFFracao] = useState(fracaoInicial);
   const [fOrigem, setFOrigem] = useState("todas");
   const [fAuditou, setFAuditou] = useState("todos");
   const [fFuncao, setFFuncao] = useState("todas");
