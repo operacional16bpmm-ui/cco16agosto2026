@@ -6,16 +6,22 @@ import { usePathname } from "next/navigation";
 import { URL_FORMULARIO } from "@/lib/cop2026";
 import { cn } from "@/lib/utils";
 import {
-  IconeAdmin,
+  IconeAuditores,
+  IconeAutorizados,
   IconeBriefing,
   IconeDiretriz,
   IconeDivergencias,
   IconeInicio,
   IconeInstagram,
+  IconeImportar,
   IconeLancamentos,
   IconeLancar,
+  IconeMetas,
   IconePainel,
   IconeRelatorios,
+  IconeSaude,
+  IconeTrilha,
+  IconeUnidades,
   IconeWhatsApp,
 } from "@/components/publico16/cop/icones-cop";
 
@@ -84,20 +90,36 @@ const NAVEGACAO: Atalho[] = [
   },
 ];
 
+/**
+ * As NOVE telas de administração, todas na barra — determinação do Fabricio em
+ * 08/09/2026 ("todos os botões que você tem como admin"). Elas ficam numa
+ * segunda linha, e não misturadas à navegação da tropa: são catorze destinos no
+ * total, e uma fila só obrigaria a rolar para achar o Painel.
+ *
+ * A ordem é a mesma das abas de dentro da administração
+ * (`app/(public)/cop2026/admin/cabecalho-admin.tsx`) — duas ordens diferentes
+ * para a mesma lista fazem a pessoa procurar duas vezes.
+ */
 const ADMINISTRACAO: Atalho[] = [
+  { href: "/cop2026/admin", rotulo: "Autorizados", curto: "Autoriz.", Icone: IconeAutorizados },
   {
     href: "/cop2026/admin/lancamentos",
     rotulo: "Lançamentos",
     curto: "Lançtos.",
     Icone: IconeLancamentos,
   },
+  { href: "/cop2026/admin/auditores", rotulo: "Auditores", Icone: IconeAuditores },
+  { href: "/cop2026/admin/parametros", rotulo: "Metas", Icone: IconeMetas },
+  { href: "/cop2026/admin/unidades", rotulo: "Unidades", Icone: IconeUnidades },
+  { href: "/cop2026/admin/trilha", rotulo: "Trilha", Icone: IconeTrilha },
+  { href: "/cop2026/admin/importar", rotulo: "Importar", Icone: IconeImportar },
   {
     href: "/cop2026/admin/divergencias",
     rotulo: "Divergências",
     curto: "Diverg.",
     Icone: IconeDivergencias,
   },
-  { href: "/cop2026/admin", rotulo: "Administração", curto: "Admin", Icone: IconeAdmin },
+  { href: "/cop2026/admin/saude", rotulo: "Saúde", Icone: IconeSaude },
 ];
 
 /* Contato: o número é o mesmo do botão de socorro do formulário
@@ -140,7 +162,7 @@ function Botao({ atalho, ativo }: { atalho: Atalho; ativo: boolean }) {
     ativo
       ? "border-vermelho bg-vermelho text-white shadow-[0_2px_10px_rgba(213,52,65,0.45)]"
       : atalho.destaque
-        ? "border-vermelho/70 bg-vermelho/15 text-white hover:bg-vermelho/25"
+        ? "border-vermelho bg-vermelho/30 text-white hover:bg-vermelho/45"
         : "border-white/15 text-white/80 hover:border-white/40 hover:bg-white/10 hover:text-white"
   );
 
@@ -169,7 +191,7 @@ function Botao({ atalho, ativo }: { atalho: Atalho; ativo: boolean }) {
 }
 
 function Separador() {
-  return <span className="mx-1 h-9 w-px shrink-0 self-center bg-white/15" aria-hidden />;
+  return <span className="mx-1 h-9 w-px shrink-0 self-center bg-white/25" aria-hidden />;
 }
 
 export function BarraCop({ ehAdmin = false }: { ehAdmin?: boolean }) {
@@ -179,38 +201,52 @@ export function BarraCop({ ehAdmin = false }: { ehAdmin?: boolean }) {
      devolveria a pessoa para a própria porta, em círculo. */
   if (pathname.startsWith("/cop2026/acesso")) return null;
 
-  const itens: (Atalho | "separador")[] = [
-    ...NAVEGACAO,
-    ...(ehAdmin ? (["separador", ...ADMINISTRACAO] as const) : []),
-    "separador",
-    ...CONTATO,
-  ];
-
   return (
     <div className="sticky top-0 z-50 bg-azul-noite shadow-[0_2px_12px_rgba(0,0,0,0.25)]">
-      <div className="mx-auto flex max-w-[1400px] items-center gap-3 px-3 py-2 sm:px-5">
-        {/* Assinatura do módulo — some no celular, onde o espaço é dos botões. */}
-        <div className="hidden shrink-0 border-r border-white/15 pr-4 lg:block">
-          <p className="font-serif text-[13px] font-bold uppercase leading-tight tracking-wide text-white">
-            Auditoria de COP
-          </p>
-          <p className="text-[10.5px] uppercase tracking-[0.12em] text-white/60">
-            16º BPM/M · 2026
-          </p>
+      <div className="mx-auto max-w-[1400px] px-3 py-2 sm:px-5">
+        <div className="flex items-center gap-3">
+          {/* Assinatura do módulo — some no celular, onde o espaço é dos botões. */}
+          <div className="hidden shrink-0 border-r border-white/15 pr-4 lg:block">
+            <p className="font-serif text-[13px] font-bold uppercase leading-tight tracking-wide text-white">
+              Auditoria de COP
+            </p>
+            <p className="text-[10.5px] uppercase tracking-[0.12em] text-white/60">
+              16º BPM/M · 2026
+            </p>
+          </div>
+
+          <nav
+            aria-label="Atalhos da Auditoria de COP"
+            className="flex flex-1 snap-x items-stretch gap-1.5 overflow-x-auto py-0.5"
+          >
+            {NAVEGACAO.map((a) => (
+              <Botao key={a.href} atalho={a} ativo={estaAtivo(pathname, a)} />
+            ))}
+            <Separador />
+            {CONTATO.map((a) => (
+              <Botao key={a.href} atalho={a} ativo={false} />
+            ))}
+          </nav>
         </div>
 
-        <nav
-          aria-label="Atalhos da Auditoria de COP"
-          className="flex flex-1 snap-x items-stretch gap-1.5 overflow-x-auto py-0.5"
-        >
-          {itens.map((item, i) =>
-            item === "separador" ? (
-              <Separador key={`sep-${i}`} />
-            ) : (
-              <Botao key={item.href} atalho={item} ativo={estaAtivo(pathname, item)} />
-            )
-          )}
-        </nav>
+        {/* Segunda linha: administração. Só existe para quem administra —
+            `exigirAdminCop()` responde 404 aos demais, e botão que leva a 404
+            faz a tropa achar que o portal quebrou. */}
+        {ehAdmin && (
+          <div className="mt-1.5 flex items-center gap-3 border-t border-white/10 pt-1.5">
+            <span className="hidden shrink-0 border-r border-white/15 py-1 pr-4 text-[10px] font-bold uppercase leading-tight tracking-[0.14em] text-ouro lg:block">
+              Administração
+            </span>
+            <nav
+              aria-label="Administração da Auditoria de COP"
+              className="flex flex-1 snap-x items-stretch gap-1.5 overflow-x-auto py-0.5"
+            >
+              {ADMINISTRACAO.map((a) => (
+                <Botao key={a.href} atalho={a} ativo={estaAtivo(pathname, a)} />
+              ))}
+            </nav>
+          </div>
+        )}
       </div>
 
       {/* Faixa institucional: fecha a barra com o vermelho do brasão. */}

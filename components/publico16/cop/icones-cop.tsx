@@ -9,7 +9,7 @@
  * o escudo do Batalhão no início, a prancheta com caneta no lançamento, a
  * barra com a linha de meta no painel.
  *
- * REGRA DE DESENHO, para o próximo ícone nascer igual aos onze:
+ * REGRA DE DESENHO, para o próximo ícone nascer igual aos dezessete:
  *
  * - grade de 24×24, com folga de 2px na borda — nada encosta no limite;
  * - traço `1.75`, `round` nas pontas e nas junções, `fill="none"`;
@@ -143,13 +143,83 @@ export function IconeLancamentos(p: Props) {
   );
 }
 
-/** Administração — o escudo com a engrenagem do controle. */
-export function IconeAdmin(p: Props) {
+/* ------------------------------------------------- telas de administração */
+
+/** Autorizados — quem abre o painel: pessoa com a chave de acesso. */
+export function IconeAutorizados(p: Props) {
   return (
     <Svg {...p}>
-      <path d="M12 2.6 4.6 5.4v6.1c0 4.3 3 8.2 7.4 9.9 4.4-1.7 7.4-5.6 7.4-9.9V5.4L12 2.6Z" />
-      <circle cx="12" cy="11.4" r="2.2" />
-      <path d="M12 6.6v1.4M12 14.8v1.4M8.6 9.4l1.2.7M14.2 12.7l1.2.7M15.4 9.4l-1.2.7M9.8 12.7l-1.2.7" />
+      <circle cx="9.4" cy="8" r="3.4" />
+      <path d="M3.4 20.4a6 6 0 0 1 10.3-4.2" />
+      <circle cx="17.4" cy="16.6" r="2.2" />
+      <path d="M19 15.1 21.4 12.7M20.1 14l1 1" />
+    </Svg>
+  );
+}
+
+/** Auditores — o crachá do vínculo conta↔RE. */
+export function IconeAuditores(p: Props) {
+  return (
+    <Svg {...p}>
+      <rect x="3.4" y="4.6" width="17.2" height="15" rx="2" />
+      <circle cx="9" cy="11" r="2.2" />
+      <path d="M5.6 16.6a3.8 3.8 0 0 1 6.8 0" />
+      <path d="M14.6 9.8h4M14.6 13.2h4" />
+    </Svg>
+  );
+}
+
+/** Metas — o alvo com a flecha no centro. */
+export function IconeMetas(p: Props) {
+  return (
+    <Svg {...p}>
+      <circle cx="12" cy="12" r="8.4" />
+      <circle cx="12" cy="12" r="4.6" />
+      <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" />
+      <path d="m17.6 6.4 3-3M18.6 3.4h2v2" />
+    </Svg>
+  );
+}
+
+/** Unidades — o organograma Comando → Batalhão → Fração. */
+export function IconeUnidades(p: Props) {
+  return (
+    <Svg {...p}>
+      <rect x="9" y="2.8" width="6" height="4.2" rx="1" />
+      <rect x="2.8" y="16.8" width="5.6" height="4.2" rx="1" />
+      <rect x="15.6" y="16.8" width="5.6" height="4.2" rx="1" />
+      <path d="M12 7v4.6M5.6 16.8v-2.6h12.8v2.6M12 11.6v2.6" />
+    </Svg>
+  );
+}
+
+/** Trilha — o histórico: relógio com a seta que volta. */
+export function IconeTrilha(p: Props) {
+  return (
+    <Svg {...p}>
+      <path d="M3.6 12a8.4 8.4 0 1 0 2.6-6.1" />
+      <path d="M3.4 4.6v3.8h3.8" />
+      <path d="M12 7.8V12l3 1.8" />
+    </Svg>
+  );
+}
+
+/** Importar — a carga que entra na base. */
+export function IconeImportar(p: Props) {
+  return (
+    <Svg {...p}>
+      <path d="M12 3.4v9.8" />
+      <path d="m8.4 9.8 3.6 3.6 3.6-3.6" />
+      <path d="M4.4 15.4v3.2a2 2 0 0 0 2 2h11.2a2 2 0 0 0 2-2v-3.2" />
+    </Svg>
+  );
+}
+
+/** Saúde — o pulso das invariantes do painel. */
+export function IconeSaude(p: Props) {
+  return (
+    <Svg {...p}>
+      <path d="M3 12.4h3.6l1.8-4.6 3.2 9 2.2-5.4 1.4 3H21" />
     </Svg>
   );
 }
