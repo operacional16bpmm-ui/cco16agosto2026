@@ -357,3 +357,126 @@ head -1 .ultimo-deploy && git rev-parse HEAD
 # integridade do backup de código
 git bundle verify /mnt/pool/Backup-Diario/repos/portal-cco16.bundle
 ```
+
+---
+
+## 15. Auditoria adversarial de 08/09/2026
+
+Varredura por seis lentes independentes (coerência dos números, segurança,
+integridade do dado, sobras da decisão do identificador, operação/recuperação,
+acessibilidade), com **dois verificadores por achado instruídos a refutar por
+padrão**. 17 achados brutos, **3 refutados**, 14 confirmados. Todos os
+confirmados foram corrigidos no mesmo dia, exceto onde indicado.
+
+### 15.1 A decisão do identificador não estava aplicada por inteiro
+
+A remoção de 07/09 pegou a fileira de KPIs do dashboard e passou ao largo de
+quatro superfícies. Corrigido:
+
+- **Cartão nominal `idInvalidoLista`** continuava no dashboard, listando auditores
+  em laranja por formato de ID — e mandando "corrija na planilha", que não é mais
+  a fonte. Removido.
+- **`?excecao=idinvalido|semids|duplicado`** ainda era aceito pelo parser: um link
+  salvo reativava o julgamento na tela. As três chaves saíram do tipo, do parser e
+  dos ramos do filtro; sobraram `naoauditou` e `abaixo`.
+- **Painel de saúde** pintava os três indicadores de ID com `alerta`. O número
+  ficou (é diagnóstico), a cor de alarme saiu, e a nota aponta para Divergências.
+- **Texto do briefing exportado** (o que vai no PDF/PNG) ainda dizia que "não
+  informou o ID" é um dos motivos de pendência. Já não era verdade no cálculo.
+
+> **Lição registrada:** o gate `verificar:excecoes` trava o *número*
+> (`totalPendencia`), não a *presença* de um cartão na tela. Uma remoção parcial de
+> UI passa por todos os gates. Um teste que trave a ausência de
+> `idInvalidoLista`/`semIdsLista`/`duplicadoLista` em `dashboard-cop.tsx` fecharia
+> essa classe inteira — está em aberto.
+
+### 15.2 Perda silenciosa de evidências na importação
+
+`importarMes()` inseria as evidências de cada lançamento em **um único INSERT
+multi-linha**. Sem `ON CONFLICT`, a violação de `cop_evid_re_uidx` em uma linha
+**aborta o comando inteiro** — um lançamento com 5 IDs bons e 1 repetido perdia os
+6. O comentário no código afirmava o contrário ("a evidência colidida não entra"),
+e o resumo da importação reportava sucesso do mesmo jeito.
+
+`upsert` não resolve: o índice é **parcial**
+(`WHERE id_normalizado IS NOT NULL AND descartada = false`) e o PostgREST não emite
+o predicado, então o Postgres não consegue inferi-lo. A correção é lote primeiro e
+**linha a linha só quando colide**, com o novo contador `evidenciasPerdidas` no
+resultado — antes a perda não aparecia em lugar nenhum.
+
+### 15.3 "Já registrado" para um lançamento que foi excluído
+
+`cop_lanc_submissao_uidx` é unique sobre `payload_bruto->>'idSubmissao'` e **não
+filtra `excluido_em`**. A guarda de idempotência também não. Resultado: o policial
+que reenviava de uma aba antiga um lançamento que o Comando havia excluído recebia
+`ok: true, duplicado: true` — e ia embora com o lançamento fora de toda contagem.
+É o pior caso possível de um formulário: achar que enviou. Agora responde
+`conflito: "excluido"` com instrução de refazer.
+
+### 15.4 Identidade do auditor: sempre a base do RE
+
+`chaveDoTurno` e a contagem de PMs distintos usavam `l.re` **como veio digitado**.
+Medido no banco: **11 policiais com duas grafias** (`130550` e `130550-6`) em 49
+lançamentos, e **3 casos** em que o mesmo policial no mesmo turno já era contado
+como dois turnos (30/08, 04/09 e 07/09). Nesses três ninguém caiu abaixo do mínimo
+por sorte — as duas metades passavam de 3 sozinhas. Quem fizesse 2+2 com grafias
+diferentes apareceria com dois desvios tendo cumprido a cota.
+
+Introduzida `identidadeAuditor()`, que é a base normalizada do RE, usada na chave
+do turno, na contagem de PMs e na linha do auditor.
+
+### 15.5 Recuperação e segurança
+
+- **`cop_config` estava fora do backup.** É a tabela que guarda a decisão do Major
+  (janela de atenção, migration 030) — ela saiu do cookie justamente porque cookie
+  vale para uma aba e decisão vale para todos. Restaurar sem ela devolvia o padrão
+  de fábrica, calado. Entrou na lista fechada.
+- **`CCO16_SAUDE_TOKEN` era comparado com `!==`.** Este endpoint não tem cookie
+  atrás dele: o token é a única barreira. Passou a usar `timingSafeEqual`, com o
+  comprimento conferido antes.
+- **Os scripts que consertaram o apagão de backup não tinham backup.** Espelhados
+  em `pc1:~/_workspace/_scripts/pc2-vigia/` (coberto pelo backup diário), com
+  `LEIA-ME.md` apontando o original de cada um no pc2.
+
+### 15.6 Acessibilidade do formulário (o que a tropa usa no celular)
+
+- O campo de identificador — o mais usado — tinha `<label>` **sem `htmlFor`/`id`**:
+  tocar em "Vídeo N" não focava o campo, único assim no formulário.
+- `aria-invalid` sem `aria-describedby`: o leitor de tela anunciava "inválido" e
+  nunca lia o porquê. E o campo não mudava de aparência quando recusado.
+- **Erro do servidor não movia a tela.** O policial confirma no fim da página, o
+  alerta aparece no topo e a tela fica onde estava — no celular, no fim do turno,
+  ele vê o formulário do jeito que estava e vai embora. Agora rola até o alerta e
+  põe foco nele.
+- Botão de fechar o aviso de colagem tinha alvo de ~14 px; passou para 44 px.
+
+### 15.7 Refutados na verificação (não são defeito)
+
+Três achados caíram no crivo dos verificadores. Registrados para não voltarem como
+"descoberta": a normalização `chaveSubunidade` **cobre** a grafia `2º` do roster
+(vira `2cia` corretamente), e as demais alegações não se sustentaram na leitura do
+código.
+
+### 15.8 Divergência aberta, para decisão do Comando
+
+A **Matriz Proporcional é constante no código** e o efetivo real já não bate com
+ela, embora o total feche em 570:
+
+| Fração | Matriz | `p4_efetivo` | Δ |
+|---|---|---|---|
+| 3ª Cia | 111 | 123 | +12 |
+| 2ª Cia | 93 | 87 | −6 |
+| Força Tática | 73 | 68 | −5 |
+| 4ª Cia | 93 | 97 | +4 |
+| 1ª Cia | 102 | 99 | −3 |
+| Estado-Maior | 98 | 96 | −2 |
+
+O painel anuncia "quadro: N PMs" pela Matriz, e a cota de cada fração foi rateada
+por esses números. Não é bug — a Matriz é documento do Comando. Precisa de decisão:
+a Matriz se atualiza com o roster, ou fica congelada por definição?
+
+**Também aberto:** 6 REs que lançam auditoria **não existem em `p4_efetivo`** (65
+evidências em setembro, entre eles um Maj PM/COORDOP). Por isso caem em `outros` e
+não entram na barra de fração nenhuma — o sistema não chuta, por decisão de
+projeto. Resolve-se incluindo os 6 no roster, ou reclassificando lançamento a
+lançamento em `/cop2026/admin/lancamentos`.

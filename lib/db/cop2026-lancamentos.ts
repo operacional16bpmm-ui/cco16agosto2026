@@ -26,7 +26,7 @@ const TABELA_EVIDENCIA = "cop_evidencia";
 
 export type ResultadoGravacao =
   | { ok: true; id: string; protocolo: string; duplicado: boolean }
-  | { ok: false; erro: string; conflito?: "dedup" | "replay" };
+  | { ok: false; erro: string; conflito?: "dedup" | "replay" | "excluido" };
 
 /** Protocolo curto para o print que o PM manda ao Sargento. Os 8 primeiros
  *  caracteres do uuid do lançamento, em caixa alta — não é identificador de
@@ -63,10 +63,24 @@ export async function gravarLancamento(
   // servidor aceitar) reencontra o registro em vez de duplicá-lo.
   const { data: jaExiste } = await c
     .from(TABELA)
-    .select("id")
+    .select("id, excluido_em")
     .eq("payload_bruto->>idSubmissao", v.idSubmissao)
     .maybeSingle();
   if (jaExiste?.id) {
+    /* O reenvio de um lançamento que o Comando EXCLUIU não pode responder
+     * "já registrado". `cop_lanc_submissao_uidx` é unique e NÃO filtra
+     * `excluido_em`, então o registro excluído continua ocupando o
+     * idSubmissao: o policial reenviava de uma aba antiga, recebia sucesso e
+     * ia embora — com o lançamento fora de toda contagem. É o pior caso do
+     * formulário: achar que enviou e não ter enviado. */
+    if (jaExiste.excluido_em) {
+      return {
+        ok: false,
+        conflito: "excluido",
+        erro:
+          "Este envio foi excluído pelo Comando e não está mais valendo. Recarregue a página e lance de novo para gerar um novo registro.",
+      };
+    }
     const id = jaExiste.id as string;
     return { ok: true, id, protocolo: protocoloDe(id), duplicado: true };
   }
@@ -129,9 +143,18 @@ export async function gravarLancamento(
     if (error.code === "23505") {
       const { data: existente } = await c
         .from(TABELA)
-        .select("id")
+        .select("id, excluido_em")
         .eq("payload_bruto->>idSubmissao", v.idSubmissao)
         .maybeSingle();
+      /* Mesma regra da guarda de cima: excluído não é sucesso. */
+      if (existente?.id && existente.excluido_em) {
+        return {
+          ok: false,
+          conflito: "excluido",
+          erro:
+            "Este envio foi excluído pelo Comando e não está mais valendo. Recarregue a página e lance de novo para gerar um novo registro.",
+        };
+      }
       if (existente?.id) {
         const id = existente.id as string;
         return { ok: true, id, protocolo: protocoloDe(id), duplicado: true };

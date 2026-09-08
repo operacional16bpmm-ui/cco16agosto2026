@@ -21,6 +21,7 @@ import {
   type LancamentoCop,
   type MetaSubunidade,
 } from "@/lib/cop2026";
+import { normalizarRe } from "@/lib/cop2026-lancamento";
 import { diasEntre, hojeBrt } from "@/lib/cop2026-ciclo";
 import { RELATORIOS_MENSAIS, mesCorrente } from "@/lib/cop2026-relatorios";
 import {
@@ -323,7 +324,12 @@ export type Filtros = {
    *  identificador da plataforma, só quem lançou um ID que já foi lançado.
    *  São casos DIFERENTES: um precisa ser cobrado a informar, outro a corrigir,
    *  o último a explicar por que a mesma mídia foi auditada duas vezes. */
-  excecao: "" | "naoauditou" | "abaixo" | "semids" | "idinvalido" | "duplicado";
+  /* As tres excecoes de IDENTIFICADOR (semids, idinvalido, duplicado) sairam
+     em 08/09/2026. A decisao de Comando de 07/09 tirou o identificador de toda
+     tela de desempenho, mas as chaves continuavam no parser: bastava um link
+     `?excecao=idinvalido` para o dashboard voltar a listar auditor por ID.
+     A apuracao vive em /cop2026/admin/divergencias. */
+  excecao: "" | "naoauditou" | "abaixo";
 };
 
 export const FILTROS_VAZIOS: Filtros = {
@@ -379,11 +385,10 @@ export function lerFiltros(sp: Record<string, string | string[] | undefined>): F
     de: de || padrao?.de || "",
     ate: ate || padrao?.ate || "",
     busca: um("busca"),
-    /* A lista tem que trazer TODAS as exceções que `aplicarFiltros` entende.
-       `idinvalido` ficou de fora quando o cartão foi criado, então o cartão
-       "Informaram ID fora do formato" montava o link, o link chegava aqui e o
-       filtro era descartado em silêncio — clique que não filtra nada. */
-    excecao: (["naoauditou", "abaixo", "semids", "idinvalido", "duplicado"] as const).includes(
+    /* A lista tem que trazer TODAS as exceções que `aplicarFiltros` entende, e
+       SÓ elas: chave aceita aqui sem ramo lá é clique que não filtra nada, e ramo
+       lá sem chave aqui é filtro descartado em silêncio. */
+    excecao: (["naoauditou", "abaixo"] as const).includes(
       excecao as never
     )
       ? (excecao as Filtros["excecao"])
@@ -470,8 +475,27 @@ export function duplicadosDoLancamento(
  * histograma e a dispersão continuavam contando por LANÇAMENTO: o cartão dizia
  * 5 e o clique nele devolvia 8. Daqui em diante todos leem estas três funções.
  */
+/**
+ * QUEM é o auditor, para efeito de contagem.
+ *
+ * Sempre a BASE do RE, nunca o RE como veio digitado. Medido no banco em
+ * 08/09/2026: 11 policiais aparecem com duas grafias (`130550` e `130550-6`),
+ * em 49 lançamentos — variação normal de digitação, e o próprio sistema trata
+ * as duas como a mesma pessoa em todo o resto.
+ *
+ * Sem isto, o MESMO policial no MESMO turno vira dois turnos: em 30/08, 04/09
+ * e 07/09 isso já acontece na base. Nesses três nenhum caiu abaixo do mínimo
+ * por sorte (as duas metades passavam de 3 sozinhas), mas quem fizesse 2+2 com
+ * grafias diferentes apareceria com DOIS desvios tendo cumprido a cota. A régua
+ * do mínimo é por turno, e turno é (auditor, data, turno) — com auditor estável.
+ */
+export function identidadeAuditor(l: LancamentoCop): string {
+  const base = normalizarRe(l.re || "").base;
+  return base || l.re || l.nomeGuerra || "?";
+}
+
 export function chaveDoTurno(l: LancamentoCop): string {
-  return `${l.re || l.nomeGuerra || "?"}|${l.data}|${(l.turno || "").toLowerCase()}`;
+  return `${identidadeAuditor(l)}|${l.data}|${(l.turno || "").toLowerCase()}`;
 }
 
 /** Evidências somadas por turno de serviço. Só entra quem declarou auditoria. */
@@ -524,15 +548,6 @@ export function aplicarFiltros(
   return base.filter((l) => {
     if (f.excecao === "naoauditou") return !l.auditou;
     if (f.excecao === "abaixo") return l.auditou && abaixoDoMinimo!.has(chaveDoTurno(l));
-    if (f.excecao === "semids") return l.auditou && !l.idsMidia.trim();
-    if (f.excecao === "idinvalido") {
-      return (
-        l.auditou &&
-        !!l.idsMidia.trim() &&
-        !separarIdentificadores(l.idsMidia).some(ehIdentificadorValido)
-      );
-    }
-    if (f.excecao === "duplicado") return duplicadosDoLancamento(l, duplicados).length > 0;
     return true;
   });
 }
@@ -1227,8 +1242,8 @@ export function calcularPainel(
       const k = chave(l) || "Não informado";
       const a = m.get(k) ?? { v: 0, pms: new Set<string>() };
       a.v += l.videos;
-      const quem = l.re || l.nomeGuerra;
-      if (quem) a.pms.add(quem);
+      const quem = identidadeAuditor(l);
+      if (quem && quem !== "?") a.pms.add(quem);
       m.set(k, a);
     });
     return [...m.entries()]
@@ -1462,7 +1477,7 @@ export function calcularPainel(
     const turnosDoAuditor = new Map<string, { total: number; abaixo: number }>();
     for (const [chave, soma] of somaPorTurno) {
       const l = primeiroDoTurno.get(chave);
-      const quem = l ? l.re || l.nomeGuerra : "";
+      const quem = l ? identidadeAuditor(l) : "";
       if (!quem) continue;
       const a = turnosDoAuditor.get(quem) ?? { total: 0, abaixo: 0 };
       a.total += 1;

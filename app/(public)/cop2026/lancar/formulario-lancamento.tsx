@@ -173,8 +173,20 @@ export function FormularioLancamento({ identificado }: { identificado: string | 
   /* Se o servidor recusou o envio, sai da revisão para o auditor VER os erros
      acima do formulário e corrigir. Sem isto o cartão de revisão continuaria
      na frente e o `<div role="alert">` ficaria escondido no topo. */
+  const alertaErroRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (estado.erros.length > 0) setRevisando(false);
+    if (estado.erros.length === 0) return;
+    setRevisando(false);
+    /* E LEVA A PESSOA ATÉ O ALERTA (08/09/2026). Sair da revisão não bastava:
+       o policial toca em "Confirmar e enviar" no fim da página, a revisão some,
+       o alerta aparece LÁ EM CIMA e a tela não se move. No celular, no fim do
+       turno, o que ele vê é o formulário do jeito que estava — e vai embora
+       achando que enviou. `focus` além do scroll: leitor de tela precisa do
+       foco para anunciar o alerta. */
+    const alvo = alertaErroRef.current;
+    if (!alvo) return;
+    alvo.scrollIntoView({ behavior: "smooth", block: "center" });
+    alvo.focus({ preventScroll: true });
   }, [estado.erros]);
   /** Ficha do roster para o RE digitado — só para confirmar na tela quem é. */
   const [fichaRoster, setFichaRoster] = useState<{
@@ -435,8 +447,10 @@ export function FormularioLancamento({ identificado }: { identificado: string | 
 
       {estado.erros.length > 0 && (
         <div
+          ref={alertaErroRef}
           role="alert"
-          className="rounded-lg border border-sinal-critico/40 bg-sinal-critico-suave px-4 py-3"
+          tabIndex={-1}
+          className="rounded-lg border border-sinal-critico/40 bg-sinal-critico-suave px-4 py-3 outline-none"
         >
           <p className="flex items-center gap-2 text-[13px] font-bold uppercase tracking-wide text-sinal-critico">
             <AlertTriangle size={15} aria-hidden /> Corrija antes de enviar
@@ -704,10 +718,12 @@ export function FormularioLancamento({ identificado }: { identificado: string | 
             <p className="mt-4 flex items-start gap-2 rounded-lg border border-borda px-3 py-2 text-[12.5px] text-texto-suave">
               <Info size={14} className="mt-0.5 shrink-0" aria-hidden />
               {avisoColagem}
+              {/* Alvo de 44px (WCAG 2.5.5): antes era só o ícone de 14px, e no
+                  celular errar o toque ao lado de texto corrido era fácil. */}
               <button
                 type="button"
                 onClick={() => setAvisoColagem(null)}
-                className="ml-auto shrink-0 text-texto-suave hover:text-vermelho"
+                className="-my-2 ml-auto flex min-h-11 min-w-11 shrink-0 items-center justify-center text-texto-suave hover:text-vermelho"
                 aria-label="Fechar aviso"
               >
                 <X size={14} aria-hidden />
@@ -724,7 +740,14 @@ export function FormularioLancamento({ identificado }: { identificado: string | 
                 <li key={campo.id}>
                   <div className="flex items-start gap-2">
                     <div className="flex-1">
-                      <label className="text-[12px] font-bold uppercase tracking-wide text-texto-suave">
+                      {/* `htmlFor`/`id` e `aria-describedby` (08/09/2026): sem eles,
+                          tocar em "Vídeo N" no celular não focava o campo — o único
+                          do formulário assim — e o leitor de tela anunciava
+                          "inválido" sem nunca ler o porquê. */}
+                      <label
+                        htmlFor={`identificador-${i}`}
+                        className="text-[12px] font-bold uppercase tracking-wide text-texto-suave"
+                      >
                         Vídeo {i + 1}
                         {/* Prefixo só para a pessoa saber qual campo é qual.
                             NUNCA para comparar ou deduplicar: 8 hex são 32 bits
@@ -738,14 +761,18 @@ export function FormularioLancamento({ identificado }: { identificado: string | 
                         )}
                       </label>
                       <input
+                        id={`identificador-${i}`}
                         name="identificador"
                         value={campo.valor}
                         onChange={(e) => atualizarCampo(i, e.target.value)}
                         autoComplete="off"
                         spellCheck={false}
                         placeholder="Cole aqui o ID da mídia ou da gravação"
-                        className={`${entrada} mt-1 font-mono text-[13px]`}
+                        className={`${entrada} mt-1 font-mono text-[13px]${
+                          recusa ? " border-sinal-critico/60" : ""
+                        }`}
                         aria-invalid={Boolean(recusa)}
+                        aria-describedby={recusa ? `identificador-${i}-erro` : undefined}
                       />
                     </div>
                     {campos.length > 1 && (
@@ -761,7 +788,10 @@ export function FormularioLancamento({ identificado }: { identificado: string | 
                   </div>
 
                   {recusa && (
-                    <p className="mt-1.5 flex items-start gap-1.5 text-[12.5px] leading-relaxed text-sinal-critico">
+                    <p
+                      id={`identificador-${i}-erro`}
+                      className="mt-1.5 flex items-start gap-1.5 text-[12.5px] leading-relaxed text-sinal-critico"
+                    >
                       <AlertTriangle size={13} className="mt-0.5 shrink-0" aria-hidden />
                       {recusa.explicacao}
                     </p>

@@ -769,8 +769,8 @@ export function BriefingSlides({
             <Leitura>
               {FMT.format(desvios)} lançamento(s) com pendência em{" "}
               {FMT.format(p.excecoes.totalLancamentos)} — conta cada lançamento uma vez, mesmo que
-              ele acumule motivos: não auditou, ficou abaixo do mínimo de {FMT.format(p.minimo)} ou
-              não informou o ID da mídia. A lista nominal, com a justificativa registrada por cada
+              ele acumule motivos: não auditou ou ficou abaixo do mínimo de{" "}
+              {FMT.format(p.minimo)}. A lista nominal, com a justificativa registrada por cada
               policial, fica no painel de controle, onde se filtra e se cobra fração a fração.
             </Leitura>
           </Bloco>

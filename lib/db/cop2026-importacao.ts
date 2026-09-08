@@ -37,6 +37,9 @@ export type ResultadoImportacao = {
   gravados?: number;
   jaExistiam?: number;
   falhas?: number;
+  /** Identificadores que colidiram com outro lançamento do MESMO RE e não
+   *  entraram. Existe para o admin ver: antes disso a perda era silenciosa. */
+  evidenciasPerdidas?: number;
   erro?: string;
 };
 
@@ -85,6 +88,7 @@ export async function importarMes(
 
   const db = createAdminClient();
   let gravados = 0;
+  let evidenciasPerdidas = 0;
   let jaExistiam = 0;
   let falhas = 0;
 
@@ -106,16 +110,38 @@ export async function importarMes(
     }
 
     if (r.evidencias.length > 0) {
-      const { error: erroEvid } = await db
-        .from("cop_evidencia")
-        .insert(r.evidencias.map((e) => ({ ...e, lancamento_id: data.id })));
-      // Replay real medido em agosto: 24 identificadores se repetem, um deles 6
-      // vezes. O lançamento fica; a evidência colidida não entra. Perder a
-      // evidência repetida é o comportamento certo — ela é o achado, não o dado.
-      if (erroEvid) console.error("[cop2026-importacao] evidências recusadas:", erroEvid.message);
+      const linhas = r.evidencias.map((e) => ({ ...e, lancamento_id: data.id }));
+      /* Lote primeiro; linha a linha só quando colide.
+       *
+       * O comentário antigo aqui dizia que a evidência colidida não entra e as
+       * outras entram. Isso é FALSO para um INSERT multi-linha do Postgres: sem
+       * `ON CONFLICT`, a violação de `cop_evid_re_uidx` em UMA linha aborta o
+       * comando inteiro — não existe inserção parcial. Um lançamento com 5 IDs
+       * bons e 1 repetido perdia os 6, e o resumo da importação reportava
+       * sucesso do mesmo jeito.
+       *
+       * `upsert`/`ON CONFLICT` não resolve: o índice é PARCIAL
+       * (`WHERE id_normalizado IS NOT NULL AND descartada = false`) e o PostgREST
+       * não emite o predicado, então o Postgres não consegue inferi-lo.
+       * Daí o retry linha a linha, que só paga o custo no caso raro. */
+      const { error: erroLote } = await db.from("cop_evidencia").insert(linhas);
+      if (erroLote) {
+        for (const linha of linhas) {
+          const { error: erroLinha } = await db.from("cop_evidencia").insert(linha);
+          if (!erroLinha) continue;
+          if (erroLinha.code === "23505") evidenciasPerdidas += 1;
+          else {
+            evidenciasPerdidas += 1;
+            console.error(
+              "[cop2026-importacao] evidência recusada:",
+              erroLinha.message
+            );
+          }
+        }
+      }
     }
     gravados += 1;
   }
 
-  return { ok: true, mes, fonteSha256, resumo, gravados, jaExistiam, falhas };
+  return { ok: true, mes, fonteSha256, resumo, gravados, jaExistiam, falhas, evidenciasPerdidas };
 }

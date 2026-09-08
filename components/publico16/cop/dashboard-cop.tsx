@@ -904,16 +904,10 @@ export function DashboardCop({
     },
     f.excecao && {
       k: "excecao",
+      /* Só as duas exceções que sobraram depois de 08/09/2026: as três de
+         identificador saíram do filtro público junto com os cartões. */
       t:
-        f.excecao === "naoauditou"
-          ? "Não auditaram"
-          : f.excecao === "abaixo"
-            ? `Abaixo de ${p.minimo}`
-            : f.excecao === "idinvalido"
-              ? "ID fora do formato"
-              : f.excecao === "duplicado"
-                ? "ID já auditado por outro"
-                : "Sem IDs de mídia",
+        f.excecao === "naoauditou" ? "Não auditaram" : `Abaixo de ${p.minimo}`,
       limpar: () => definir({ excecao: "" }),
     },
     f.busca && { k: "busca", t: `"${f.busca}"`, limpar: () => definir({ busca: "" }) },
@@ -2101,34 +2095,15 @@ export function DashboardCop({
           </div>
         )}
 
-        {/* Mesmo critério do cartão acima: só aparece quando existe. Este é o
-            caso em que a pessoa INFORMOU um identificador e o que informou não
-            resolve para nada na plataforma — cobra-se correção, não
-            preenchimento. Fica separado de "sem IDs" de propósito. */}
-        {p.idInvalidoLista.length > 0 && (
-          <div className="mt-5 rounded-xl border border-sinal-atencao/40 bg-sinal-atencao/[0.07] p-4">
-            <p className="rotulo-dado text-sinal-atencao">
-              Identificador fora do formato da plataforma · {p.idInvalidoLista.length}
-            </p>
-            <p className="mt-1.5 text-[12.5px] leading-relaxed text-texto-suave">
-              O campo de ID foi preenchido, mas o que está ali não é o ID da mídia (32 caracteres)
-              nem o ID da gravação (com hífens) que a plataforma exibe em Visão geral — quase
-              sempre é o número da ocorrência ou a data digitada no lugar. A evidência continua
-              contando para a meta, mas não pode ser conferida na plataforma. Corrija na planilha.
-            </p>
-            <ul className="mt-3 space-y-2">
-              {p.idInvalidoLista.map((i) => (
-                <li key={i.id} className="rounded-lg border border-borda px-3 py-2.5">
-                  <p className="text-[13px] font-semibold text-branco">{i.quem}</p>
-                  <p className="dados mt-0.5 text-[11.5px] text-texto-suave">
-                    {i.fracao} · {formatarData(i.data)}
-                    {i.turno ? ` · ${i.turno}` : ""}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+        {/* O cartão "Identificador fora do formato da plataforma" ficava AQUI e
+            saiu em 08/09/2026.
+            A decisão de Comando de 07/09 tirou o identificador de toda tela de
+            desempenho, e a remoção daquele dia pegou só a fileira de KPIs do
+            topo — este bloco, mais abaixo no mesmo arquivo, sobreviveu e seguiu
+            nomeando auditores em laranja pelo formato do ID digitado. Era
+            exatamente o julgamento que a decisão aboliu.
+            A lista nominal vive agora só em /cop2026/admin/divergencias. */
+        }
       </Cartao>
 
       {/* ---------------- Camada 3: Análise técnica ---------------- */}

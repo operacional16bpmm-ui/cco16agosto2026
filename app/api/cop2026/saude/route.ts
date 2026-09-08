@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 
 import { medirSaude } from "@/lib/cop2026-saude";
+import { timingSafeEqual } from "node:crypto";
 
 /**
  * SAÚDE DO PAINEL para o vigia externo (pc2).
@@ -16,6 +17,15 @@ import { medirSaude } from "@/lib/cop2026-saude";
  */
 
 export const runtime = "nodejs";
+
+/** Igualdade que não vaza o tamanho do prefixo correto pelo tempo. */
+function tokenConfere(enviado: string, esperado: string): boolean {
+  const a = Buffer.from(enviado);
+  const b = Buffer.from(esperado);
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(a, b);
+}
+
 export const dynamic = "force-dynamic";
 export const maxDuration = 25;
 
@@ -28,7 +38,12 @@ export async function GET(req: NextRequest) {
     );
   }
   const enviado = (req.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");
-  if (enviado !== esperado) {
+  /* Comparação em tempo constante. O `!==` do V8 sai no primeiro byte
+   * diferente, e este endpoint é a única barreira do retrato de saúde — não
+   * há cookie por trás dele. Diferença de tempo mensurável é vetor conhecido
+   * para descobrir o token byte a byte. `timingSafeEqual` exige buffers do
+   * mesmo tamanho, então o comprimento entra na conta explicitamente. */
+  if (!tokenConfere(enviado, esperado)) {
     return NextResponse.json({ erro: "não autorizado" }, { status: 401 });
   }
 

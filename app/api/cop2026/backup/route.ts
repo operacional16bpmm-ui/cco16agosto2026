@@ -55,6 +55,12 @@ const TABELAS = new Set([
      a quem eles pertencem: `identificarPorRe` deixa de resolver RE → fração e
      todo lançamento novo vira órfão. Ficou de fora da primeira lista. */
   "p4_efetivo",
+  /* A DECISÃO DO COMANDO. `cop_config` guarda a janela de atenção fixada pelo
+     Major (migration 030) — ela saiu do cookie exatamente porque cookie vale
+     para uma aba e a decisão vale para todos. Restaurar sem ela devolve o
+     sistema com o padrão de fábrica no lugar do que o Comando determinou, e
+     sem nada na tela dizendo que mudou. Ficou de fora até 08/09/2026. */
+  "cop_config",
 ]);
 
 const PAGINA_MAX = 1000;

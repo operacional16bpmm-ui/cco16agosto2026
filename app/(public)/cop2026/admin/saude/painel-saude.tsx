@@ -178,9 +178,15 @@ export function PainelSaude({
           <Metrica rotulo="Mínimo por turno" valor={String(p.minimo)} nota="determinação do Batalhão" />
           <Metrica rotulo="Turnos auditados" valor={String(p.turnosAuditados)} nota={`${p.turnosConformes} cumpriram`} />
           <Metrica rotulo="Abaixo do mínimo" valor={String(p.turnosAbaixo)} nota="turnos" alerta={p.turnosAbaixo > 0} />
-          <Metrica rotulo="Sem informar ID" valor={String(p.semIds)} nota="lançamentos" alerta={p.semIds > 0} />
-          <Metrica rotulo="ID fora do formato" valor={String(p.comIdInvalido)} nota="lançamentos" alerta={p.comIdInvalido > 0} />
-          <Metrica rotulo="ID já auditado" valor={String(p.comIdDuplicado)} nota={`${p.idsDuplicadosDistintos} ID distintos`} alerta={p.comIdDuplicado > 0} />
+          {/* Os três indicadores de IDENTIFICADOR continuam medidos, mas SEM
+              `alerta` desde 08/09/2026: pela decisão de Comando de 07/09 o ID não
+              reprova ninguém, e pintá-los de laranja aqui repetia — na própria tela
+              de saúde — o julgamento que foi abolido das telas de desempenho.
+              O número fica porque é diagnóstico; a cobrança mora em
+              /cop2026/admin/divergencias. */}
+          <Metrica rotulo="Sem informar ID" valor={String(p.semIds)} nota="ver Divergências" />
+          <Metrica rotulo="ID fora do formato" valor={String(p.comIdInvalido)} nota="ver Divergências" />
+          <Metrica rotulo="ID já auditado" valor={String(p.comIdDuplicado)} nota={`${p.idsDuplicadosDistintos} ID distintos`} />
           <Metrica rotulo="Sem fração" valor={String(p.semFracaoVideos)} nota="evidências órfãs" alerta={p.semFracaoVideos > 0} />
           <Metrica rotulo="Linhas em dobro" valor={String(p.linhasEmDobro)} nota="planilha × banco" alerta={p.linhasEmDobro > 0} />
           <Metrica rotulo="Leitura da base" valor={`${(saude.msLeitura / 1000).toFixed(1)}s`} nota={`${N.format(p.totalNaPlanilha)} registros`} alerta={saude.msLeitura > 15000} />
