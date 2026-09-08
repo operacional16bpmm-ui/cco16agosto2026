@@ -252,6 +252,7 @@ Fluxo obrigatório antes de publicar (`AGENTS.md`): `tsc --noEmit` → `verifica
 | `verificar:excecoes` | as barras fecham com a base; **sem-ID não conta como desvio** |
 | `verificar:paridade` | planilha × banco antes de virar fonte |
 | `verificar:seguranca` | nenhuma tabela do domínio devolve linha para a chave pública |
+| `verificar:superficies` | o identificador não volta às telas de desempenho (ver §15.1) |
 
 Os scripts usam alias `@/lib` e **só rodam pelos comandos npm** (`scripts/alias-loader.mjs`).
 `node --test` direto falha com `MODULE_NOT_FOUND`, e isso não é bug.
