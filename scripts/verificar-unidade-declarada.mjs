@@ -83,6 +83,18 @@ test("a página tem saída quando a árvore de unidades não responde", () => {
   );
 });
 
+test("a rota de unidades está liberada no proxy", () => {
+  // Achado de 08/09/2026, em teste no dev: sem esta linha o proxy devolvia
+  // 307 → /login para `/api/cop2026/unidades`. O seletor abria com as frações
+  // do 16º BPM/M (que vêm prontas da página) e travava para todo o resto —
+  // ninguém de outro batalhão conseguiria escolher a fração, que é obrigatória.
+  assert.match(
+    ler("proxy.ts"),
+    /"\/api\/cop2026\/unidades"/,
+    "proxy.ts não libera /api/cop2026/unidades: o seletor de unidade cai no login."
+  );
+});
+
 test("a rota pública de unidades não toca em pessoa", () => {
   const fonte = ler(ROTA);
   for (const proibido of ["p4_efetivo", "nome_guerra", "cop_auditoria_lancamento"]) {

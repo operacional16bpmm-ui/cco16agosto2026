@@ -74,6 +74,15 @@ const ROTAS_PUBLICAS = [
   // oráculo sobre o efetivo nominal — decisão de Comando, e o conserto (mover
   // esta linha para ROTAS_RESTRITAS_COP) está descrito no próprio route.ts.
   "/api/cop2026/efetivo",
+  /* Organograma Comando → Batalhão → Fração, para o seletor de unidade do
+     mesmo formulário público (08/09/2026). Sem esta linha o policial de outro
+     batalhão trocava o comando e o seletor caía no login — e a fração é
+     obrigatória, então ele não lançaria.
+
+     Aberta com folga menor que a `/efetivo`: aqui não há pessoa nenhuma, só
+     nome e código de OPM, que é o que qualquer boletim publica. NÃO existe
+     subrota, e não deve existir: a lista casa por prefixo. */
+  "/api/cop2026/unidades",
   /* Saúde do painel para o vigia externo (pc2). Não é rota aberta: ela tem
      gate PRÓPRIO por `Authorization: Bearer CCO16_SAUDE_TOKEN` e responde 503
      se a variável não existir. Fica aqui porque o vigia é uma máquina — não
