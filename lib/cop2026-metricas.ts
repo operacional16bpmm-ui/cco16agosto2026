@@ -519,11 +519,13 @@ export function turnosAbaixoDoMinimo(
   return fora;
 }
 
+/* O parâmetro `duplicados` saiu em 08/09/2026 junto com o ramo
+   `excecao === "duplicado"`: sem ele a função não tinha mais o que fazer com
+   o mapa, e parâmetro que ninguém lê é convite para alguém achar que filtra. */
 export function aplicarFiltros(
   lancamentos: LancamentoCop[],
   f: Filtros,
-  minimo: number,
-  duplicados: Map<string, number> = new Map()
+  minimo: number
 ): LancamentoCop[] {
   /* Duas fases, e a ordem importa: o recorte primeiro, a exceção depois.
      "Abaixo do mínimo" é uma pergunta sobre o TURNO, e o turno tem que ser
@@ -831,17 +833,12 @@ export function calcularPainel(
   const janelaMes = janelaDoRecorte({ ...f, semana: "todas" }, hoje);
   const duplicados = mapearDuplicados(lancamentos);
 
-  const dados = aplicarFiltros(lancamentos, f, minimo, duplicados);
+  const dados = aplicarFiltros(lancamentos, f, minimo);
 
   /* Mesmo recorte do painel, menos o filtro de SEMANA — é a base de tudo que é
      "semana a semana". Os cartões semanais SÃO o seletor de semana: aplicar
      `f.semana` aqui zeraria os outros três e o clique deixaria de servir. */
-  const dadosSemFiltroDeSemana = aplicarFiltros(
-    lancamentos,
-    { ...f, semana: "todas" },
-    minimo,
-    duplicados
-  );
+  const dadosSemFiltroDeSemana = aplicarFiltros(lancamentos, { ...f, semana: "todas" }, minimo);
 
   /* Último dia do MÊS que ancora o recorte — não da janela, que já pode estar
      encolhida para a semana. É ele que dimensiona a 4ª semana. */
