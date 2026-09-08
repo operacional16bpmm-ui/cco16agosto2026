@@ -792,3 +792,24 @@ body {
     animation: none !important;
   }
 }
+
+/* ============================================================================
+   Pisca do campo que falta (formulário de lançamento da COP).
+   Quem lança lê pouco e no celular, muitas vezes andando: o aviso escrito não
+   basta, o passo pendente tem de SALTAR na tela. Três piscadas fortes e para —
+   pisca infinito vira decoração e deixa de ser aviso.
+   ============================================================================ */
+@keyframes pisca-falta {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(202, 2, 2, 0); background-color: transparent; }
+  50%      { box-shadow: 0 0 0 5px rgba(202, 2, 2, 0.55), 0 0 26px rgba(202, 2, 2, 0.45);
+             background-color: rgba(202, 2, 2, 0.16); }
+}
+.pisca-falta { animation: pisca-falta 620ms ease-in-out 3; }
+
+/* Com movimento reduzido o aviso não some: vira contorno vermelho fixo. */
+@media (prefers-reduced-motion: reduce) {
+  .pisca-falta {
+    animation: none;
+    box-shadow: 0 0 0 3px rgba(202, 2, 2, 0.75);
+  }
+}

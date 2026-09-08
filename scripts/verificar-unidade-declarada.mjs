@@ -56,10 +56,40 @@ test("a Server Action grava a subunidade DECLARADA, não a do roster", () => {
 test("o formulário não deixa enviar sem fração declarada", () => {
   const fonte = ler(FORM);
   assert.match(fonte, /<SeletorUnidade/, `${FORM} perdeu o seletor de unidade.`);
+
+  /* Desde 08/09/2026 (fim da tarde) o bloqueio NÃO é mais um botão cinza: o
+     botão responde sempre e o que trava é a lista de pendências. A regra que
+     este gate guarda é a mesma — sem fração declarada não se chega à revisão —
+     só o mecanismo mudou. Por isso as duas metades: a fração PRECISA gerar
+     pendência, e pendência PRECISA impedir a revisão. */
   assert.match(
     fonte,
-    /const\s+podeEnviar\s*=\s*\n?\s*unidadeCompleta/,
-    `${FORM}: o envio não depende mais da fração declarada — o lançamento voltaria a nascer órfão.`
+    /!unidadeCompleta[\s\S]{0,160}passo-unidade/,
+    `${FORM}: faltar fração não gera mais pendência — o lançamento voltaria a nascer órfão.`
+  );
+  assert.match(
+    fonte,
+    /pendencias\.length\s*>\s*0[\s\S]{0,220}return;[\s\S]{0,160}setRevisando\(true\)/,
+    `${FORM}: a revisão abre mesmo com pendência aberta. O aviso vira decorativo e a ` +
+      `fração deixa de ser obrigatória na prática.`
+  );
+});
+
+test("o botão de revisar nunca fica cinza sem explicação", () => {
+  /* Fabricio, 08/09/2026: no celular, botão apagado sem motivo escrito faz o
+     auditor abandonar o lançamento — foi o que aconteceu com o turno em branco,
+     que não tinha aviso nenhum. Só `enviando` pode desabilitar (anti-duplicata). */
+  const fonte = ler(FORM);
+  assert.doesNotMatch(
+    fonte,
+    /disabled=\{!podeEnviar\}/,
+    `${FORM}: o botão de revisar voltou a nascer desabilitado. Ele tem de responder ao ` +
+      `toque e DIZER o que falta, piscando no passo pendente.`
+  );
+  assert.match(
+    fonte,
+    /pisca-falta/,
+    `${FORM} perdeu o pisca do campo pendente: sobra só texto, que quem lança não lê.`
   );
 });
 

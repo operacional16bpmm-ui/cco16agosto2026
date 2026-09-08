@@ -263,6 +263,13 @@ export function FormularioLancamento({
    */
   const [revisando, setRevisando] = useState(false);
 
+  /* O passo que está piscando agora, e se o auditor já tentou avançar. O botão
+     NUNCA fica cinza (Fabricio, 08/09/2026): quem lança lê pouco e no celular,
+     e botão apagado sem motivo escrito faz o lançamento ser abandonado. Toca,
+     a tela pisca vermelho no campo que falta e diz em uma linha o que fazer. */
+  const [piscando, setPiscando] = useState<string | null>(null);
+  const [pendenciaCobrada, setPendenciaCobrada] = useState(false);
+
   /* Se o servidor recusou o envio, sai da revisão para o auditor VER os erros
      acima do formulário e corrigir. Sem isto o cartão de revisão continuaria
      na frente e o `<div role="alert">` ficaria escondido no topo. */
@@ -514,14 +521,49 @@ export function FormularioLancamento({
      bloqueiam. */
   const unidadeCompleta = Boolean(unidade.fracao);
 
-  const podeEnviar =
-    unidadeCompleta &&
-    Boolean(turno) &&
-    auditou !== null &&
-    !enviando &&
-    (auditou
-      ? leitura.evidencias.length > 0 && motivoValido
-      : motivoValido && justificativa.trim().length >= 0);
+  /* O que ainda falta, em frase curta e imperativa: o auditor lê pouco e no
+     celular. Cada pendência sabe qual passo acender. */
+  const pendencias = useMemo(() => {
+    const lista: { ancora: string; texto: string }[] = [];
+    if (!unidadeCompleta)
+      lista.push({ ancora: "passo-unidade", texto: "Escolha a sua fração — passo 1" });
+    if (!turno) lista.push({ ancora: "passo-turno", texto: "Marque o turno — passo 2" });
+    if (auditou === null)
+      lista.push({ ancora: "passo-auditou", texto: "Responda se auditou — passo 3" });
+    if (auditou === true && leitura.evidencias.length === 0)
+      lista.push({
+        ancora: "passo-identificadores",
+        texto: "Cole pelo menos 1 identificador — passo 4",
+      });
+    if (precisaDeMotivo && !motivoValido)
+      lista.push({ ancora: "passo-motivo", texto: "Escolha o motivo — passo 4" });
+    return lista;
+  }, [unidadeCompleta, turno, auditou, leitura.evidencias.length, precisaDeMotivo, motivoValido]);
+
+  /* O pisca precisa reiniciar quando a pessoa toca de novo no mesmo passo, e
+     apagar sozinho — senão vira decoração e para de chamar atenção. */
+  const pisca = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    return () => {
+      if (pisca.current) clearTimeout(pisca.current);
+    };
+  }, []);
+
+  /** Leva ao campo que falta e o faz piscar. No celular o passo 1 fica muitas
+   *  telas acima do botão: rolar é parte do aviso, não enfeite. */
+  function acenderPendencia(ancora: string) {
+    const alvo = document.getElementById(ancora);
+    alvo?.scrollIntoView({ behavior: "smooth", block: "center" });
+    alvo?.focus({ preventScroll: true });
+    if (pisca.current) clearTimeout(pisca.current);
+    setPiscando(null);
+    // Um quadro sem a classe para a animação recomeçar do zero no mesmo passo.
+    requestAnimationFrame(() => setPiscando(ancora));
+    pisca.current = setTimeout(() => setPiscando(null), 2600);
+  }
+
+  /** Classe do passo: vermelho piscante enquanto ele é o que falta. */
+  const aceso = (ancora: string) => (piscando === ancora ? " pisca-falta" : "");
 
   /* ------------------------------------------------------------ sucesso */
 
@@ -584,12 +626,19 @@ export function FormularioLancamento({
 
       {/* --------------------------------------------------------- unidade */}
 
-      <SeletorUnidade
-        arvore={arvore}
-        escolha={unidade}
-        onEscolha={escolherUnidade}
-        sugestao={sugestaoFracao}
-      />
+      {/* `tabIndex={-1}` só para o aviso conseguir focar o passo ao piscar. */}
+      <div
+        id="passo-unidade"
+        tabIndex={-1}
+        className={`rounded-xl outline-none${aceso("passo-unidade")}`}
+      >
+        <SeletorUnidade
+          arvore={arvore}
+          escolha={unidade}
+          onEscolha={escolherUnidade}
+          sugestao={sugestaoFracao}
+        />
+      </div>
 
       {/* ---------------------------------------------------- identificação */}
 
@@ -641,7 +690,11 @@ export function FormularioLancamento({
           </Campo>
         </div>
 
-        <div className="mt-4">
+        <div
+          id="passo-turno"
+          tabIndex={-1}
+          className={`mt-4 rounded-lg outline-none${aceso("passo-turno")}`}
+        >
           <p className="text-[12.5px] font-bold uppercase tracking-wide text-texto-suave">
             Turno de serviço
           </p>
@@ -705,7 +758,13 @@ export function FormularioLancamento({
 
       {/* ------------------------------------------------------ auditou? */}
 
-      <fieldset className="rounded-xl border border-borda bg-tatico-super p-5">
+      <fieldset
+        id="passo-auditou"
+        tabIndex={-1}
+        className={`rounded-xl border border-borda bg-tatico-super p-5 outline-none${aceso(
+          "passo-auditou"
+        )}`}
+      >
         <legend className="px-2 text-[11.5px] font-bold uppercase tracking-[0.14em] text-texto-suave">
           3 · Auditou vídeo neste turno?
         </legend>
@@ -744,7 +803,13 @@ export function FormularioLancamento({
       {/* ------------------------------------------------- não auditou */}
 
       {auditou === false && (
-        <fieldset className="rounded-xl border border-borda bg-tatico-super p-5">
+        <fieldset
+          id="passo-motivo"
+          tabIndex={-1}
+          className={`rounded-xl border border-borda bg-tatico-super p-5 outline-none${aceso(
+            "passo-motivo"
+          )}`}
+        >
           <legend className="px-2 text-[11.5px] font-bold uppercase tracking-[0.14em] text-texto-suave">
             4 · Justificativa
           </legend>
@@ -776,7 +841,13 @@ export function FormularioLancamento({
       {/* ---------------------------------------------------- auditou */}
 
       {auditou === true && (
-        <fieldset className="rounded-xl border border-borda bg-tatico-super p-5">
+        <fieldset
+          id="passo-identificadores"
+          tabIndex={-1}
+          className={`rounded-xl border border-borda bg-tatico-super p-5 outline-none${aceso(
+            "passo-identificadores"
+          )}`}
+        >
           <legend className="px-2 text-[11.5px] font-bold uppercase tracking-[0.14em] text-texto-suave">
             4 · Identificadores das gravações auditadas
           </legend>
@@ -817,7 +888,13 @@ export function FormularioLancamento({
           {abaixoDoMinimo && (
             /* Só aparece quando a QUANTIDADE já foi definida e ficou abaixo do
                piso — não polui a tela de quem ainda vai colar mais IDs. */
-            <div className="mt-4 rounded-lg border border-sinal-atencao/40 bg-sinal-atencao-suave/40 p-4">
+            <div
+              id="passo-motivo"
+              tabIndex={-1}
+              className={`mt-4 rounded-lg border border-sinal-atencao/40 bg-sinal-atencao-suave/40 p-4 outline-none${aceso(
+                "passo-motivo"
+              )}`}
+            >
               <p className="mb-3 text-[13px] font-bold text-sinal-atencao">
                 Auditou abaixo do mínimo de {MINIMO_PADRAO} — justifique.
               </p>
@@ -966,28 +1043,70 @@ export function FormularioLancamento({
           onCorrigir={() => setRevisando(false)}
         />
       ) : (
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="space-y-3">
+          {/* Botão apagado é beco sem saída: o auditor toca, nada acontece e o
+              lançamento morre ali. Aqui ele SEMPRE responde — só `enviando`
+              desabilita, para não duplicar o envio. Faltando algo, o toque
+              rola até o campo, acende o pisca vermelho e escreve o que fazer. */}
           <button
             type="button"
-            disabled={!podeEnviar}
-            onClick={() => setRevisando(true)}
-            className="inline-flex min-h-14 flex-1 items-center justify-center gap-2 rounded-md border border-vermelho bg-vermelho/10 px-6 py-4 text-[14px] font-bold uppercase tracking-wide text-vermelho transition-colors hover:bg-vermelho/15 disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none"
+            disabled={enviando}
+            aria-describedby={pendencias.length > 0 ? "pendencias-lancamento" : undefined}
+            onClick={() => {
+              if (pendencias.length > 0) {
+                setPendenciaCobrada(true);
+                acenderPendencia(pendencias[0].ancora);
+                return;
+              }
+              setPendenciaCobrada(false);
+              setRevisando(true);
+            }}
+            className="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-md border border-vermelho bg-vermelho/10 px-6 py-4 text-[14px] font-bold uppercase tracking-wide text-vermelho transition-colors hover:bg-vermelho/15 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
           >
             Revisar antes de enviar
           </button>
-          {/* Botão desabilitado sem explicação é o jeito mais rápido de perder
-              o auditor: ele toca, nada acontece e ele vai embora. Aqui a tela
-              diz, com todas as letras, o que falta. */}
-          {!unidadeCompleta ? (
-            <p className="flex items-start gap-2 text-[12.5px] font-bold text-sinal-atencao">
-              <AlertTriangle size={14} className="mt-0.5 shrink-0" aria-hidden />
-              Falta escolher a sua fração no passo 1 (Estado-Maior, Força Tática ou a sua Cia).
-            </p>
-          ) : (
+
+          {pendencias.length === 0 ? (
             <p className="text-[12px] text-texto-suave">
               Você verá tudo o que vai gravar antes de confirmar. O rascunho fica
               guardado neste aparelho até o envio.
             </p>
+          ) : (
+            <div
+              id="pendencias-lancamento"
+              role={pendenciaCobrada ? "alert" : undefined}
+              className={`rounded-lg border px-4 py-3 ${
+                pendenciaCobrada
+                  ? "border-sinal-critico bg-sinal-critico-suave pisca-falta"
+                  : "border-sinal-atencao/50 bg-sinal-atencao-suave/40"
+              }`}
+            >
+              <p
+                className={`flex items-center gap-2 text-[13px] font-bold uppercase tracking-wide ${
+                  pendenciaCobrada ? "text-sinal-critico" : "text-sinal-atencao"
+                }`}
+              >
+                <AlertTriangle size={17} className="shrink-0" aria-hidden />
+                {pendenciaCobrada ? "Falta isto para enviar" : "Ainda falta"}
+              </p>
+              <ul className="mt-2 space-y-1">
+                {pendencias.map((p) => (
+                  <li key={p.ancora}>
+                    {/* Cada linha é um atalho e tem alvo de toque de 44px: o
+                        passo que falta pode estar muitas telas acima. */}
+                    <button
+                      type="button"
+                      onClick={() => acenderPendencia(p.ancora)}
+                      className={`flex min-h-11 w-full items-center gap-2 text-left text-[14px] font-bold leading-snug underline decoration-dotted underline-offset-4 ${
+                        pendenciaCobrada ? "text-sinal-critico" : "text-sinal-atencao"
+                      }`}
+                    >
+                      {p.texto}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
         </div>
       )}
