@@ -31,21 +31,32 @@ const PUBLICAS = new Map([
   ["acesso/sair", "encerra a sessão — exigir sessão para sair não faz sentido"],
   ["efetivo", "consultada pelo formulário público /cop2026/lancar, que a tropa usa sem login"],
   [
+    "briefing-png",
+    "exporta o que o Dashboard já mostra, e o Dashboard ficou aberto por determinação do Comando em 08/09/2026; quem tem sessão exporta com a própria identidade",
+  ],
+  [
+    "briefing-pdf",
+    "mesma razão do briefing-png: recusar o arquivo do que se lê na tela só produziria um botão que não funciona",
+  ],
+  [
     "unidades",
     "organograma da Corporação (nome e código de OPM) para o seletor do formulário público; não devolve pessoa, contagem nem lançamento",
   ],
 ]);
 
 /**
- * Como uma rota pode provar que confere acesso. `prepararExportacao` entra
- * porque é o guarda compartilhado do PDF/PNG: ele chama `sessaoCop()` por dentro
- * — a checagem é indireta, mas é checagem.
+ * Como uma rota pode provar que confere acesso.
+ *
+ * `prepararExportacao` SAIU desta lista em 08/09/2026: ele continua chamando
+ * `sessaoCop()`, mas deixou de recusar quem não tem sessão — o Dashboard que ele
+ * fotografa ficou aberto. Guarda que não recusa não é guarda, e mantê-lo aqui
+ * faria as duas rotas de exportação parecerem protegidas para sempre. Elas estão
+ * declaradas em PUBLICAS, com o motivo escrito.
  */
 const GUARDAS = [
   "exigirAdminCop",
   "exigirAcessoCop",
   "sessaoCop",
-  "prepararExportacao",
   "CCO16_SAUDE_TOKEN",
   "CCO16_BACKUP_TOKEN",
 ];

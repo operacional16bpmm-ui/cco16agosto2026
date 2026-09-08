@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { BriefingSlides } from "@/components/publico16/briefing-slides";
 import { lerAuditoriaCop2026 } from "@/lib/cop2026-leitura";
 import { ehAdminCop } from "@/lib/cop2026-acesso";
-import { exigirAcessoCop } from "@/lib/db/cop2026-autorizados";
+import { identidadeCop } from "@/lib/db/cop2026-autorizados";
 import { mesCorrente } from "@/lib/cop2026-relatorios";
 
 /**
@@ -26,19 +26,21 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 20;
 
 export default async function BriefingPage() {
-  // Gate próprio, como no dashboard: exigirAcessoCop recheca a lista no banco
-  // a cada requisição, então revogar alguém derruba o briefing dele na hora.
+  /* ABERTO desde 08/09/2026, por determinação do Comando (ver
+     ROTAS_RESTRITAS_COP em lib/cop2026-acesso.ts). A identidade continua sendo
+     lida — mas só para o cabeçalho mostrar quem está logado e oferecer as telas
+     de administração a quem administra. `null` é o caso normal. */
   const [{ lancamentos, metas, lidoEm }, acesso] = await Promise.all([
     lerAuditoriaCop2026(),
-    exigirAcessoCop("/cop2026/briefing"),
+    identidadeCop(),
   ]);
   return (
     <BriefingSlides
       lancamentos={lancamentos}
       metas={metas}
       lidoEm={lidoEm}
-      email={acesso.email}
-      ehAdmin={ehAdminCop(acesso.email)}
+      email={acesso?.email}
+      ehAdmin={ehAdminCop(acesso?.email)}
       mes={mesCorrente() ?? null}
     />
   );

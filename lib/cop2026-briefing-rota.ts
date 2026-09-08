@@ -44,7 +44,10 @@ export type PreparoExportacao = {
   /** Endereço absoluto do painel em modo briefing, com o recorte repassado. */
   alvo: string;
   /** Sessão curta emitida agora para o headless — nunca a de quem chamou. */
-  cookie: CookieDeAcesso;
+  /** `null` quando quem pediu não tem sessão. O painel está aberto desde
+   *  08/09/2026, então o headless não precisa de credencial para abri-lo — o
+   *  cookie só existe para o arquivo sair com a identidade de quem exportou. */
+  cookie: CookieDeAcesso | null;
 };
 
 /**
@@ -54,13 +57,12 @@ export type PreparoExportacao = {
 export async function prepararExportacao(
   request: NextRequest
 ): Promise<PreparoExportacao | NextResponse> {
-  /* Segunda camada de proteção: o proxy já conferiu a ASSINATURA do cookie na
-     borda, e aqui sessaoCop() recheca a LISTA de autorizados no banco — é o que
-     faz a revogação valer na hora, e não só na expiração do cookie. */
+  /* A exportação acompanha a tela: o Dashboard ficou aberto por determinação
+     do Comando em 08/09/2026, e recusar o PDF do que já se lê na tela só
+     produziria um botão que não funciona. `sessaoCop()` continua sendo
+     chamado — quem TEM sessão exporta com a própria identidade, e é isso que
+     mantém a revogação valendo para o arquivo nominal. */
   const sessao = await sessaoCop();
-  if (!sessao) {
-    return NextResponse.json({ erro: "Sem acesso à Auditoria de COP 2026." }, { status: 401 });
-  }
 
   /* A origem vem do request e não de env: o mesmo deploy responde por vários
      domínios *.vercel.app (ver REESCRITA_RAIZ_POR_HOST no proxy) e o headless
@@ -76,11 +78,13 @@ export async function prepararExportacao(
      Google, e reaproveitar o cookie de quem chamou seria mandar a sessão da
      pessoa para dentro de outro processo. A identidade é a mesma — a assinatura
      sai para a conta que acabou de passar pelo sessaoCop(). */
-  const valorCookie = await assinarAcesso(sessao.email, sessao.nome);
+  const valorCookie = sessao ? await assinarAcesso(sessao.email, sessao.nome) : null;
 
   return {
     alvo: alvo.toString(),
-    cookie: { nome: COOKIE_ACESSO_COP, valor: valorCookie, dominio: alvo.hostname },
+    cookie: valorCookie
+      ? { nome: COOKIE_ACESSO_COP, valor: valorCookie, dominio: alvo.hostname }
+      : null,
   };
 }
 

@@ -162,7 +162,7 @@ function emFila<T>(tarefa: () => Promise<T>): Promise<T> {
  */
 function comPaginaDoPainel<T>(
   url: string,
-  cookie: CookieDeAcesso,
+  cookie: CookieDeAcesso | null,
   render: (pagina: Page) => Promise<T>
 ): Promise<T> {
   return emFila(() => capturar(url, cookie, render));
@@ -170,17 +170,21 @@ function comPaginaDoPainel<T>(
 
 async function capturar<T>(
   url: string,
-  cookie: CookieDeAcesso,
+  cookie: CookieDeAcesso | null,
   render: (pagina: Page) => Promise<T>
 ): Promise<T> {
-  const biscoito = {
-    name: cookie.nome,
-    value: cookie.valor,
-    domain: cookie.dominio,
-    path: "/",
-    httpOnly: true,
-    secure: cookie.dominio !== "localhost",
-  };
+  /* Sem cookie quando quem pediu não tem sessão: o painel está aberto e o
+     headless o alcança sem credencial. */
+  const biscoito = cookie
+    ? {
+        name: cookie.nome,
+        value: cookie.valor,
+        domain: cookie.dominio,
+        path: "/",
+        httpOnly: true,
+        secure: cookie.dominio !== "localhost",
+      }
+    : null;
 
   let pagina: Page | null = null;
   let navegadorUsado: Browser | null = null;
@@ -198,7 +202,7 @@ async function capturar<T>(
        sobe como `Protocol error (Target.createTarget): Target closed`, que não
        menciona contexto nenhum.
        O isolamento é feito à mão, apagando o cookie no `finally`. */
-    await browser.setCookie(biscoito);
+    if (biscoito) await browser.setCookie(biscoito);
 
     pagina = await browser.newPage();
     await pagina.setViewport({
@@ -244,7 +248,7 @@ async function capturar<T>(
        em vez do objeto inteiro — e por isso acontece ANTES de fechá-la. No
        caminho de erro o navegador já foi descartado, e aí não sobra jarra
        nenhuma para limpar. */
-    if (navegadorUsado?.connected) {
+    if (biscoito && navegadorUsado?.connected) {
       await pagina
         ?.deleteCookie({ name: biscoito.name, domain: biscoito.domain, path: biscoito.path })
         .catch(() => {});
@@ -260,7 +264,10 @@ async function capturar<T>(
  * e essa é a natureza do formato: imagem não pagina. Quem precisa LER o
  * conteúdo com calma, ou imprimir, usa o PDF.
  */
-export async function capturarPainel(url: string, cookie: CookieDeAcesso): Promise<Buffer> {
+export async function capturarPainel(
+  url: string,
+  cookie: CookieDeAcesso | null
+): Promise<Buffer> {
   return comPaginaDoPainel(url, cookie, async (pagina) => {
     const alvo = await pagina.$(SELETOR_PAINEL);
     if (!alvo) throw new Error("o bloco do briefing sumiu antes da captura");
@@ -330,7 +337,7 @@ function moldura(titulo: string) {
  */
 export async function gerarPainelPdf(
   url: string,
-  cookie: CookieDeAcesso,
+  cookie: CookieDeAcesso | null,
   titulo: string
 ): Promise<Buffer> {
   return comPaginaDoPainel(url, cookie, async (pagina) => {

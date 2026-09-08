@@ -7,7 +7,7 @@ import { RodapeCop } from "@/components/publico16/cop/rodape-cop";
 import { CapaRelatorioMes } from "@/components/publico16/cop/marco-ciclo";
 import { lerAuditoriaCop2026 } from "@/lib/cop2026-leitura";
 import { ehAdminCop } from "@/lib/cop2026-acesso";
-import { exigirAcessoCop } from "@/lib/db/cop2026-autorizados";
+import { identidadeCop } from "@/lib/db/cop2026-autorizados";
 import { relatorioPorChave, periodoEncerrado } from "@/lib/cop2026-relatorios";
 
 export const metadata: Metadata = {
@@ -30,7 +30,7 @@ export default async function RelatoriosMesPage({
 
   const [{ lidoEm }, acesso] = await Promise.all([
     lerAuditoriaCop2026(),
-    exigirAcessoCop(`/cop2026/relatorios/${chave}`),
+    identidadeCop(),
   ]);
 
   const encerrado = periodoEncerrado(mes);

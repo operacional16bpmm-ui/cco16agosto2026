@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { COOKIE_SESSAO, verificarSessao } from "@/lib/auth-simples";
 import {
+  ABERTAS_SOB_ADMIN_COP,
   COOKIE_ACESSO_COP,
   ROTAS_RESTRITAS_COP,
   ROTA_ACESSO_COP,
@@ -124,12 +125,15 @@ const REESCRITA_RAIZ_POR_HOST: Record<string, string> = {
   "16bpmmcomando.vercel.app": "/login",
 };
 
-/* /cop2026 é público por prefixo, e o Dashboard, o Briefing e a tela de
-   Autorizados herdavam esse "aberto" sem ninguém decidir isso. Eles carregam nome, RE e justificativa de
-   policial — são do Comando, não da tropa. Esta lista quebra a herança e é
-   conferida ANTES da lista de públicas; a página de acesso e o handshake com o
-   Google seguem abertos, senão não haveria como entrar. */
+/* /cop2026 é público por prefixo. Esta lista quebra a herança para o que ainda
+   é restrito — hoje só a ADMINISTRAÇÃO — e é conferida ANTES da lista de
+   públicas. O Dashboard, o Briefing e os Relatórios saíram dela em 08/09/2026
+   por determinação do Comando: ver ROTAS_RESTRITAS_COP em lib/cop2026-acesso.ts,
+   onde está escrito o que essa abertura expõe. */
 function ehRotaRestritaCop(pathname: string): boolean {
+  // A exceção vem primeiro: `/cop2026/admin/lancamentos` é consulta aberta
+  // morando sob um prefixo restrito — ver ABERTAS_SOB_ADMIN_COP.
+  if (ABERTAS_SOB_ADMIN_COP.some((rota) => pathname === rota)) return false;
   return ROTAS_RESTRITAS_COP.some(
     (rota) => pathname === rota || pathname.startsWith(`${rota}/`)
   );

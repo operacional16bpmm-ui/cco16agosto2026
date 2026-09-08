@@ -23,16 +23,23 @@ export const DURACAO_ACESSO_SEGUNDOS = 60 * 60 * 12;
 /** Rotas que deixam de herdar o "público" de /cop2026. A página de acesso e as
  *  rotas de handshake precisam continuar abertas, senão o login não acontece. */
 export const ROTAS_RESTRITAS_COP = [
-  "/cop2026/dashboard",
-  "/cop2026/briefing",
+  /* SÓ A ADMINISTRAÇÃO, desde 08/09/2026.
+   *
+   * O Dashboard, o Briefing, os Relatórios e a Planilha de Lançamentos ficaram
+   * ABERTOS por determinação do Comando, trazida pelo Fabricio: *"tudo aberto
+   * no dashboard foi ordem do comando — RE não é dado sigiloso, esses dados são
+   * públicos e estão na internet em sites de publicações do governo"*.
+   *
+   * O que isso significa na prática, escrito para quem for reabrir a discussão:
+   * as telas de desempenho da COP mostram RE, nome de guerra, fração e
+   * justificativa de policial a QUALQUER pessoa com o endereço. Foi decisão de
+   * Comando, tomada depois de a exposição ser apontada. O `noindex` continua em
+   * todas elas — aberto a quem tem o link é diferente de indexado no Google.
+   *
+   * O que continua fechado: `/cop2026/admin`, que administra a lista de acesso,
+   * as metas, a trilha e a importação. Ali o gate é ADMIN, não só sessão.
+   */
   "/cop2026/admin",
-  "/cop2026/relatorios",
-  /* O PNG do painel entra aqui, e não na lista de públicas, porque ele carrega
-     o mesmo dado nominal do Dashboard. Sem esta linha a rota cairia no
-     fail-closed geral do proxy e exigiria a credencial única da Sala de
-     Comando, que quem usa a COP não tem — o gate correto é a conta Google. */
-  "/api/cop2026/briefing-png",
-  "/api/cop2026/briefing-pdf",
   /* O LANÇAMENTO é aberto por padrão e entra aqui só se o Comando mandar.
    *
    * O gate escolhido para quem lança nunca foi login: é o padrão do
@@ -45,6 +52,20 @@ export const ROTAS_RESTRITAS_COP = [
    * para poder ser relaxado em minutos se a adesão cair. */
   ...(process.env.COP2026_LANCAR_EXIGE_LOGIN === "1" ? ["/cop2026/lancar"] : []),
 ];
+
+/**
+ * A exceção que fura o prefixo `/cop2026/admin`.
+ *
+ * A Planilha de Lançamentos mora sob `/admin` desde que era tela de manejo, e
+ * o endereço já circulou — mudá-lo quebraria link salvo do Comando. Ela é de
+ * CONSULTA, não de administração: por determinação do Comando (08/09/2026) fica
+ * aberta como o Dashboard, e por isso precisa escapar do prefixo restrito.
+ *
+ * Lista fechada e conferida por teste (`verificar:navegacao`): abrir uma tela
+ * de administração por engano aqui daria a qualquer pessoa a lista de acesso e
+ * a trilha de auditoria.
+ */
+export const ABERTAS_SOB_ADMIN_COP = ["/cop2026/admin/lancamentos"];
 
 export const ROTA_ACESSO_COP = "/cop2026/acesso";
 

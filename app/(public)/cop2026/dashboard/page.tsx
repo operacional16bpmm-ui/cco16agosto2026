@@ -7,7 +7,7 @@ import { lerFiltros } from "@/lib/cop2026-metricas";
 import { janelaAtencaoDias } from "@/lib/cop2026-config-atencao";
 import { cicloAcabou, fimDoCicloCadastrado, mesCorrente } from "@/lib/cop2026-relatorios";
 import { ehAdminCop } from "@/lib/cop2026-acesso";
-import { exigirAcessoCop } from "@/lib/db/cop2026-autorizados";
+import { identidadeCop } from "@/lib/db/cop2026-autorizados";
 
 /**
  * O mês vem de `mesCorrente()`, não de constante: em 1º de outubro este mesmo
@@ -53,7 +53,7 @@ export default async function DashboardPage({
   const [{ lancamentos, metas, erro, lidoEm }, sp, acesso, janelaAtencao] = await Promise.all([
     lerAuditoriaCop2026(),
     searchParams,
-    exigirAcessoCop("/cop2026/dashboard"),
+    identidadeCop(),
     janelaAtencaoDias(),
   ]);
 

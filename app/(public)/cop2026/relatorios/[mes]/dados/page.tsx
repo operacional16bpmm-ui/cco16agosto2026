@@ -14,7 +14,7 @@ import {
   auditoresParaCsv,
 } from "@/lib/cop2026-metricas";
 import { ehAdminCop } from "@/lib/cop2026-acesso";
-import { exigirAcessoCop } from "@/lib/db/cop2026-autorizados";
+import { identidadeCop } from "@/lib/db/cop2026-autorizados";
 import { relatorioPorChave, periodoEncerrado } from "@/lib/cop2026-relatorios";
 
 export const metadata: Metadata = {
@@ -36,7 +36,7 @@ export default async function RelatorioDadosPage({
 
   const [{ lancamentos, metas, erro, lidoEm }, acesso] = await Promise.all([
     lerAuditoriaCop2026(),
-    exigirAcessoCop(`/cop2026/relatorios/${chave}/dados`),
+    identidadeCop(),
   ]);
 
   const painel = calcularPainel(lancamentos, metas, {

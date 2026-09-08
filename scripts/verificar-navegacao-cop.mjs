@@ -125,27 +125,26 @@ test("as telas de administração não repetem a navegação", () => {
   );
 });
 
-test("a Planilha de Lançamentos abre para autorizado, e só as ações são de admin", () => {
-  /* Decisão do Fabricio, 08/09/2026: os superiores leem o lançamento campo a
-     campo, e o administrador é um só. A tela saiu do gate de admin e ficou no
-     mesmo do Dashboard — conta Google autorizada. O que NÃO se afrouxou:
+test("a Planilha de Lançamentos é aberta, e só as ações são de admin", () => {
+  /* Determinação do Comando, 08/09/2026: Dashboard, Briefing, Relatórios e a
+     Planilha ficam abertos — "RE não é dado sigiloso". O que NÃO se afrouxou:
      excluir e reclassificar continuam exigindo admin dentro da própria Server
      Action, porque esconder botão nunca foi controle de acesso. */
   const pagina = readFileSync(
     join(RAIZ_ROTAS, "cop2026/admin/lancamentos/page.tsx"),
     "utf8"
   );
-  assert.match(
-    pagina,
-    /exigirAcessoCop\(/,
-    "a Planilha de Lançamentos deixou de exigir sessão. Ela carrega RE, nome de guerra e " +
-      "justificativa de policial: aberta na internet é exposição de dado pessoal."
-  );
-  // `await exigirAdminCop(` e não `exigirAdminCop(`: o cabeçalho do arquivo
-  // explica por que o gate mudou, e citar o nome antigo não é chamá-lo.
   assert.ok(
-    !pagina.includes("await exigirAdminCop("),
-    "a Planilha de Lançamentos voltou a exigir administrador — os superiores perdem a conferência."
+    !pagina.includes("await exigirAdminCop(") && !pagina.includes("await exigirAcessoCop("),
+    "a Planilha de Lançamentos voltou a exigir sessão — o Comando mandou abri-la."
+  );
+
+  // Ela mora sob o prefixo restrito `/cop2026/admin`: sem a exceção explícita
+  // o proxy a manda para o login antes de a página rodar.
+  assert.match(
+    readFileSync("lib/cop2026-acesso.ts", "utf8"),
+    /ABERTAS_SOB_ADMIN_COP\s*=\s*\["\/cop2026\/admin\/lancamentos"\]/,
+    "a exceção de proxy da Planilha sumiu: ela cai no login apesar de estar aberta."
   );
 
   const acoes = readFileSync(
@@ -157,7 +156,18 @@ test("a Planilha de Lançamentos abre para autorizado, e só as ações são de 
   assert.ok(
     quantosGates >= quantasAcoes,
     `actions.ts tem ${quantasAcoes} ação(ões) e só ${quantosGates} chamada(s) a exigirAdminCop(). ` +
-      `Server action é endpoint próprio: sem o gate na primeira linha, qualquer autorizado exclui.`
+      `Com a tela aberta, um gate a menos aqui deixa QUALQUER PESSOA excluir lançamento.`
+  );
+});
+
+test("a exceção de proxy não abriu nenhuma outra tela de administração", () => {
+  const fonte = readFileSync("lib/cop2026-acesso.ts", "utf8");
+  const lista = fonte.slice(fonte.indexOf("ABERTAS_SOB_ADMIN_COP"));
+  const rotas = [...lista.slice(0, lista.indexOf("]")).matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+  assert.deepEqual(
+    rotas,
+    ["/cop2026/admin/lancamentos"],
+    "entrou rota nova na exceção do proxy. Ali dentro moram a lista de acesso, as metas e a trilha."
   );
 });
 

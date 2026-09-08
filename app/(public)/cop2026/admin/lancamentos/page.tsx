@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { RodapeCop } from "@/components/publico16/cop/rodape-cop";
 import { FaixaCreditos } from "@/components/publico16/creditos";
 import { ehAdminCop } from "@/lib/cop2026-acesso";
-import { exigirAcessoCop } from "@/lib/db/cop2026-autorizados";
+import { identidadeCop } from "@/lib/db/cop2026-autorizados";
 import { identificadoresCompartilhados, listarParaManejo } from "@/lib/db/cop2026-lancamentos";
 import { cadeiaDasFracoes } from "@/lib/db/cop2026-unidade";
 import { CabecalhoAdmin } from "../cabecalho-admin";
@@ -20,22 +20,24 @@ export const dynamic = "force-dynamic";
  * Planilha de Lançamentos — a tela onde o Comando confere, registro a registro,
  * o que a tropa declarou.
  *
- * **O ACESSO MUDOU EM 08/09/2026.** Ela exigia `exigirAdminCop()` (404 para
- * todo mundo menos o administrador) e passou a exigir `exigirAcessoCop()`: a
- * mesma conta Google que abre o Dashboard e o Briefing. Determinação do
- * Fabricio — é dela que os superiores tiram a conferência detalhada, e o
- * administrador é um só.
+ * **O ACESSO MUDOU DUAS VEZES EM 08/09/2026.** Ela exigia `exigirAdminCop()`
+ * (404 para todos menos o administrador), passou a exigir sessão Google e
+ * terminou o dia ABERTA, junto com o Dashboard e o Briefing, por determinação
+ * do Comando trazida pelo Fabricio: *"RE não é dado sigiloso; esses dados são
+ * públicos e estão na internet em sites de publicações do governo"*.
  *
- * O que NÃO se afrouxou junto: a tela continua fora do alcance de quem não tem
- * sessão (carrega RE, nome de guerra e justificativa de policial), e **as ações
- * seguem sendo de administrador**. Excluir e reclassificar chamam
- * `exigirAdminCop()` na primeira linha da própria Server Action — esconder o
- * botão nunca foi controle de acesso, e por isso o `ehAdmin` daqui só decide o
- * que aparece.
+ * Ela mora sob `/admin` por herança do tempo em que era tela de manejo, e é a
+ * ÚNICA exceção da lista `ABERTAS_SOB_ADMIN_COP` — o endereço já circulou e
+ * mudá-lo quebraria link salvo do Comando.
+ *
+ * O que NÃO se afrouxou junto: **as ações seguem sendo de administrador**.
+ * Excluir e reclassificar chamam `exigirAdminCop()` na primeira linha da
+ * própria Server Action — esconder o botão nunca foi controle de acesso, e por
+ * isso o `ehAdmin` daqui só decide o que aparece.
  */
 export default async function AdminLancamentosPage() {
-  const sessao = await exigirAcessoCop("/cop2026/admin/lancamentos");
-  const ehAdmin = ehAdminCop(sessao.email);
+  const sessao = await identidadeCop();
+  const ehAdmin = ehAdminCop(sessao?.email);
 
   const [{ itens, erro }, compartilhados] = await Promise.all([
     listarParaManejo(),
@@ -53,7 +55,7 @@ export default async function AdminLancamentosPage() {
       <FaixaCreditos />
       <CabecalhoAdmin
         secao="Planilha de Lançamentos"
-        email={sessao.email}
+        email={sessao?.email ?? ""}
         largura="max-w-[1800px]"
       />
 

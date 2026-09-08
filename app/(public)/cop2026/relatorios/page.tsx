@@ -6,7 +6,7 @@ import { RodapeCop } from "@/components/publico16/cop/rodape-cop";
 import { SeloMes } from "@/components/publico16/cop/arte-ciclo";
 import { lerAuditoriaCop2026 } from "@/lib/cop2026-leitura";
 import { ehAdminCop } from "@/lib/cop2026-acesso";
-import { exigirAcessoCop } from "@/lib/db/cop2026-autorizados";
+import { identidadeCop } from "@/lib/db/cop2026-autorizados";
 import { estadoDoCiclo, hojeBrt } from "@/lib/cop2026-ciclo";
 import {
   RELATORIOS_MENSAIS,
@@ -143,7 +143,7 @@ function CartaoMes({ mes, hoje }: { mes: RelatorioMes; hoje: string }) {
 export default async function RelatoriosPage() {
   const [{ lidoEm }, acesso] = await Promise.all([
     lerAuditoriaCop2026(),
-    exigirAcessoCop("/cop2026/relatorios"),
+    identidadeCop(),
   ]);
 
   // Uma leitura só do relógio para a grade inteira: cinco cartões consultando
