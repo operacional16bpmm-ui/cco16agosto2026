@@ -18,6 +18,7 @@ const {
   chaveDedup,
   lerEvidencias,
   normalizarRe,
+  padronizarFuncao,
   validarLancamento,
   TETO_HARD_EVIDENCIAS,
 } = await import("../lib/cop2026-lancamento.ts");
@@ -153,6 +154,49 @@ const BASE = {
 };
 
 const AGORA = new Date("2026-09-01T12:00:00-03:00");
+
+/* ----------------------------------------------------------------- função */
+
+test("Função: as três grafias de agosto/setembro viram UMA", () => {
+  // Reais, medidas nos 203 lançamentos ativos em 08/09/2026: o painel agrupa
+  // desempenho por este campo e contava as três como funções diferentes.
+  const alvo = "Comando grupo patrulha";
+  assert.equal(padronizarFuncao("Comando Grupo Patrulha"), alvo);
+  assert.equal(padronizarFuncao("COMANDO GRUPO PATRULHA"), alvo);
+  assert.equal(padronizarFuncao("Comando grupo patrulha"), alvo);
+  assert.equal(padronizarFuncao("  comando   grupo  patrulha  "), alvo);
+
+  assert.equal(padronizarFuncao("Cmt Cia"), "Cmt cia");
+  assert.equal(padronizarFuncao("CMT CIA"), "Cmt cia");
+});
+
+test("Função: sigla e letra do grupo não viram minúscula", () => {
+  // A regra do Comando é "primeira maiúscula, resto minúsculo"; sem as duas
+  // exceções, `CGP A` viraria `Cgp a` e `FT` viraria `Ft` — e é assim que está
+  // escrito em toda escala do Batalhão.
+  assert.equal(padronizarFuncao("CGP A"), "CGP A");
+  assert.equal(padronizarFuncao("cgp d"), "CGP D");
+  assert.equal(padronizarFuncao("CMT EQ FT"), "Cmt eq FT");
+  assert.equal(padronizarFuncao("CFP Noturno"), "CFP noturno");
+});
+
+test("Função: 1o e 2o viram ordinal", () => {
+  assert.equal(padronizarFuncao("CMT EQUIPE FT 1o PEL"), "Cmt equipe FT 1º pel");
+  assert.equal(padronizarFuncao("cmt equipe ft 2o pel"), "Cmt equipe FT 2º pel");
+});
+
+test("Função: vazio continua vazio, e não vira espaço", () => {
+  assert.equal(padronizarFuncao(""), "");
+  assert.equal(padronizarFuncao("   "), "");
+});
+
+test("Função é padronizada no envio, não só na tela", () => {
+  // Server action é endpoint público: o `curl` manda o texto cru e a
+  // padronização tem de acontecer aqui, não no componente.
+  const r = validarLancamento({ ...BASE, funcao: "COMANDO GRUPO PATRULHA" }, AGORA);
+  assert.ok(r.ok, "o caminho feliz não pode quebrar por causa da função");
+  assert.equal(r.valor.funcao, "Comando grupo patrulha");
+});
 
 test("Válido: o caminho feliz passa", () => {
   const r = validarLancamento(BASE, AGORA);

@@ -56,6 +56,67 @@ export function turnoValido(bruto: string): bruto is Turno {
   return (TURNOS as readonly string[]).includes(bruto);
 }
 
+/* -------------------------------------------------------------- função */
+
+/**
+ * Siglas do vocabulário do Batalhão que continuam em caixa alta.
+ *
+ * Sem esta lista, a regra do Fabricio ("primeira letra maiúscula, o resto
+ * minúsculo") transformaria `CGP A` em `Cgp a` e `FT` em `Ft` — e o que está
+ * escrito em toda escala e em toda parte é a sigla.
+ */
+const SIGLAS_FUNCAO = new Set([
+  "cgp",
+  "ft",
+  "em",
+  "pm",
+  "cfp",
+  "cop",
+  "gp",
+  "bpm",
+  "cpa",
+  "coe",
+  "rp",
+]);
+
+/**
+ * Padroniza a função declarada.
+ *
+ * Determinação do Fabricio (08/09/2026): *"padronize os textos, sempre com a
+ * primeira letra maiúscula e as demais minúsculas, pois os usuários estavam
+ * colocando de qualquer forma"*. E estavam mesmo — medido nos 203 lançamentos
+ * ativos: `Comando Grupo Patrulha`, `Comando grupo patrulha` e
+ * `COMANDO GRUPO PATRULHA` eram três funções diferentes para o painel, que
+ * agrupa por este campo; `Cmt Cia` e `CMT CIA`, mais duas.
+ *
+ * Três exceções à regra, todas para não estragar o que a tropa escreve:
+ * sigla conhecida fica em caixa alta, palavra de uma letra também (`CGP A`,
+ * `CGP D` — é o nome do grupo de patrulha) e `1o`/`1a` viram ordinal.
+ */
+export function padronizarFuncao(bruto: string): string {
+  const limpo = String(bruto ?? "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!limpo) return "";
+
+  const palavras = limpo.split(" ").map((p) => {
+    const minuscula = p.toLocaleLowerCase("pt-BR");
+    if (SIGLAS_FUNCAO.has(minuscula.replace(/[^a-z]/g, ""))) {
+      return minuscula.toLocaleUpperCase("pt-BR");
+    }
+    // `1o pel` → `1º pel`; `2a cia` → `2ª cia`.
+    const ordinal = minuscula.match(/^(\d+)([oa])$/);
+    if (ordinal) return `${ordinal[1]}${ordinal[2] === "o" ? "º" : "ª"}`;
+    if (minuscula.replace(/[^a-zà-ú]/g, "").length === 1) {
+      return minuscula.toLocaleUpperCase("pt-BR");
+    }
+    return minuscula;
+  });
+
+  const texto = palavras.join(" ");
+  return texto.charAt(0).toLocaleUpperCase("pt-BR") + texto.slice(1);
+}
+
 /* ---------------------------------------------------------------------- RE */
 
 /**
@@ -463,7 +524,9 @@ export function validarLancamento(
       re,
       nomeGuerra,
       posto: String(entrada.posto ?? "").trim(),
-      funcao: String(entrada.funcao ?? "").trim(),
+      // Padronizada no SERVIDOR, não só na tela: o mesmo texto escrito de
+      // três jeitos virava três funções no agrupamento do painel.
+      funcao: padronizarFuncao(entrada.funcao ?? ""),
       auditou: Boolean(entrada.auditou),
       quantidadeDeclarada: entrada.auditou ? quantidade : 0,
       evidencias: leitura.evidencias,

@@ -140,6 +140,7 @@ export function PainelLancamentos({
   const [fFracao, setFFracao] = useState("todas");
   const [fOrigem, setFOrigem] = useState("todas");
   const [fAuditou, setFAuditou] = useState("todos");
+  const [fFuncao, setFFuncao] = useState("todas");
   const [fSituacao, setFSituacao] = useState("todas");
   const [busca, setBusca] = useState("");
   const [ordem, setOrdem] = useState("recentes");
@@ -158,6 +159,7 @@ export function PainelLancamentos({
       if (fTurno !== "todos" && l.turno !== fTurno) return false;
       if (fFracao !== "todas" && l.subunidade !== fFracao) return false;
       if (fOrigem !== "todas" && l.origem !== fOrigem) return false;
+      if (fFuncao !== "todas" && (l.funcao ?? "") !== fFuncao) return false;
       if (fAuditou === "sim" && !l.auditou) return false;
       if (fAuditou === "nao" && l.auditou) return false;
       if (fSituacao === "semids" && l.videos_validos > 0) return false;
@@ -213,11 +215,23 @@ export function PainelLancamentos({
     fFracao,
     fOrigem,
     fAuditou,
+    fFuncao,
     fSituacao,
     busca,
     ordem,
     cadeias,
   ]);
+
+  /* As funções que existem no recorte inteiro, para o seletor. Sai da lista
+     carregada, e não de constante: a função é declarada pelo policial e a lista
+     cresce sozinha. */
+  const funcoes = useMemo(
+    () =>
+      [...new Set(itens.map((l) => (l.funcao ?? "").trim()).filter(Boolean))].sort((a, b) =>
+        a.localeCompare(b, "pt-BR")
+      ),
+    [itens]
+  );
 
   const limpo =
     fMes === "todos" &&
@@ -227,6 +241,7 @@ export function PainelLancamentos({
     fFracao === "todas" &&
     fOrigem === "todas" &&
     fAuditou === "todos" &&
+    fFuncao === "todas" &&
     fSituacao === "todas" &&
     !busca.trim();
 
@@ -238,6 +253,7 @@ export function PainelLancamentos({
     setFFracao("todas");
     setFOrigem("todas");
     setFAuditou("todos");
+    setFFuncao("todas");
     setFSituacao("todas");
     setBusca("");
   }
@@ -413,6 +429,15 @@ export function PainelLancamentos({
             <option value="planilha">Planilha importada</option>
             <option value="formulario">Formulário do portal</option>
             <option value="admin">Lançado pelo admin</option>
+          </Seletor>
+
+          <Seletor rotulo="Função" valor={fFuncao} ao={setFFuncao}>
+            <option value="todas">Todas</option>
+            {funcoes.map((f) => (
+              <option key={f} value={f}>
+                {f}
+              </option>
+            ))}
           </Seletor>
 
           <Seletor rotulo="Situação" valor={fSituacao} ao={setFSituacao}>

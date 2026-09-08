@@ -24,6 +24,7 @@ import {
   OPCOES_TURNO,
   lerEvidencias,
   normalizarRe,
+  padronizarFuncao,
   prefixoExibicao,
 } from "@/lib/cop2026-lancamento";
 import { MINIMO_PADRAO } from "@/lib/cop2026-metricas";
@@ -142,9 +143,12 @@ function lerRascunho(chave: string): Rascunho | null {
 export function FormularioLancamento({
   identificado,
   arvore,
+  funcoes,
 }: {
   identificado: string | null;
   arvore: ArvoreFormulario;
+  /** Funções que a tropa já declarou, da mais usada para a menos usada. */
+  funcoes: string[];
 }) {
   /**
    * Identificador de envio em `ref`, e não em estado.
@@ -663,7 +667,7 @@ export function FormularioLancamento({
           <input type="hidden" name="turno" value={turno} />
         </div>
 
-        <div className="mt-4 grid gap-4 sm:grid-cols-3">
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <Campo rotulo="Nome de guerra">
             <input
               name="nomeGuerra"
@@ -683,16 +687,13 @@ export function FormularioLancamento({
               className={entrada}
             />
           </Campo>
-          <Campo rotulo="Função">
-            <input
-              name="funcao"
-              value={funcao}
-              onChange={(e) => setFuncao(e.target.value)}
-              autoComplete="off"
-              className={entrada}
-            />
-          </Campo>
         </div>
+
+        <SeletorFuncao
+          opcoes={funcoes}
+          funcao={funcao}
+          setFuncao={setFuncao}
+        />
 
         {identificado && (
           <p className="mt-4 text-[12px] text-texto-suave">
@@ -1330,6 +1331,108 @@ function ComprovanteProtocolo({
           Ver painel do Batalhão
         </a>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Função exercida no turno — lista do que a tropa já declarou, mais um campo
+ * para o que ainda não existe.
+ *
+ * Determinação do Fabricio (08/09/2026): a função é DECLARADA pelo policial, as
+ * opções já usadas ficam à mão e o botão de mais serve para criar a que falta.
+ * A lista vem do banco (`funcoesDeclaradas`) e cresce sozinha — quem inventar
+ * uma função nova hoje faz dela um botão para o próximo.
+ *
+ * POR QUE ISTO NÃO É CAMPO LIVRE: o painel agrupa desempenho POR FUNÇÃO, e o
+ * texto livre produziu `Comando Grupo Patrulha`, `Comando grupo patrulha` e
+ * `COMANDO GRUPO PATRULHA` — três linhas no relatório para a mesma função. O
+ * que for digitado aqui ainda passa por `padronizarFuncao` no servidor; a
+ * prévia embaixo do campo mostra como vai ficar, para não ser surpresa.
+ */
+function SeletorFuncao({
+  opcoes,
+  funcao,
+  setFuncao,
+}: {
+  opcoes: string[];
+  funcao: string;
+  setFuncao: (v: string) => void;
+}) {
+  const naLista = opcoes.includes(funcao);
+  /* Abre sozinho quando o que está preenchido não é nenhuma das opções — caso
+     do rascunho restaurado e de quem já digitou antes. */
+  const [outra, setOutra] = useState(false);
+  const mostrandoOutra = outra || (funcao.trim().length > 0 && !naLista);
+  const previa = padronizarFuncao(funcao);
+
+  return (
+    <div className="mt-4">
+      <p className="text-[12px] font-bold uppercase tracking-wide text-texto-suave">
+        Função no turno
+      </p>
+      <p className="mt-0.5 text-[12px] text-texto-suave">
+        Toque na sua. Se não estiver na lista, use <strong>Outra função</strong>.
+      </p>
+
+      <div className="mt-2 flex flex-wrap gap-2">
+        {opcoes.map((o) => (
+          <button
+            key={o}
+            type="button"
+            onClick={() => {
+              setFuncao(o);
+              setOutra(false);
+            }}
+            aria-pressed={funcao === o && !outra}
+            className={`min-h-11 rounded-md border px-3 py-2 text-[13px] font-bold transition-colors ${
+              funcao === o && !outra
+                ? "border-vermelho bg-vermelho/10 text-vermelho"
+                : "border-borda text-branco hover:border-vermelho/40"
+            }`}
+          >
+            {o}
+          </button>
+        ))}
+
+        <button
+          type="button"
+          onClick={() => {
+            setOutra(true);
+            if (naLista) setFuncao("");
+          }}
+          aria-pressed={mostrandoOutra}
+          className={`inline-flex min-h-11 items-center gap-1.5 rounded-md border px-3 py-2 text-[13px] font-bold transition-colors ${
+            mostrandoOutra
+              ? "border-vermelho bg-vermelho/10 text-vermelho"
+              : "border-borda text-branco hover:border-vermelho/40"
+          }`}
+        >
+          <Plus size={14} aria-hidden /> Outra função
+        </button>
+      </div>
+
+      {mostrandoOutra && (
+        <div className="mt-3">
+          <input
+            value={funcao}
+            onChange={(e) => setFuncao(e.target.value)}
+            autoComplete="off"
+            placeholder="Ex.: Cmt equipe FT 1º pel"
+            className={entrada}
+            aria-label="Escreva a sua função"
+          />
+          {previa && previa !== funcao && (
+            <p className="mt-1.5 text-[12px] text-texto-suave">
+              Vai ser registrado como <span className="font-bold text-branco">{previa}</span>.
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* O valor viaja num campo oculto: os botões não são `input`, e o campo
+          de texto só existe quando "Outra função" está aberta. */}
+      <input type="hidden" name="funcao" value={funcao} />
     </div>
   );
 }

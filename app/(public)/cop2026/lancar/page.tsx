@@ -10,6 +10,7 @@ import { ehAdminCop } from "@/lib/cop2026-acesso";
 import { BotaoAdmin } from "@/components/publico16/cop/botao-admin";
 import { ORDEM_SUBUNIDADES, ROTULO_SUBUNIDADE } from "@/lib/cop2026";
 import { arvoreDoFormulario, type ArvoreFormulario } from "@/lib/db/cop2026-unidade";
+import { funcoesDeclaradas } from "@/lib/db/cop2026-lancamentos";
 import { FormularioLancamento } from "./formulario-lancamento";
 
 export const metadata: Metadata = {
@@ -61,9 +62,13 @@ function arvoreDeEmergencia(): ArvoreFormulario {
 
 export default async function LancarPage() {
   // Só para carimbar a autoria de quem já está logado. `null` é o caso normal.
-  const [identidade, arvoreDoBanco] = await Promise.all([
+  const [identidade, arvoreDoBanco, funcoes] = await Promise.all([
     identidadeCop(),
     arvoreDoFormulario(),
+    // A lista de funções É o histórico da tropa: o que foi declarado até agora
+    // vira opção para o próximo. Vazia (banco fora do ar), o campo continua
+    // aceitando texto — nunca trava o lançamento.
+    funcoesDeclaradas(),
   ]);
   const arvore = arvoreDoBanco.fracoes.length > 0 ? arvoreDoBanco : arvoreDeEmergencia();
 
@@ -112,7 +117,11 @@ export default async function LancarPage() {
           </p>
         </div>
 
-        <FormularioLancamento identificado={identidade?.email ?? null} arvore={arvore} />
+        <FormularioLancamento
+          identificado={identidade?.email ?? null}
+          arvore={arvore}
+          funcoes={funcoes}
+        />
 
         <div className="mt-8 border-t border-borda pt-5">
           {/* Vocabulário do Comando: o que o Portal pode afirmar com honestidade

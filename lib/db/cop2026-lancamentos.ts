@@ -5,6 +5,7 @@ import { supabaseConfigurado } from "@/lib/preview";
 import { ehIdentificadorValido, redigirCpf, type LancamentoCop } from "@/lib/cop2026";
 import {
   chaveDedup,
+  padronizarFuncao,
   type LancamentoValidado,
   type SubunidadeValida,
 } from "@/lib/cop2026-lancamento";
@@ -356,6 +357,47 @@ export async function lerLancamentosDoBanco(opcoes?: {
   } catch (erro) {
     console.error("[cop2026-lancamentos] falha ao ler:", erro);
     return { lancamentos: [], erro: "Não foi possível ler os lançamentos registrados." };
+  }
+}
+
+/**
+ * As funções que a tropa JÁ declarou, da mais usada para a menos usada.
+ *
+ * Determinação do Fabricio (08/09/2026): *"deixe as opções pré-existentes lá
+ * como opção pra ele selecionar e deixe o botão de mais pra se tiver outra ele
+ * criar… depois que todos preencherem você faz seu banco de dados disso"*. Ou
+ * seja: a lista não é constante em código — ela É o histórico, e cresce sozinha
+ * quando alguém declara uma função nova.
+ *
+ * O texto vem padronizado da gravação (`padronizarFuncao`), então o agrupamento
+ * aqui já é por função real e não por grafia. `limite` existe porque a tela é
+ * de celular: as mais usadas cobrem a tropa inteira, e o resto entra pelo campo
+ * "Outra função".
+ */
+export async function funcoesDeclaradas(limite = 14): Promise<string[]> {
+  if (!supabaseConfigurado()) return [];
+  try {
+    const { data, error } = await createAdminClient()
+      .from(TABELA)
+      .select("funcao")
+      .is("excluido_em", null)
+      .not("funcao", "is", null)
+      .limit(4000);
+    if (error) throw new Error(error.message);
+
+    const conta = new Map<string, number>();
+    for (const linha of (data ?? []) as { funcao: string | null }[]) {
+      const f = padronizarFuncao(linha.funcao ?? "");
+      if (f) conta.set(f, (conta.get(f) ?? 0) + 1);
+    }
+    return [...conta.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "pt-BR"))
+      .slice(0, limite)
+      .map(([f]) => f);
+  } catch (erro) {
+    // Lista vazia é degradação aceitável: o campo continua aceitando texto.
+    console.error("[cop2026-lancamentos] falha ao listar funções:", erro);
+    return [];
   }
 }
 
