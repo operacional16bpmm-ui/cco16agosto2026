@@ -370,11 +370,16 @@ export async function lerLancamentosDoBanco(opcoes?: {
  * quando alguém declara uma função nova.
  *
  * O texto vem padronizado da gravação (`padronizarFuncao`), então o agrupamento
- * aqui já é por função real e não por grafia. `limite` existe porque a tela é
- * de celular: as mais usadas cobrem a tropa inteira, e o resto entra pelo campo
- * "Outra função".
+ * aqui já é por função real e não por grafia.
+ *
+ * O `limite` é teto de segurança contra uma lista que cresça sem controle, não
+ * um corte de curadoria: em 08/09/2026 o Fabricio decidiu MANTER separadas as
+ * funções que são sinônimas entre si (`CGP` e `Comando grupo patrulha`,
+ * `Cmt cia` e `Cmt de cia`…), e com teto baixo a menos usada delas sumia da
+ * tela — ninguém a escolhe, todo mundo clica em outra, e ela morre sozinha.
+ * Hoje são 15 funções em uso; o teto fica com folga.
  */
-export async function funcoesDeclaradas(limite = 14): Promise<string[]> {
+export async function funcoesDeclaradas(limite = 24): Promise<string[]> {
   if (!supabaseConfigurado()) return [];
   try {
     const { data, error } = await createAdminClient()
