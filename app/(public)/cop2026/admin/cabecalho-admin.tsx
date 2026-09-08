@@ -45,7 +45,10 @@ export function CabecalhoAdmin({
               aria-label="Trilha de navegação"
               className="mt-0.5 flex items-center gap-1 text-[12px] text-texto-suave"
             >
-              <Link href="/cop2026" className="hover:text-vermelho">
+              {/* `-my-2 py-2` no celular: o alvo continua parecendo um link de
+                  trilha, mas passa de 18px para 34px de área tocável sem
+                  empurrar nada — a margem negativa devolve o espaço ao layout. */}
+              <Link href="/cop2026" className="-my-2 py-2 hover:text-vermelho sm:my-0 sm:py-0">
                 COP 2026
               </Link>
               <ChevronRight size={12} aria-hidden />
@@ -61,7 +64,7 @@ export function CabecalhoAdmin({
             <span className="dados">{email}</span>
             <a
               href="/api/cop2026/acesso/sair"
-              className="inline-flex items-center gap-1 rounded-md border border-borda px-2 py-1 font-semibold hover:border-vermelho/40 hover:text-vermelho"
+              className="inline-flex min-h-11 items-center gap-1 rounded-md border border-borda px-3 py-1 font-semibold hover:border-vermelho/40 hover:text-vermelho sm:min-h-0 sm:px-2"
             >
               <LogOut size={12} aria-hidden /> Sair
             </a>

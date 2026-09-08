@@ -295,6 +295,33 @@ body {
   color: var(--branco);
 }
 
+/* ============================================================================
+   CELULAR — o zoom que o iPhone dá sozinho ao tocar um campo
+   ----------------------------------------------------------------------------
+   O Safari do iOS amplia a página inteira quando o campo focado tem fonte
+   MENOR que 16px, e não desamplia ao sair: a pessoa preenche o resto do
+   formulário com a tela deslocada, rolando de lado atrás dos botões. Os campos
+   da COP nasceram entre 13px e 15px (`/cop2026/lancar`, `/cop2026/inconsistencias`,
+   a Planilha de Lançamentos e a busca do Painel) — todos disparavam o zoom.
+
+   A correção é de leitura, não de estética: 16px é o piso mínimo que desarma o
+   comportamento, e só vale abaixo de 768px. Do tablet para cima as classes
+   `text-[13px]`/`text-sm` originais continuam valendo, então o desktop não muda
+   um pixel.
+
+   Por que aqui e não campo a campo: são ~25 campos hoje em 19 telas, e o
+   vigésimo sexto nasceria errado. A alternativa canônica
+   (`user-scalable=no` no viewport) está fora de cogitação — ela também proíbe a
+   pessoa de ampliar a tela de propósito, o que é falha de acessibilidade.
+   ============================================================================ */
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: max(16px, 1em);
+  }
+}
+
 /* ===== Movimento de ação (institucional, discreto) ===== */
 @keyframes flutua {
   0%, 100% { transform: translateY(0); }

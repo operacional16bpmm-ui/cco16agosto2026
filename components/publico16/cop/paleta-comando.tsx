@@ -62,12 +62,18 @@ export function PaletaComando({
       <button
         type="button"
         onClick={() => setAberto(true)}
-        className={`card-interativo flex min-w-0 max-w-full items-center gap-2 rounded-lg border border-borda bg-tatico-super px-3 py-1.5 text-xs text-texto-suave shadow-xs transition-colors hover:border-vermelho/50 hover:text-branco ${className ?? ""}`}
+        /* `min-h-11` no celular: o gatilho tinha 31px de altura, abaixo dos
+           44px de alvo de toque. No desktop volta ao tamanho original — lá o
+           ponteiro do mouse acerta 31px sem esforço. */
+        className={`card-interativo flex min-h-11 min-w-0 max-w-full items-center gap-2 rounded-lg border border-borda bg-tatico-super px-3 py-1.5 text-xs text-texto-suave shadow-xs transition-colors hover:border-vermelho/50 hover:text-branco lg:min-h-0 ${className ?? ""}`}
         title="Busca rápida (Ctrl + K)"
       >
         <Search className="h-3.5 w-3.5 shrink-0 text-vermelho" />
         <span className="truncate font-medium">Buscar RE, Auditor ou Fração...</span>
-        <kbd className="dados shrink-0 rounded bg-branco/10 px-1.5 py-0.5 text-[10px] font-bold text-branco/70">
+        {/* O atalho de teclado só existe onde há teclado — no celular ele
+            ocupava 40px da largura do gatilho para anunciar um Ctrl que não
+            se digita. */}
+        <kbd className="dados hidden shrink-0 rounded bg-branco/10 px-1.5 py-0.5 text-[10px] font-bold text-branco/70 lg:inline">
           Ctrl K
         </kbd>
       </button>

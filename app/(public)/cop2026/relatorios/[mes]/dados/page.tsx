@@ -58,7 +58,7 @@ export default async function RelatorioDadosPage({
         <div className="mx-auto max-w-5xl px-4 pt-6">
           <Link
             href={`/cop2026/relatorios/${chave}`}
-            className="nao-imprime inline-flex items-center gap-1.5 text-[13px] font-semibold text-texto-suave transition-colors hover:text-vermelho"
+            className="nao-imprime inline-flex min-h-11 items-center gap-1.5 text-[13px] font-semibold text-texto-suave sm:min-h-0 transition-colors hover:text-vermelho"
           >
             <ArrowLeft className="h-4 w-4" /> Relatórios de {mes.rotulo}
           </Link>

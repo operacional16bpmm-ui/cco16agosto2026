@@ -43,7 +43,7 @@ export default async function InconsistenciasPage() {
         <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-3 px-4 py-3">
           <Link
             href="/cop2026"
-            className="inline-flex items-center gap-1.5 text-[13px] font-bold text-[#15304c]/75 hover:text-[#ca0202]"
+            className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-bold text-[#15304c]/75 hover:text-[#ca0202] sm:min-h-0"
           >
             <ArrowLeft size={15} /> Início
           </Link>

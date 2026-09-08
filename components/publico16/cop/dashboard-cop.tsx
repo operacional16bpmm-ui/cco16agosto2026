@@ -206,7 +206,9 @@ function Th({
       <button
         type="button"
         onClick={() => ordenar(col)}
-        className="inline-flex items-center gap-1 hover:text-vermelho"
+        /* Cabeçalho de tabela: o alvo era a altura da letra (14px). `-my-2 py-2`
+           dá 30px de área tocável sem engordar a linha do cabeçalho. */
+        className="-my-2.5 inline-flex items-center gap-1 py-2.5 hover:text-vermelho sm:my-0 sm:py-0"
         aria-label={`Ordenar por ${String(children)}`}
       >
         {children}
@@ -1256,7 +1258,10 @@ export function DashboardCop({
               type="button"
               onClick={() => setGavetaFiltrosAberta(true)}
               className={cn(
-                "relative shrink-0 inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all",
+                /* `min-h-11` = 44px, o piso de alvo de toque do iOS HIG e do
+                   Material. Era 30px: no celular, dentro da viatura, o dedo
+                   erra e a pessoa acha que o filtro não funciona. */
+                "relative shrink-0 inline-flex min-h-11 items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all lg:min-h-0",
                 totalFiltrosAtivos > 0
                   ? "border-vermelho bg-vermelho/10 text-vermelho shadow-xs"
                   : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
@@ -1290,7 +1295,10 @@ export function DashboardCop({
                   type="button"
                   onClick={() => definir({ semana: item.id })}
                   className={cn(
-                    "shrink-0 rounded-full px-3 py-1.5 text-xs font-bold transition-all",
+                    /* Mesmo piso de 44px das pílulas de semana — são cinco
+                       alvos lado a lado num carrossel que rola: com 30px de
+                       altura o toque cai na pílula vizinha. */
+                    "inline-flex min-h-11 shrink-0 items-center rounded-full px-4 py-1.5 text-xs font-bold transition-all",
                     ativo
                       ? "bg-vermelho text-white shadow-xs"
                       : "bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200"
@@ -1428,7 +1436,7 @@ export function DashboardCop({
                 key={c.k}
                 type="button"
                 onClick={c.limpar}
-                className="inline-flex items-center gap-1 rounded-full border border-vermelho/40 bg-vermelho/10 px-2.5 py-0.5 text-[11px] font-extrabold text-vermelho hover:bg-vermelho/20 transition-colors"
+                className="inline-flex min-h-11 items-center gap-1 rounded-full border border-vermelho/40 bg-vermelho/10 px-3 py-0.5 text-[11px] font-extrabold text-vermelho transition-colors hover:bg-vermelho/20 sm:min-h-0 sm:px-2.5"
               >
                 {c.t}
                 <X size={11} aria-hidden />
@@ -2102,7 +2110,7 @@ export function DashboardCop({
           </span>
           <a
             href="/cop2026/admin/parametros"
-            className="text-[11px] font-bold uppercase tracking-wide text-vermelho hover:underline"
+            className="inline-flex min-h-11 items-center text-[11px] font-bold uppercase tracking-wide text-vermelho hover:underline sm:min-h-0"
           >
             Ajustar em Metas
           </a>

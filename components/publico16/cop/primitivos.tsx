@@ -118,7 +118,9 @@ export function ComoLer({
             onClick={() => setAberto((a) => !a)}
             aria-expanded={aberto}
             aria-controls={id}
-            className="nao-imprime mt-2 inline-flex items-center gap-1 rounded-md border border-borda px-2 py-1 text-[11px] font-semibold text-texto-suave transition-colors hover:border-vermelho/40 hover:text-vermelho"
+            /* Este "Entenda a conta" repete em quase todo quadro do painel:
+               44px de altura no celular vale por uma dúzia de alvos. */
+            className="nao-imprime mt-2 inline-flex min-h-11 items-center gap-1 rounded-md border border-borda px-2.5 py-1 text-[11px] font-semibold text-texto-suave transition-colors hover:border-vermelho/40 hover:text-vermelho sm:min-h-0 sm:px-2"
           >
             <ChevronDown
               size={13}

@@ -959,7 +959,7 @@ export function BriefingSlides({
         <div className="flex items-center gap-2.5">
           <Link
             href="/cop2026/dashboard"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-white/20 bg-white/5 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-white transition-all hover:border-[#ca0202] hover:bg-[#ca0202]/15"
+            className="inline-flex min-h-10 min-w-10 items-center justify-center gap-1.5 rounded-lg border border-white/20 bg-white/5 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-white transition-all hover:border-[#ca0202] hover:bg-[#ca0202]/15 sm:min-h-0 sm:min-w-0"
             title="Retornar ao painel de controle"
           >
             <BarChart3 size={14} />
@@ -967,7 +967,7 @@ export function BriefingSlides({
           </Link>
           <Link
             href="/cop2026"
-            className="inline-flex items-center gap-1 rounded-lg border border-white/20 bg-white/5 px-2.5 py-1.5 text-[11px] font-semibold text-white/60 transition-colors hover:border-white hover:text-white sm:border-0 sm:bg-transparent sm:px-0 sm:py-0"
+            className="inline-flex min-h-10 min-w-10 items-center justify-center gap-1 rounded-lg border border-white/20 bg-white/5 px-2.5 py-1.5 text-[11px] font-semibold text-white/60 transition-colors hover:border-white hover:text-white sm:min-h-0 sm:min-w-0 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0"
           >
             <Home size={13} />
             <span className="hidden sm:inline">Início</span>
@@ -997,7 +997,7 @@ export function BriefingSlides({
           )}
           <button
             onClick={toggleFullscreen}
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-white/20 bg-white/5 px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-white/80 transition-colors hover:border-white hover:text-white"
+            className="inline-flex min-h-10 min-w-10 cursor-pointer items-center justify-center gap-1.5 rounded-md border border-white/20 bg-white/5 px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-white/80 transition-colors hover:border-white hover:text-white sm:min-h-0 sm:min-w-0"
             title="Alternar tela cheia (tecla F)"
           >
             {fullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
@@ -1005,7 +1005,7 @@ export function BriefingSlides({
           </button>
           <button
             onClick={() => window.print()}
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-white/20 bg-white/5 px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-white/80 transition-colors hover:border-[#ca0202] hover:text-white"
+            className="inline-flex min-h-10 min-w-10 cursor-pointer items-center justify-center gap-1.5 rounded-md border border-white/20 bg-white/5 px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-white/80 transition-colors hover:border-[#ca0202] hover:text-white sm:min-h-0 sm:min-w-0"
             title="Imprimir ou salvar em PDF"
           >
             <Printer size={14} />
@@ -1014,7 +1014,7 @@ export function BriefingSlides({
           {email && (
             <a
               href="/api/cop2026/acesso/sair"
-              className="inline-flex items-center gap-1.5 rounded-md border border-white/20 bg-white/5 px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-white/80 transition-colors hover:border-[#ca0202] hover:text-white"
+              className="inline-flex min-h-10 min-w-10 items-center justify-center gap-1.5 rounded-md border border-white/20 bg-white/5 px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-white/80 transition-colors hover:border-[#ca0202] hover:text-white sm:min-h-0 sm:min-w-0"
               title="Encerrar sessão"
             >
               <LogOut size={14} />
@@ -1056,7 +1056,7 @@ export function BriefingSlides({
         <button
           onClick={() => ir(-1)}
           disabled={i === 0}
-          className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-white/10 px-3.5 py-2 text-[11px] font-bold uppercase tracking-wider transition-all hover:bg-white/20 disabled:pointer-events-none disabled:opacity-30 sm:text-xs"
+          className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center gap-2 rounded-lg bg-white/10 px-3.5 py-2 text-[11px] font-bold uppercase tracking-wider transition-all hover:bg-white/20 disabled:pointer-events-none disabled:opacity-30 sm:min-h-0 sm:min-w-0 sm:text-xs"
         >
           <ArrowLeft size={15} />
           <span className="hidden sm:inline">Anterior</span>
@@ -1064,22 +1064,31 @@ export function BriefingSlides({
 
         <div className="flex items-center gap-1.5">
           {slides.map((sl, k) => (
+            /* A bolinha continua com 8px — quem apresenta precisa da régua fina.
+               O que cresceu foi a ÁREA CLICÁVEL: o <button> virou uma faixa de
+               32px de altura com a bolinha centrada dentro. Antes o alvo tinha
+               8×8px no celular, menos de um quinto do mínimo de toque, e a
+               pessoa que tentava pular de slide acabava tocando o vizinho. */
             <button
               key={k}
               onClick={() => setI(k)}
-              className={`h-2 cursor-pointer rounded-full transition-all duration-300 ${
-                k === i ? "w-7 bg-[#ca0202] sm:w-9" : "w-2 bg-white/25 hover:bg-white/50"
-              }`}
+              className="group flex h-8 cursor-pointer items-center px-0.5 sm:h-2 sm:px-0"
               title={`${dd(k + 1)} · ${sl.selo}`}
               aria-label={`Ir para o slide ${k + 1}: ${sl.titulo}`}
-            />
+            >
+              <span
+                className={`block h-2 rounded-full transition-all duration-300 ${
+                  k === i ? "w-7 bg-[#ca0202] sm:w-9" : "w-2 bg-white/25 group-hover:bg-white/50"
+                }`}
+              />
+            </button>
           ))}
         </div>
 
         <button
           onClick={() => ir(1)}
           disabled={i === total - 1}
-          className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-[#ca0202] px-3.5 py-2 text-[11px] font-bold uppercase tracking-wider text-white transition-all hover:bg-[#e40707] hover:shadow-lg hover:shadow-[#ca0202]/30 disabled:pointer-events-none disabled:opacity-30 sm:text-xs"
+          className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#ca0202] px-3.5 py-2 text-[11px] font-bold uppercase tracking-wider text-white transition-all hover:bg-[#e40707] hover:shadow-lg hover:shadow-[#ca0202]/30 disabled:pointer-events-none disabled:opacity-30 sm:min-h-0 sm:min-w-0 sm:text-xs"
         >
           <span className="hidden sm:inline">Próximo</span>
           <ArrowRight size={15} />

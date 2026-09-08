@@ -693,7 +693,7 @@ export function RankingFracoes({
                 href={`/cop2026/admin/lancamentos?fracao=${encodeURIComponent(d.chave)}`}
                 title={`Abrir a Planilha de Lançamentos da ${d.rotulo}`}
                 aria-label={`Abrir a Planilha de Lançamentos da ${d.rotulo}`}
-                className="mt-0.5 inline-flex shrink-0 items-center gap-1.5 rounded-lg border-2 border-slate-300 bg-white px-2 py-1.5 text-[11px] font-black uppercase tracking-wide text-slate-700 shadow-xs transition-colors hover:border-vermelho/50 hover:text-vermelho"
+                className="mt-0.5 inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-lg border-2 border-slate-300 bg-white px-2 py-1.5 text-[11px] font-black uppercase tracking-wide text-slate-700 shadow-xs transition-colors hover:border-vermelho/50 hover:text-vermelho sm:min-h-0 sm:min-w-0"
               >
                 <IconePlanilha />
                 <span className="hidden sm:inline">Planilha</span>
@@ -705,11 +705,16 @@ export function RankingFracoes({
               aria-label={`Filtrar por ${d.rotulo} — ${PCT.format(d.pct)}% da meta`}
             >
               <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-                <span className="flex items-center gap-2 text-sm sm:text-base font-black text-[#1d1d1d]">
+                {/* `flex-wrap` + `min-w-0`: em 360px (Moto G, Galaxy A, iPhone SE)
+                    o nome da fração + o selo + a caixa "Cota:" somam ~290px numa
+                    linha indivisível e empurravam a página 28px além da viewport
+                    — a tela inteira passava a rolar de lado. Quebrar a linha é o
+                    único ajuste; nenhum número muda. */}
+                <span className="flex min-w-0 flex-wrap items-center gap-2 text-sm sm:text-base font-black text-[#1d1d1d]">
                   {d.rotulo}
                   <Selo nivel={d.nivel} />
                   {d.pctBatalhao !== undefined && (
-                    <span className="inline-flex items-center gap-1.5 rounded-lg border-2 border-slate-300 bg-white px-2.5 py-1 text-xs font-black text-slate-800 shadow-xs">
+                    <span className="inline-flex max-w-full items-center gap-1.5 rounded-lg border-2 border-slate-300 bg-white px-2.5 py-1 text-xs font-black text-slate-800 shadow-xs">
                       <span className="text-slate-600 font-bold">Cota:</span>
                       <span className="text-slate-900 font-black">{PCT.format(d.pctBatalhao)}%</span>
                       <span className="dados font-black text-[#ca0202]">({FMT.format(d.meta)})</span>
