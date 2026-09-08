@@ -258,10 +258,6 @@ function QuadroDeRegras({ diasMes, diasDecorridos }: { diasMes: number; diasDeco
               quando sobra, vira <strong>crédito</strong>.
             </li>
             <li>
-              <strong>Amanhã</strong> = cota do dia + dívida. Fração adiantada continua com a cota
-              cheia: crédito é folga, não dispensa.
-            </li>
-            <li>
               <strong>Período</strong> — dia {N0.format(diasDecorridos)} de {N0.format(diasMes)}. O
               dia em curso conta; o mês zera na virada, e nada é fixo no sistema.
             </li>
@@ -402,26 +398,12 @@ function Cartao({
             </strong>
           </span>
         )}
-        <span className="font-semibold text-slate-700">
-          {amanha.ultimo ? (
-            "Mês encerrado — não há dia seguinte."
-          ) : (
-            <>
-              Amanhã{" "}
-              <strong
-                className="dados text-[13px] font-black"
-                style={{ color: atrasado ? VERM : AMBAR }}
-              >
-                {N2.format(amanha.alvo)}
-              </strong>{" "}
-              <span className="text-slate-500">
-                {atrasado
-                  ? `= cota ${N2.format(amanha.cota)} + dívida ${N2.format(amanha.divida)}`
-                  : "= a cota do dia"}
-              </span>
-            </>
-          )}
-        </span>
+        {/* O "Amanhã" saiu daqui em 08/09/2026 junto com o cartão do
+            velocímetro — a decisão do Fabrício foi sobre a leitura, não sobre
+            um cartão só, e deixá-lo aqui repetiria em cada fração o número que
+            ele mandou tirar do Batalhão. `amanha.cota` FICA: ela é a cota
+            diária normal, que desenha a linha de alvo do gráfico e pinta as
+            barras do dia — isso é ALVO, não "amanhã". */}
       </div>
 
       <ResponsiveContainer width="100%" height={186}>
