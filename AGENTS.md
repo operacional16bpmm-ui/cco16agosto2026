@@ -33,6 +33,7 @@ npx tsc --noEmit \
   && npm run verificar:indices \
   && npm run verificar:excecoes \
   && npm run verificar:unidade-declarada \
+  && npm run verificar:navegacao \
   && npm run verificar:rotas \
   && npm run verificar:seguranca \
   && git commit -m "<msg>" && npx vercel --prod --yes
@@ -65,6 +66,12 @@ efetivo atribui ao RE. É teste de SÍMBOLO, não de número — voltar a deriva
 fração pelo RE não muda o total de evidências, só o balde, e nenhum gate de
 contagem pegaria. O contrário disso está escrito em comentário em três arquivos
 (a antiga regra C-4) e parece conserto.
+
+**`verificar:navegacao`** confere que todo atalho da barra da COP
+(`components/publico16/cop/barra-cop.tsx`) aponta para uma rota que existe em
+disco, e que ela continua sendo montada no `layout.tsx` do módulo. A barra
+aparece nas 19 telas: um `href` renomeado ali é 404 para o Batalhão inteiro, e
+`<Link href="...">` aceita qualquer string sem reclamar no build.
 
 **`verificar:seguranca`** pergunta, com a chave pública do site, quantas linhas
 cada tabela do domínio devolve — todas têm de responder zero. É a rede que teria
