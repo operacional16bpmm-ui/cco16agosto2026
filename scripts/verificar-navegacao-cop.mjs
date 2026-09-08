@@ -14,7 +14,7 @@
  *
  * Rodar: `npm run verificar:navegacao`
  */
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -83,6 +83,46 @@ test("os destinos que o Comando pediu continuam na barra", () => {
   assert.match(fonteBarra, /URL_FORMULARIO/, "a barra perdeu o atalho de lançamento.");
   assert.match(fonteBarra, /wa\.me/, "a barra perdeu o contato de ajuda no WhatsApp.");
   assert.match(fonteBarra, /instagram\.com/, "a barra perdeu o Instagram do Batalhão.");
+});
+
+test("a barra conhece todas as telas de administração", () => {
+  // A lista da barra é a ÚNICA navegação da administração desde 08/09/2026 (as
+  // abas internas saíram). Tela nova que não entre aqui fica sem caminho: só
+  // chega quem digitar a URL.
+  const hrefs = new Set(hrefsDaBarra());
+  const telas = [];
+  const raizAdmin = join(RAIZ_ROTAS, "cop2026/admin");
+  const varrer = (dir, prefixo) => {
+    for (const nome of readdirSync(dir, { withFileTypes: true })) {
+      if (!nome.isDirectory()) continue;
+      const rota = `${prefixo}/${nome.name}`;
+      if (existsSync(join(dir, nome.name, "page.tsx"))) telas.push(rota);
+      varrer(join(dir, nome.name), rota);
+    }
+  };
+  varrer(raizAdmin, "/cop2026/admin");
+  telas.push("/cop2026/admin");
+
+  const foraDaBarra = telas.filter((t) => !hrefs.has(t));
+  assert.deepEqual(
+    foraDaBarra,
+    [],
+    `tela(s) de administração sem atalho na barra: ${foraDaBarra.join(", ")}.`
+  );
+});
+
+test("as telas de administração não repetem a navegação", () => {
+  // Duas fileiras idênticas na mesma tela, e duas listas para manter.
+  const sobrou = readdirSync(join(RAIZ_ROTAS, "cop2026/admin"), { withFileTypes: true })
+    .filter((e) => e.isFile() && e.name.endsWith(".tsx"))
+    .filter((e) =>
+      readFileSync(join(RAIZ_ROTAS, "cop2026/admin", e.name), "utf8").includes("AbasAdmin")
+    );
+  assert.deepEqual(
+    sobrou.map((e) => e.name),
+    [],
+    "as abas internas da administração voltaram: a navegação dela vive na BarraCop."
+  );
 });
 
 test("os atalhos de administração não aparecem para quem não administra", () => {

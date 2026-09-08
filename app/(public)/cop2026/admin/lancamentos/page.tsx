@@ -4,7 +4,7 @@ import { RodapeCop } from "@/components/publico16/cop/rodape-cop";
 import { FaixaCreditos } from "@/components/publico16/creditos";
 import { exigirAdminCop } from "@/lib/db/cop2026-autorizados";
 import { identificadoresCompartilhados, listarParaManejo } from "@/lib/db/cop2026-lancamentos";
-import { AbasAdmin, CabecalhoAdmin } from "../cabecalho-admin";
+import { CabecalhoAdmin } from "../cabecalho-admin";
 import { PainelLancamentos, type LinhaLancamento } from "./painel-lancamentos";
 
 export const metadata: Metadata = {
@@ -25,7 +25,6 @@ export default async function AdminLancamentosPage() {
     <div className="tema-institucional min-h-screen bg-tatico-fundo text-[15px] text-branco">
       <FaixaCreditos />
       <CabecalhoAdmin secao="Lançamentos" email={admin.email} />
-      <AbasAdmin atual="/cop2026/admin/lancamentos" />
 
       <main>
         <PainelLancamentos

@@ -7,7 +7,7 @@ import { lerParametros, periodoDe } from "@/lib/db/cop2026-parametros";
 import { fonteCop2026 } from "@/lib/cop2026-leitura";
 import { janelaAtencaoDias } from "@/lib/cop2026-config-atencao";
 import { hojeBrt } from "@/lib/cop2026-ciclo";
-import { AbasAdmin, CabecalhoAdmin } from "../cabecalho-admin";
+import { CabecalhoAdmin } from "../cabecalho-admin";
 import { PainelParametros } from "./painel-parametros";
 
 export const metadata: Metadata = {
@@ -36,7 +36,6 @@ export default async function AdminParametrosPage({
     <div className="tema-institucional min-h-screen bg-tatico-fundo text-[15px] text-branco">
       <FaixaCreditos />
       <CabecalhoAdmin secao="Metas" email={admin.email} />
-      <AbasAdmin atual="/cop2026/admin/parametros" />
 
       <main>
         <PainelParametros

@@ -5,7 +5,7 @@ import { FaixaCreditos } from "@/components/publico16/creditos";
 import { exigirAdminCop } from "@/lib/db/cop2026-autorizados";
 import { lerAuditoriaCop2026 } from "@/lib/cop2026-leitura";
 import { FILTROS_VAZIOS, calcularPainel } from "@/lib/cop2026-metricas";
-import { AbasAdmin, CabecalhoAdmin } from "../cabecalho-admin";
+import { CabecalhoAdmin } from "../cabecalho-admin";
 import { TabelaDivergencias } from "./tabela-divergencias";
 
 export const metadata: Metadata = {
@@ -46,7 +46,6 @@ export default async function AdminDivergenciasPage() {
     <div className="tema-institucional min-h-screen bg-tatico-fundo text-[15px] text-branco">
       <FaixaCreditos />
       <CabecalhoAdmin secao="Divergências" email={admin.email} />
-      <AbasAdmin atual="/cop2026/admin/divergencias" />
 
       <main className="mx-auto max-w-[1100px] space-y-5 px-5 py-8">
         <section className="rounded-xl border border-borda bg-tatico-super p-5">

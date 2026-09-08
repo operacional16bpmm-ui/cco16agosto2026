@@ -4,7 +4,7 @@ import { RodapeCop } from "@/components/publico16/cop/rodape-cop";
 import { FaixaCreditos } from "@/components/publico16/creditos";
 import { exigirAdminCop } from "@/lib/db/cop2026-autorizados";
 import { medirSaude } from "@/lib/cop2026-saude";
-import { AbasAdmin, CabecalhoAdmin } from "../cabecalho-admin";
+import { CabecalhoAdmin } from "../cabecalho-admin";
 import { PainelSaude } from "./painel-saude";
 import { SecaoInfra } from "./secao-infra";
 
@@ -32,7 +32,6 @@ export default async function AdminSaudePage() {
     <div className="tema-institucional min-h-screen bg-tatico-fundo text-[15px] text-branco">
       <FaixaCreditos />
       <CabecalhoAdmin secao="Saúde" email={admin.email} />
-      <AbasAdmin atual="/cop2026/admin/saude" />
 
       <main>
         <PainelSaude inicial={inicial} assistenteAtivo={Boolean(process.env.ANTHROPIC_API_KEY)} />

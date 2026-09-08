@@ -4,7 +4,7 @@ import { exigirAdminCop, listarAutorizados } from "@/lib/db/cop2026-autorizados"
 import { RodapeCop } from "@/components/publico16/cop/rodape-cop";
 import { FaixaCreditos } from "@/components/publico16/creditos";
 import { PainelAutorizados } from "./painel-autorizados";
-import { AbasAdmin, CabecalhoAdmin } from "./cabecalho-admin";
+import { CabecalhoAdmin } from "./cabecalho-admin";
 
 export const metadata: Metadata = {
   title: "Autorizados · Auditoria de COP 2026",
@@ -27,7 +27,6 @@ export default async function AdminCopPage() {
 
       <CabecalhoAdmin secao="Autorizados" email={admin.email} />
 
-      <AbasAdmin atual="/cop2026/admin" />
 
       <main>
         <PainelAutorizados

@@ -9,6 +9,12 @@ import { ChevronRight, LogOut } from "lucide-react";
  * virou quatro — Autorizados, Lançamentos, Auditores e Metas. Cabeçalho
  * copiado é cabeçalho que diverge: o Major navega entre as telas e cobra a
  * diferença.
+ *
+ * **AS ABAS SAÍRAM DAQUI em 08/09/2026.** As nove telas de administração viraram
+ * a segunda linha da `BarraCop`, que aparece em todo o módulo — mantê-las nos
+ * dois lugares empilhava duas fileiras idênticas na mesma tela e criava duas
+ * listas para atualizar quando nascesse a décima. Sobrou o que é desta tela e
+ * não do módulo: o brasão, a trilha de onde a pessoa está e a sessão aberta.
  */
 export function CabecalhoAdmin({
   secao,
@@ -64,39 +70,5 @@ export function CabecalhoAdmin({
       </div>
       <div className="faixa-institucional h-1.5" />
     </header>
-  );
-}
-
-/** Abas da administração. Vive aqui e não em cada página para que uma tela nova
- *  apareça nas outras sem edição em quatro arquivos. */
-export function AbasAdmin({ atual }: { atual: string }) {
-  const abas = [
-    { href: "/cop2026/admin", rotulo: "Autorizados" },
-    { href: "/cop2026/admin/lancamentos", rotulo: "Lançamentos" },
-    { href: "/cop2026/admin/auditores", rotulo: "Auditores" },
-    { href: "/cop2026/admin/parametros", rotulo: "Metas" },
-    { href: "/cop2026/admin/unidades", rotulo: "Unidades" },
-    { href: "/cop2026/admin/trilha", rotulo: "Trilha" },
-    { href: "/cop2026/admin/importar", rotulo: "Importar" },
-    { href: "/cop2026/admin/divergencias", rotulo: "Divergências" },
-    { href: "/cop2026/admin/saude", rotulo: "Saúde" },
-  ];
-  return (
-    <nav className="mx-auto flex max-w-[1100px] flex-wrap gap-2 px-5 pt-6" aria-label="Administração">
-      {abas.map((a) => (
-        <Link
-          key={a.href}
-          href={a.href}
-          aria-current={a.href === atual ? "page" : undefined}
-          className={`rounded-md border px-3.5 py-2 text-[12.5px] font-bold uppercase tracking-wide transition-colors ${
-            a.href === atual
-              ? "border-vermelho bg-vermelho/10 text-vermelho"
-              : "border-borda text-texto-suave hover:border-vermelho/40 hover:text-vermelho"
-          }`}
-        >
-          {a.rotulo}
-        </Link>
-      ))}
-    </nav>
   );
 }

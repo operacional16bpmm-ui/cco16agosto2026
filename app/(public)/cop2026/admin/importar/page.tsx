@@ -5,7 +5,7 @@ import { FaixaCreditos } from "@/components/publico16/creditos";
 import { exigirAdminCop } from "@/lib/db/cop2026-autorizados";
 import { fonteCop2026 } from "@/lib/cop2026-leitura";
 import { totaisPorMes } from "@/lib/db/cop2026-lancamentos";
-import { AbasAdmin, CabecalhoAdmin } from "../cabecalho-admin";
+import { CabecalhoAdmin } from "../cabecalho-admin";
 import { PainelImportacao } from "./painel-importacao";
 
 export const metadata: Metadata = {
@@ -26,7 +26,6 @@ export default async function AdminImportarPage() {
     <div className="tema-institucional min-h-screen bg-tatico-fundo text-[15px] text-branco">
       <FaixaCreditos />
       <CabecalhoAdmin secao="Importar" email={admin.email} />
-      <AbasAdmin atual="/cop2026/admin/importar" />
 
       <main>
         <PainelImportacao fonte={fonteCop2026()} porMes={porMes} />

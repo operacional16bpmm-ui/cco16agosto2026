@@ -5,7 +5,7 @@ import { FaixaCreditos } from "@/components/publico16/creditos";
 import { exigirAdminCop } from "@/lib/db/cop2026-autorizados";
 import { cpasPendentes, listarCpas, resumoDaDimensao } from "@/lib/db/cop2026-unidade";
 import { fonteCop2026 } from "@/lib/cop2026-leitura";
-import { AbasAdmin, CabecalhoAdmin } from "../cabecalho-admin";
+import { CabecalhoAdmin } from "../cabecalho-admin";
 import { PainelUnidades } from "./painel-unidades";
 
 export const metadata: Metadata = {
@@ -28,7 +28,6 @@ export default async function AdminUnidadesPage() {
     <div className="tema-institucional min-h-screen bg-tatico-fundo text-[15px] text-branco">
       <FaixaCreditos />
       <CabecalhoAdmin secao="Unidades" email={admin.email} />
-      <AbasAdmin atual="/cop2026/admin/unidades" />
       <PainelUnidades
         cpas={cpas}
         pendentes={pendentes}

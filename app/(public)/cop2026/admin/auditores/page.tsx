@@ -4,7 +4,7 @@ import { RodapeCop } from "@/components/publico16/cop/rodape-cop";
 import { FaixaCreditos } from "@/components/publico16/creditos";
 import { exigirAdminCop } from "@/lib/db/cop2026-autorizados";
 import { exigeVinculoConfirmado, listarVinculos } from "@/lib/db/cop2026-auditor";
-import { AbasAdmin, CabecalhoAdmin } from "../cabecalho-admin";
+import { CabecalhoAdmin } from "../cabecalho-admin";
 import { FilaVinculos } from "./fila-vinculos";
 
 export const metadata: Metadata = {
@@ -29,7 +29,6 @@ export default async function AdminAuditoresPage() {
     <div className="tema-institucional min-h-screen bg-tatico-fundo text-[15px] text-branco">
       <FaixaCreditos />
       <CabecalhoAdmin secao="Auditores" email={admin.email} />
-      <AbasAdmin atual="/cop2026/admin/auditores" />
 
       <main>
         <FilaVinculos itens={itens} erro={erro} exigindo={exigeVinculoConfirmado()} />

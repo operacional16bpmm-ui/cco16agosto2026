@@ -4,7 +4,7 @@ import { RodapeCop } from "@/components/publico16/cop/rodape-cop";
 import { FaixaCreditos } from "@/components/publico16/creditos";
 import { exigirAdminCop } from "@/lib/db/cop2026-autorizados";
 import { facetasDaTrilha, lerTrilha } from "@/lib/db/cop2026-trilha";
-import { AbasAdmin, CabecalhoAdmin } from "../cabecalho-admin";
+import { CabecalhoAdmin } from "../cabecalho-admin";
 import { PainelTrilha } from "./painel-trilha";
 
 export const metadata: Metadata = {
@@ -44,7 +44,6 @@ export default async function AdminTrilhaPage({
     <div className="tema-institucional min-h-screen bg-tatico-fundo text-[15px] text-branco">
       <FaixaCreditos />
       <CabecalhoAdmin secao="Trilha" email={admin.email} />
-      <AbasAdmin atual="/cop2026/admin/trilha" />
       <PainelTrilha eventos={eventos} facetas={facetas} filtro={filtro} />
       <RodapeCop />
     </div>
