@@ -138,15 +138,11 @@ export function FilaVinculos({
                 </td>
                 <td className="px-4 py-3">
                   <span className="dados">{v.re ?? v.re_base}</span>
-                  {/* O flag do roster é do Comando, e SÓ do Comando: nunca
-                      volta na resposta do formulário — a diferença entre "RE do
-                      efetivo" e "RE de fora" é um oráculo sobre o efetivo
-                      nominal do Batalhão. */}
-                  {v.re_fora_do_efetivo && (
-                    <span className="block text-[11px] text-sinal-atencao">
-                      fora do efetivo de 19/07
-                    </span>
-                  )}
+                  {/* Nada de marcar "fora do efetivo" na tela: a relação de
+                      19/07 é BASE de apoio, não verdade. Vale o RE que o
+                      policial declara (mesma regra da fração declarada, ver
+                      verificar:unidade-declarada). O flag continua gravado em
+                      `re_fora_do_efetivo` para a trilha, e nunca vira aviso. */}
                 </td>
                 <td className="px-4 py-3 text-texto-suave">{quando(v.criado_em)}</td>
                 <td className="px-4 py-3 text-[11.5px]">
