@@ -48,6 +48,13 @@ export async function gravarLancamento(
   v: LancamentoValidado,
   contexto: {
     subunidade: SubunidadeValida;
+    /** Fração na árvore de OPM, já conferida por quem chamou. Quando não vem,
+     *  cai no de-para do vocabulário do painel — o caminho da planilha e do
+     *  backfill, que não conhecem código de unidade. */
+    unidadeCod?: string | null;
+    /** A fração que a relação do efetivo aponta, só para a trilha. NÃO
+     *  reclassifica o lançamento: vale o que o policial declarou. */
+    subunidadeRoster?: string | null;
     vinculoPendente: boolean;
     email: string | null;
     sub: string | null;
@@ -104,8 +111,14 @@ export async function gravarLancamento(
       /* Fase 2: a fração REAL na árvore CPA → Batalhão → Fração. `subunidade`
          continua sendo o vocabulário do painel e não muda de significado — as
          duas convivem de propósito durante a virada. `null` quando a fração não
-         casa, e aí o lançamento aparece como órfão, como sempre apareceu. */
-      unidade_cod: await fracaoDaSubunidade(contexto.subunidade),
+         casa, e aí o lançamento aparece como órfão, como sempre apareceu.
+         Desde 08/09/2026 o formulário manda a fração DECLARADA já conferida
+         contra a árvore; o de-para pelo vocabulário do painel continua servindo
+         a quem não tem código (planilha, backfill). */
+      unidade_cod:
+        contexto.unidadeCod !== undefined
+          ? contexto.unidadeCod
+          : await fracaoDaSubunidade(contexto.subunidade),
       auditou: v.auditou,
       // Régua A (oficial em setembro): o que a pessoa declarou. Quando ela não
       // declara número, a própria contagem de identificadores serve — é o que
@@ -126,6 +139,11 @@ export async function gravarLancamento(
         recusas: v.recusas.map((r) => ({ bruto: redigirCpf(r.bruto), motivo: r.motivo })),
         duplicadasNoEnvio: v.duplicadasNoEnvio.map(redigirCpf),
         quantidadeDeclarada: v.quantidadeDeclarada,
+        /* Trilha da declaração de unidade (08/09/2026): o que a relação do
+           efetivo dizia no momento do lançamento. Existe para o Comando poder
+           cruzar depois — nenhuma tela de desempenho lê este campo, e ele NÃO
+           reclassifica nada. Vale o declarado. */
+        subunidadeRoster: contexto.subunidadeRoster ?? null,
       },
       criado_por_email: contexto.email,
       criado_por_sub: contexto.sub,

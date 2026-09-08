@@ -21,7 +21,8 @@
     "verificar:excecoes": "node --experimental-strip-types --no-warnings --import ./scripts/alias-loader.mjs --test scripts/verificar-excecoes-cop.mjs",
     "verificar:seguranca": "node --env-file-if-exists=.env.local --experimental-strip-types --no-warnings --import ./scripts/alias-loader.mjs --test scripts/verificar-seguranca-cop.mjs",
     "verificar:superficies": "node --experimental-strip-types --no-warnings --import ./scripts/alias-loader.mjs --test scripts/verificar-superficies-id.mjs",
-    "verificar:rotas": "node --experimental-strip-types --no-warnings --import ./scripts/alias-loader.mjs --test scripts/verificar-rotas-api.mjs"
+    "verificar:rotas": "node --experimental-strip-types --no-warnings --import ./scripts/alias-loader.mjs --test scripts/verificar-rotas-api.mjs",
+    "verificar:unidade-declarada": "node --experimental-strip-types --no-warnings --test scripts/verificar-unidade-declarada.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.123.0",

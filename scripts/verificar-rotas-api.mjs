@@ -30,6 +30,10 @@ const PUBLICAS = new Map([
   ["acesso/callback", "volta do Google; valida o `state` do próprio fluxo"],
   ["acesso/sair", "encerra a sessão — exigir sessão para sair não faz sentido"],
   ["efetivo", "consultada pelo formulário público /cop2026/lancar, que a tropa usa sem login"],
+  [
+    "unidades",
+    "organograma da Corporação (nome e código de OPM) para o seletor do formulário público; não devolve pessoa, contagem nem lançamento",
+  ],
 ]);
 
 /**

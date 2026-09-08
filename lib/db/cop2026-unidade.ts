@@ -16,6 +16,7 @@ import { cache } from "react";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { supabaseConfigurado } from "@/lib/preview";
+import { ORDEM_SUBUNIDADES, ROTULO_SUBUNIDADE } from "@/lib/cop2026";
 
 export type TipoUnidade = "cpa" | "batalhao" | "fracao";
 
@@ -29,6 +30,9 @@ export type Unidade = {
   ativa: boolean;
   revisadoEm: string | null;
   revisadoPor: string | null;
+  /** Vocabulário do painel ('em', '1cia', 'ft') quando a fração tem meta
+   *  própria na Matriz Proporcional. `null` nas frações administrativas. */
+  subunidadePainel: string | null;
 };
 
 export type CpaPendente = {
@@ -49,6 +53,7 @@ function daLinha(r: Record<string, unknown>): Unidade {
     ativa: Boolean(r.ativa),
     revisadoEm: (r.revisado_em as string | null) ?? null,
     revisadoPor: (r.revisado_por as string | null) ?? null,
+    subunidadePainel: (r.subunidade_painel as string | null) ?? null,
   };
 }
 
@@ -111,6 +116,185 @@ export async function listarFracoes(codBatalhao: string): Promise<Unidade[]> {
     if (error) throw error;
     return (data ?? []).map(daLinha);
   }, []);
+}
+
+/* ------------------------------------------------- seletor do formulário */
+
+/**
+ * Uma opção do seletor de unidade, já pronta para a tela: nome institucional,
+ * nada de código. O `subunidade` só vem preenchido na fração e é o que liga a
+ * escolha do policial ao vocabulário do painel ('em', '1cia', 'ft').
+ */
+export type OpcaoUnidade = {
+  cod: string;
+  nome: string;
+  subunidade: string | null;
+};
+
+/** A árvore que o formulário de lançamento carrega já montada. */
+export type ArvoreFormulario = {
+  comandos: OpcaoUnidade[];
+  batalhoes: OpcaoUnidade[];
+  fracoes: OpcaoUnidade[];
+  padrao: { comando: string; batalhao: string };
+};
+
+function opcao(u: Unidade): OpcaoUnidade {
+  return {
+    cod: u.cod,
+    nome: nomeInstitucional(u.cpaNome ?? u.nomeCurto ?? u.nome),
+    subunidade: u.subunidadePainel,
+  };
+}
+
+/** Põe o código `primeiro` no topo da lista sem reordenar o resto. */
+function comPadraoNoTopo(lista: OpcaoUnidade[], primeiro: string): OpcaoUnidade[] {
+  const i = lista.findIndex((o) => o.cod === primeiro);
+  return i <= 0 ? lista : [lista[i], ...lista.slice(0, i), ...lista.slice(i + 1)];
+}
+
+/**
+ * Os comandos (CPA/CPI e equivalentes), com o desta instalação no topo —
+ * determinação do Fabricio em 08/09/2026: "CPA/M-5 já selecionado e todas as
+ * outras abaixo". Os 13 comandos que a migration 029 deixou sem nome revisado
+ * ficam FORA: exibir "Comando 307" para a tropa escolher convida ao erro que o
+ * seletor existe para evitar.
+ */
+export async function opcoesDeComando(): Promise<OpcaoUnidade[]> {
+  const cpas = (await listarCpas()).filter((u) => u.cpaNome);
+  return cpas.map(opcao);
+}
+
+/** Os batalhões de um comando. */
+export async function opcoesDeBatalhao(codComando: string): Promise<OpcaoUnidade[]> {
+  return (await listarBatalhoes(codComando)).map(opcao);
+}
+
+/**
+ * As frações que o policial vê.
+ *
+ * Quando o batalhão tem frações mapeadas para o vocabulário do painel (o 16º
+ * BPM/M tem seis: EM, 1ª a 4ª Cia e Força Tática), **só elas aparecem** — são
+ * as que têm meta na Matriz Proporcional, e o efetivo das frações
+ * administrativas ("1.CIA PM ADM", "EM P/4") lança na Cia mãe, como o painel
+ * sempre contou. Batalhão ainda não mapeado mostra a árvore como ela é, para
+ * não ficar sem opção nenhuma.
+ */
+export async function opcoesDeFracao(codBatalhao: string): Promise<OpcaoUnidade[]> {
+  const todas = await listarFracoes(codBatalhao);
+  const comMeta = todas.filter((u) => u.subunidadePainel);
+  const lista = comMeta.length > 0 ? comMeta : todas;
+  return lista
+    .map(opcao)
+    .map((o) =>
+      // Na fração mapeada quem manda é o rótulo do painel ("Estado-Maior",
+      // "1ª Cia"): "16.BPM/M 1.CIA PM TERRITORIAL" é o nome do DEJEM, não o
+      // que o Comando lê no relatório.
+      o.subunidade && ROTULO_SUBUNIDADE[o.subunidade]
+        ? { ...o, nome: ROTULO_SUBUNIDADE[o.subunidade] }
+        : o
+    )
+    .sort((a, b) => {
+      const ia = ORDEM_SUBUNIDADES.indexOf(a.subunidade as (typeof ORDEM_SUBUNIDADES)[number]);
+      const ib = ORDEM_SUBUNIDADES.indexOf(b.subunidade as (typeof ORDEM_SUBUNIDADES)[number]);
+      if (ia !== ib) return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+      return a.nome.localeCompare(b.nome, "pt-BR");
+    });
+}
+
+/**
+ * Tudo o que a página de lançamento precisa, numa consulta só por nível.
+ *
+ * As frações dos OUTROS batalhões não vêm aqui de propósito: são 3.708 no
+ * estado, e o formulário abre em 4G de viatura. Trocar de batalhão busca as
+ * frações dele em `/api/cop2026/unidades`.
+ */
+export async function arvoreDoFormulario(): Promise<ArvoreFormulario> {
+  const batalhao = batalhaoDaInstalacao();
+  const comando = batalhao.slice(0, 3);
+  const [comandos, batalhoes, fracoes] = await Promise.all([
+    opcoesDeComando(),
+    opcoesDeBatalhao(comando),
+    opcoesDeFracao(batalhao),
+  ]);
+  return {
+    comandos: comPadraoNoTopo(comandos, comando),
+    batalhoes: comPadraoNoTopo(batalhoes, batalhao),
+    fracoes,
+    padrao: { comando, batalhao },
+  };
+}
+
+/**
+ * A fração que o policial DECLAROU, conferida contra a árvore.
+ *
+ * DECISÃO DO FABRICIO, 08/09/2026 — inverte a regra C-4, que derivava a
+ * subunidade do RE e recusava qualquer fração vinda do cliente: **vale sempre o
+ * que o policial declara**, mesmo quando a relação do efetivo (`p4_efetivo`,
+ * congelada em 19/07) o coloca em outra Cia. Quem sabe onde serve hoje é ele; o
+ * roster envelhece, o policial é transferido, e o painel que discorda da tropa
+ * perde a tropa.
+ *
+ * O que a conferência ainda garante — e é o que sobra da C-4: a fração precisa
+ * EXISTIR, estar ativa e pender do batalhão declarado, que por sua vez pende do
+ * comando declarado. Assim o `curl` pode escolher a Cia errada (risco aceito,
+ * era o preço da declaração), mas não pode inventar unidade nem despejar
+ * lançamento num código que não é fração de ninguém.
+ *
+ * `null` quando não casa — e aí quem chama decide, sem travar a tropa.
+ */
+export async function resolverUnidadeDeclarada(
+  fracaoCod: string,
+  batalhaoCod: string,
+  comandoCod: string
+): Promise<{ cod: string; subunidade: string | null; batalhao: string; comando: string } | null> {
+  if (!/^\d{6,9}$/.test(fracaoCod) || !/^\d{5}$/.test(batalhaoCod) || !/^\d{3}$/.test(comandoCod)) {
+    return null;
+  }
+  return seguro(async () => {
+    const { data, error } = await createAdminClient()
+      .from("cop_unidade")
+      .select("cod, cod_pai, subunidade_painel, ativa, tipo")
+      .eq("cod", fracaoCod)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data || data.tipo !== "fracao" || !data.ativa) return null;
+    if (data.cod_pai !== batalhaoCod || !batalhaoCod.startsWith(comandoCod)) return null;
+    return {
+      cod: String(data.cod),
+      subunidade: (data.subunidade_painel as string | null) ?? null,
+      batalhao: batalhaoCod,
+      comando: comandoCod,
+    };
+  }, null);
+}
+
+/**
+ * Nome de exibição de uma fração, batalhão ou comando — para o eco do
+ * comprovante e do relatório, onde só o nome pode aparecer.
+ */
+export async function nomesDaUnidade(
+  cods: string[]
+): Promise<Record<string, string>> {
+  const limpos = cods.filter((c) => /^\d{3,9}$/.test(c));
+  if (limpos.length === 0) return {};
+  return seguro(async () => {
+    const { data, error } = await createAdminClient()
+      .from("cop_unidade")
+      .select("cod, nome, nome_curto, cpa_nome, subunidade_painel")
+      .in("cod", limpos);
+    if (error) throw error;
+    const mapa: Record<string, string> = {};
+    for (const r of data ?? []) {
+      const sub = r.subunidade_painel as string | null;
+      mapa[String(r.cod)] =
+        (sub && ROTULO_SUBUNIDADE[sub]) ||
+        nomeInstitucional(
+          String(r.cpa_nome ?? r.nome_curto ?? r.nome ?? "")
+        );
+    }
+    return mapa;
+  }, {});
 }
 
 /** O que ainda espera o Comando nomear. Zerar isto libera a Fase 2. */

@@ -2,13 +2,20 @@
 
 import { revalidatePath } from "next/cache";
 
-import { lerEvidencias, validarLancamento, type EntradaLancamento } from "@/lib/cop2026-lancamento";
+import {
+  lerEvidencias,
+  subunidadeValida,
+  validarLancamento,
+  type EntradaLancamento,
+  type SubunidadeValida,
+} from "@/lib/cop2026-lancamento";
 import { MOTIVOS_ABAIXO_DO_MINIMO } from "@/lib/cop2026";
 import { MINIMO_PADRAO } from "@/lib/cop2026-metricas";
 import { ESTADO_INICIAL, type LancamentoState } from "./estado";
 import { identidadeCop } from "@/lib/db/cop2026-autorizados";
 import { identificarPorRe, resolverVinculo } from "@/lib/db/cop2026-auditor";
 import { gravarLancamento } from "@/lib/db/cop2026-lancamentos";
+import { fracaoDaSubunidade, resolverUnidadeDeclarada } from "@/lib/db/cop2026-unidade";
 
 /**
  * Envio do lançamento da Auditoria de COP.
@@ -19,12 +26,22 @@ import { gravarLancamento } from "@/lib/db/cop2026-lancamentos";
  * (`lib/cop2026-lancamento.ts`) — e depois ainda contra as constraints do
  * Postgres, que é a única camada que não se contorna.
  *
- * Dois campos NÃO são aceitos do cliente por decisão de segurança:
+ * O vínculo conta↔RE continua não sendo aceito do cliente: é resolvido contra
+ * `cop2026_auditor` (C-3).
  *
- * - `subunidade`, derivada do RE no servidor. Se viesse do formulário, daria
- *   para despejar evidência no balde de outra Cia e distorcer o ranking que o
- *   Comando usa para cobrar as frações.
- * - o vínculo conta↔RE, resolvido contra `cop2026_auditor` (C-3).
+ * A UNIDADE, ESSA, PASSOU A VIR DO FORMULÁRIO — determinação do Fabricio em
+ * 08/09/2026, que reverte a regra C-4. Até aqui a fração era DERIVADA do RE
+ * contra `p4_efetivo`, congelada em 19/07: quem foi transferido depois lançava
+ * e caía na Cia antiga, sem ver e sem poder corrigir. **Vale o que o policial
+ * declara**, e o que a relação diz não desempata nada.
+ *
+ * O que sobra da C-4, e continua valendo: a fração declarada é conferida contra
+ * a árvore de unidades (existe? está ativa? pende do batalhão, que pende do
+ * comando?). O `curl` pode escolher a Cia errada — risco aceito, é o preço da
+ * declaração — mas não inventa unidade nem despeja lançamento num código que
+ * não é fração de ninguém. E a fração da relação do efetivo continua sendo
+ * gravada em `payload_bruto.subunidadeRoster`, como trilha: serve para o
+ * Comando cruzar depois, NUNCA para reclassificar o lançamento.
  */
 
 function falha(...erros: string[]): LancamentoState {
@@ -96,6 +113,18 @@ export async function enviarLancamentoAction(
     idSubmissao: texto("idSubmissao"),
   };
 
+  /* A unidade declarada. `subunidadeDeclarada` é o vocabulário do painel
+     ('em', '1cia', 'ft') e é o que decide onde o lançamento conta; os três
+     códigos são a árvore de OPM e servem para conferência e para o
+     `unidade_cod`. Recusar aqui e não só na tela porque Server Action é
+     endpoint público (C-4). */
+  const subunidadeDeclarada = texto("subunidadeDeclarada");
+  if (!subunidadeValida(subunidadeDeclarada) || subunidadeDeclarada === "outros") {
+    return falha(
+      "Escolha a sua fração no passo 1 — Estado-Maior, Força Tática ou a sua Cia."
+    );
+  }
+
   const validacao = validarLancamento(entrada);
   if (!validacao.ok) return { ...ESTADO_INICIAL, erros: validacao.erros };
 
@@ -103,13 +132,31 @@ export async function enviarLancamentoAction(
 
   try {
     const identidade = await identidadeCop();
-    // A ordem importa: a subunidade sai do RE declarado, não da conta — o
-    // mesmo PM pode estar logado na conta de outro no celular da viatura.
-    const { subunidade } = await identificarPorRe(v.re.base);
+    /* A fração da relação do efetivo NÃO decide mais nada — vai para a trilha
+       e só. Mantida a busca pelo RE (e não pela conta) porque o mesmo PM pode
+       estar logado na conta de outro no celular da viatura. */
+    const roster = await identificarPorRe(v.re.base);
     const vinculo = await resolverVinculo(identidade?.email ?? null, v.re.base, v.nomeGuerra);
+
+    /* Confere a fração declarada contra a árvore. Quando ela não casa — banco
+       fora do ar, ou a página caiu na lista de emergência, onde o "código" é a
+       própria chave do painel — o lançamento entra do mesmo jeito, pela
+       subunidade declarada, e só fica sem `unidade_cod`. Travar aqui seria
+       inventar um motivo novo para a tropa não lançar. */
+    const naArvore = await resolverUnidadeDeclarada(
+      texto("fracaoCod"),
+      texto("batalhaoCod"),
+      texto("comandoCod")
+    );
+    const subunidade: SubunidadeValida =
+      naArvore?.subunidade && subunidadeValida(naArvore.subunidade)
+        ? naArvore.subunidade
+        : subunidadeDeclarada;
 
     const resultado = await gravarLancamento(v, {
       subunidade,
+      unidadeCod: naArvore?.cod ?? (await fracaoDaSubunidade(subunidade)),
+      subunidadeRoster: roster.subunidade,
       vinculoPendente: vinculo.pendente,
       email: identidade?.email ?? null,
       sub: null,

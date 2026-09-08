@@ -32,6 +32,8 @@ npx tsc --noEmit \
   && npm run verificar:unidades \
   && npm run verificar:indices \
   && npm run verificar:excecoes \
+  && npm run verificar:unidade-declarada \
+  && npm run verificar:rotas \
   && npm run verificar:seguranca \
   && git commit -m "<msg>" && npx vercel --prod --yes
 ```
@@ -56,6 +58,13 @@ e `lib/` atrás de quem voltou a formatar por conta própria.
 existia escrita três vezes, com respostas diferentes — o briefing anunciava
 "8 sem IDs" e mostrava 0 em todas as barras. Se você precisar do número de
 exceções em qualquer superfície nova, **chame a função**; não refaça o `filter`.
+
+**`verificar:unidade-declarada`** trava a decisão de 08/09/2026: a fração do
+lançamento é a que o **policial declara** no formulário, não a que a relação do
+efetivo atribui ao RE. É teste de SÍMBOLO, não de número — voltar a derivar a
+fração pelo RE não muda o total de evidências, só o balde, e nenhum gate de
+contagem pegaria. O contrário disso está escrito em comentário em três arquivos
+(a antiga regra C-4) e parece conserto.
 
 **`verificar:seguranca`** pergunta, com a chave pública do site, quantas linhas
 cada tabela do domínio devolve — todas têm de responder zero. É a rede que teria

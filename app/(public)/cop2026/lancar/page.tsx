@@ -8,6 +8,8 @@ import { FaixaCreditos } from "@/components/publico16/creditos";
 import { identidadeCop } from "@/lib/db/cop2026-autorizados";
 import { ehAdminCop } from "@/lib/cop2026-acesso";
 import { BotaoAdmin } from "@/components/publico16/cop/botao-admin";
+import { ORDEM_SUBUNIDADES, ROTULO_SUBUNIDADE } from "@/lib/cop2026";
+import { arvoreDoFormulario, type ArvoreFormulario } from "@/lib/db/cop2026-unidade";
 import { FormularioLancamento } from "./formulario-lancamento";
 
 export const metadata: Metadata = {
@@ -35,9 +37,35 @@ export const dynamic = "force-dynamic";
  * e a rota passa a viver atrás do mesmo portão do Dashboard — variável de
  * ambiente, para poder ser relaxada em minutos se a adesão cair, sem deploy.
  */
+/**
+ * Frações do 16º BPM/M sem passar pelo banco.
+ *
+ * Existe para o caso em que `cop_unidade` não responde: sem isto o seletor
+ * abriria vazio e NINGUÉM conseguiria lançar, porque a fração é obrigatória.
+ * Aqui o código da opção é a própria chave do painel ('em', '1cia'), que não
+ * casa com o formato de código de OPM — a Server Action reconhece isso e grava
+ * pela subunidade declarada, sem vínculo com a árvore.
+ */
+function arvoreDeEmergencia(): ArvoreFormulario {
+  return {
+    comandos: [],
+    batalhoes: [],
+    fracoes: ORDEM_SUBUNIDADES.map((s) => ({
+      cod: s,
+      nome: ROTULO_SUBUNIDADE[s] ?? s,
+      subunidade: s,
+    })),
+    padrao: { comando: "", batalhao: "" },
+  };
+}
+
 export default async function LancarPage() {
   // Só para carimbar a autoria de quem já está logado. `null` é o caso normal.
-  const identidade = await identidadeCop();
+  const [identidade, arvoreDoBanco] = await Promise.all([
+    identidadeCop(),
+    arvoreDoFormulario(),
+  ]);
+  const arvore = arvoreDoBanco.fracoes.length > 0 ? arvoreDoBanco : arvoreDeEmergencia();
 
   return (
     <div className="tema-institucional flex min-h-screen flex-col bg-tatico-fundo text-[15px] text-branco">
@@ -77,13 +105,14 @@ export default async function LancarPage() {
             Lançamento da auditoria do turno
           </h1>
           <p className="mt-3 text-[14px] leading-relaxed text-texto-suave">
-            Um lançamento por policial, por data e por turno. Vale a quantidade que você declarar.
-            Informe o identificador de cada gravação quando tiver — é ele que permite reconferir a
-            mídia depois.
+            Um lançamento por policial, por data e por turno. Comece marcando a sua fração — é ela
+            que diz onde o seu lançamento vai contar. Vale a quantidade que você declarar. Informe o
+            identificador de cada gravação quando tiver — é ele que permite reconferir a mídia
+            depois.
           </p>
         </div>
 
-        <FormularioLancamento identificado={identidade?.email ?? null} />
+        <FormularioLancamento identificado={identidade?.email ?? null} arvore={arvore} />
 
         <div className="mt-8 border-t border-borda pt-5">
           {/* Vocabulário do Comando: o que o Portal pode afirmar com honestidade

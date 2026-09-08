@@ -376,6 +376,30 @@ array**. Como o Estado-Maior abre a lista, o Batalhão inteiro passou a ser
 cobrado por 2 e o painel, o briefing e o plano de ação anunciavam
 "CONFORMIDADE (≥2)", "abaixo do mínimo de 2" e "Garantir o mínimo de 2".
 
+### A unidade é DECLARADA pelo policial (08/09/2026)
+
+Determinação do Fabricio: no formulário de `/cop2026/lancar`, o policial escolhe
+**Comando → Batalhão → Fração**, e **o que ele declara é o que vale**. Se a
+relação do efetivo (`p4_efetivo`, congelada em 19/07) o coloca em outra Cia,
+isso não importa e **não é acusado em tela nenhuma** — nem no dashboard, nem no
+briefing, nem no funil de conformidade.
+
+Isso **reverte a regra C-4**, que derivava a fração do RE no servidor e recusava
+qualquer fração vinda do cliente. O que sobra dela, e continua valendo: a fração
+declarada é conferida contra a árvore de unidades (existe? está ativa? pende do
+batalhão declarado, que pende do comando declarado?). O risco que a C-4 evitava
+— alguém escolher o balde de outra Cia por `curl` — foi **aceito conscientemente**
+como preço da declaração.
+
+A fração que a relação apontava no momento do lançamento fica em
+`payload_bruto.subunidadeRoster`, como trilha para o Comando cruzar depois.
+Nenhuma superfície de desempenho lê esse campo.
+
+Desenho da tela, porque é metade da decisão: Comando e Batalhão já vêm nos desta
+instalação (CPA/M-5 e 16º BPM/M) e ficam à vista; a **fração não vem marcada** e
+o envio fica travado até o toque, com o motivo escrito na tela. Gate:
+`npm run verificar:unidade-declarada`.
+
 ### Evidência sem fração aparece; não some nem soma calada
 
 Lançamento sem fração declarada não casa com linha de meta nenhuma e sumia do

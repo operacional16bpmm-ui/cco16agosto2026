@@ -1,6 +1,13 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useActionState,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import {
   AlertTriangle,
   Check,
@@ -20,9 +27,11 @@ import {
   prefixoExibicao,
 } from "@/lib/cop2026-lancamento";
 import { MINIMO_PADRAO } from "@/lib/cop2026-metricas";
-import { MOTIVOS_ABAIXO_DO_MINIMO } from "@/lib/cop2026";
+import { MOTIVOS_ABAIXO_DO_MINIMO, chaveSubunidade } from "@/lib/cop2026";
 import { hojeBrt } from "@/lib/cop2026-ciclo";
+import type { ArvoreFormulario, OpcaoUnidade } from "@/lib/db/cop2026-unidade";
 import { enviarLancamentoAction } from "./actions";
+import { SeletorUnidade } from "./seletor-unidade";
 import { ESTADO_INICIAL, type LancamentoState } from "./estado";
 
 /**
@@ -48,6 +57,41 @@ import { ESTADO_INICIAL, type LancamentoState } from "./estado";
 type Campo = { id: string; valor: string };
 
 const CHAVE_RASCUNHO = "cop2026:lancar";
+/**
+ * A unidade tem chave PRÓPRIA e não expira com o rascunho do turno: ela é o
+ * dado que menos muda na vida do policial e o que mais custa caro errar. Quem
+ * lançou ontem pela 3ª Cia abre o formulário amanhã já na 3ª Cia.
+ */
+const CHAVE_UNIDADE = "cop2026:lancar:unidade";
+
+type EscolhaUnidade = {
+  comando: OpcaoUnidade | null;
+  batalhao: OpcaoUnidade | null;
+  fracao: OpcaoUnidade | null;
+};
+
+/**
+ * A unidade guardada no aparelho, lida por `useSyncExternalStore`.
+ *
+ * `localStorage` não existe no servidor: ler num `useState` faria o HTML do SSR
+ * discordar do primeiro render do cliente, e restaurar por efeito seria
+ * `setState` em efeito — o que o lint deste projeto recusa, com razão (é uma
+ * renderização em cascata a cada abertura do formulário). `getServerSnapshot`
+ * devolve `null`, o cliente devolve o que está gravado, e o React reconcilia.
+ */
+function assinarArmazenamento(aoMudar: () => void): () => void {
+  window.addEventListener("storage", aoMudar);
+  return () => window.removeEventListener("storage", aoMudar);
+}
+
+function lerUnidadeCrua(): string | null {
+  try {
+    return window.localStorage.getItem(CHAVE_UNIDADE);
+  } catch {
+    // Aba anônima com armazenamento bloqueado.
+    return null;
+  }
+}
 
 function novoCampo(valor = ""): Campo {
   return { id: crypto.randomUUID(), valor };
@@ -95,7 +139,13 @@ function lerRascunho(chave: string): Rascunho | null {
 
 /* ------------------------------------------------------------ componente */
 
-export function FormularioLancamento({ identificado }: { identificado: string | null }) {
+export function FormularioLancamento({
+  identificado,
+  arvore,
+}: {
+  identificado: string | null;
+  arvore: ArvoreFormulario;
+}) {
   /**
    * Identificador de envio em `ref`, e não em estado.
    *
@@ -136,6 +186,45 @@ export function FormularioLancamento({ identificado }: { identificado: string | 
     },
     ESTADO_INICIAL
   );
+
+  /**
+   * Unidade declarada — a que vale, mesmo quando a relação do efetivo discorda.
+   *
+   * Três camadas, nesta ordem: o que o policial acabou de tocar, o que ficou
+   * guardado neste aparelho de um lançamento anterior e, por último, o Comando e
+   * o Batalhão desta instalação. A fração nasce VAZIA de propósito — ver o
+   * cabeçalho de `seletor-unidade.tsx`.
+   */
+  const [unidadeEscolhida, setUnidadeEscolhida] = useState<EscolhaUnidade | null>(null);
+  const guardadaCrua = useSyncExternalStore(
+    assinarArmazenamento,
+    lerUnidadeCrua,
+    () => null
+  );
+
+  const unidade = useMemo<EscolhaUnidade>(() => {
+    if (unidadeEscolhida) return unidadeEscolhida;
+    try {
+      const guardada = guardadaCrua ? (JSON.parse(guardadaCrua) as EscolhaUnidade) : null;
+      if (guardada?.fracao) return guardada;
+    } catch {
+      // Guardado de uma versão antiga do formulário: cai no padrão.
+    }
+    return {
+      comando: arvore.comandos.find((c) => c.cod === arvore.padrao.comando) ?? null,
+      batalhao: arvore.batalhoes.find((b) => b.cod === arvore.padrao.batalhao) ?? null,
+      fracao: null,
+    };
+  }, [unidadeEscolhida, guardadaCrua, arvore]);
+
+  function escolherUnidade(nova: EscolhaUnidade) {
+    setUnidadeEscolhida(nova);
+    try {
+      if (nova.fracao) window.localStorage.setItem(CHAVE_UNIDADE, JSON.stringify(nova));
+    } catch {
+      // Aba anônima: a escolha vale para este envio e só.
+    }
+  }
 
   const hoje = useMemo(() => hojeBrt(), []);
   const [data, setData] = useState(hoje);
@@ -323,7 +412,7 @@ export function FormularioLancamento({ identificado }: { identificado: string | 
    * mesma (`ficha: null`) e a tela volta a ser digitação livre — nunca recusa o
    * lançamento, pela mesma razão do "roster enriquece, nunca bloqueia".
    */
-  const escritoPeloRoster = useRef<{ nome: string; posto: string; funcao: string } | null>(null);
+  const escritoPeloRoster = useRef<{ nome: string; posto: string } | null>(null);
   const baseRe = reNormalizado.base;
 
   useEffect(() => {
@@ -354,10 +443,14 @@ export function FormularioLancamento({ identificado }: { identificado: string | 
 
         setNomeGuerra((atual) => substituir(atual, anterior?.nome ?? " ", ficha.nome));
         setPosto((atual) => substituir(atual, anterior?.posto ?? " ", ficha.posto));
-        setFuncao((atual) => substituir(atual, anterior?.funcao ?? " ", ficha.cia));
+        /* A Cia da relacao NAO e mais escrita em campo nenhum (08/09/2026).
+           Ela caia em "Funcao" — que o painel agrupa como funcao exercida, e
+           virava "3ª" no lugar de "Patrulheiro" — e, pior, dava ao roster a
+           ultima palavra sobre a fracao. Agora ela so acende o selo de
+           sugestao no seletor de unidade; quem declara e o policial. */
         // O sentinela ` ` na primeira busca evita que `anterior` ausente
         // vire string vazia e case com qualquer campo já digitado.
-        escritoPeloRoster.current = { nome: ficha.nome, posto: ficha.posto, funcao: ficha.cia };
+        escritoPeloRoster.current = { nome: ficha.nome, posto: ficha.posto };
         setFichaRoster(ficha);
       } catch {
         // Abortado ou rede caída: segue digitação livre.
@@ -403,7 +496,22 @@ export function FormularioLancamento({ identificado }: { identificado: string | 
     ? MOTIVOS_ABAIXO_DO_MINIMO.includes(motivo as (typeof MOTIVOS_ABAIXO_DO_MINIMO)[number])
     : true;
 
+  /** A fração que a relação do efetivo aponta — SUGESTÃO na tela, nunca
+   *  seleção: quem declara a unidade é o policial (Fabricio, 08/09/2026). */
+  const sugestaoFracao = useMemo(
+    () => (fichaRoster?.cia ? chaveSubunidade(fichaRoster.cia) : null),
+    [fichaRoster]
+  );
+
+  /* A FRAÇÃO é o que trava o envio, não a trinca. Comando e Batalhão já vêm
+     preenchidos, e quando o banco de unidades não responde a página cai para a
+     lista de frações do próprio Batalhão — sem comando nem batalhão, e ainda
+     assim o lançamento tem de entrar. Roster e árvore enriquecem; nunca
+     bloqueiam. */
+  const unidadeCompleta = Boolean(unidade.fracao);
+
   const podeEnviar =
+    unidadeCompleta &&
     Boolean(turno) &&
     auditou !== null &&
     !enviando &&
@@ -428,7 +536,7 @@ export function FormularioLancamento({ identificado }: { identificado: string | 
         re={reNormalizado.canonico || re}
         nomeGuerra={nomeGuerra}
         posto={posto}
-        fracao={fichaRoster?.cia}
+        unidade={unidade}
         auditou={auditou}
         quantidadeEfetiva={quantidadeEfetiva}
         identificadores={leitura.evidencias.map((e) => e.bruto)}
@@ -470,11 +578,20 @@ export function FormularioLancamento({ identificado }: { identificado: string | 
         </p>
       )}
 
+      {/* --------------------------------------------------------- unidade */}
+
+      <SeletorUnidade
+        arvore={arvore}
+        escolha={unidade}
+        onEscolha={escolherUnidade}
+        sugestao={sugestaoFracao}
+      />
+
       {/* ---------------------------------------------------- identificação */}
 
       <fieldset className="rounded-xl border border-borda bg-tatico-super p-5">
         <legend className="px-2 text-[11.5px] font-bold uppercase tracking-[0.14em] text-texto-suave">
-          1 · Quem lança
+          2 · Quem lança
         </legend>
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -589,7 +706,7 @@ export function FormularioLancamento({ identificado }: { identificado: string | 
 
       <fieldset className="rounded-xl border border-borda bg-tatico-super p-5">
         <legend className="px-2 text-[11.5px] font-bold uppercase tracking-[0.14em] text-texto-suave">
-          2 · Auditou vídeo neste turno?
+          3 · Auditou vídeo neste turno?
         </legend>
 
         {/* "Não auditei" fica NO TOPO e leva a 3 toques até enviar. No Forms,
@@ -628,7 +745,7 @@ export function FormularioLancamento({ identificado }: { identificado: string | 
       {auditou === false && (
         <fieldset className="rounded-xl border border-borda bg-tatico-super p-5">
           <legend className="px-2 text-[11.5px] font-bold uppercase tracking-[0.14em] text-texto-suave">
-            3 · Justificativa
+            4 · Justificativa
           </legend>
           <CaixaMotivo
             titulo="Motivo pelo qual não foi possível auditar neste turno"
@@ -660,7 +777,7 @@ export function FormularioLancamento({ identificado }: { identificado: string | 
       {auditou === true && (
         <fieldset className="rounded-xl border border-borda bg-tatico-super p-5">
           <legend className="px-2 text-[11.5px] font-bold uppercase tracking-[0.14em] text-texto-suave">
-            3 · Identificadores das gravações auditadas
+            4 · Identificadores das gravações auditadas
           </legend>
 
           <details className="mb-4 rounded-lg border border-borda px-4 py-3">
@@ -835,7 +952,9 @@ export function FormularioLancamento({ identificado }: { identificado: string | 
           nomeGuerra={nomeGuerra}
           posto={posto}
           funcao={funcao}
-          fracao={fichaRoster?.cia}
+          /* A unidade DECLARADA, não a da relação do efetivo: é ela que o
+             servidor grava e é ela que o Comando vai cobrar. */
+          unidade={unidade}
           auditou={auditou}
           quantidadeEfetiva={quantidadeEfetiva}
           identificadores={leitura.evidencias.map((e) => e.bruto)}
@@ -855,10 +974,20 @@ export function FormularioLancamento({ identificado }: { identificado: string | 
           >
             Revisar antes de enviar
           </button>
-          <p className="text-[12px] text-texto-suave">
-            Você verá tudo o que vai gravar antes de confirmar. O rascunho fica
-            guardado neste aparelho até o envio.
-          </p>
+          {/* Botão desabilitado sem explicação é o jeito mais rápido de perder
+              o auditor: ele toca, nada acontece e ele vai embora. Aqui a tela
+              diz, com todas as letras, o que falta. */}
+          {!unidadeCompleta ? (
+            <p className="flex items-start gap-2 text-[12.5px] font-bold text-sinal-atencao">
+              <AlertTriangle size={14} className="mt-0.5 shrink-0" aria-hidden />
+              Falta escolher a sua fração no passo 1 (Estado-Maior, Força Tática ou a sua Cia).
+            </p>
+          ) : (
+            <p className="text-[12px] text-texto-suave">
+              Você verá tudo o que vai gravar antes de confirmar. O rascunho fica
+              guardado neste aparelho até o envio.
+            </p>
+          )}
         </div>
       )}
     </form>
@@ -917,7 +1046,7 @@ function CartaoRevisao({
   nomeGuerra,
   posto,
   funcao,
-  fracao,
+  unidade,
   auditou,
   quantidadeEfetiva,
   identificadores,
@@ -933,7 +1062,7 @@ function CartaoRevisao({
   nomeGuerra: string;
   posto: string;
   funcao: string;
-  fracao?: string;
+  unidade: EscolhaUnidade;
   auditou: boolean | null;
   quantidadeEfetiva: number;
   identificadores: string[];
@@ -957,6 +1086,25 @@ function CartaoRevisao({
         </p>
       </header>
 
+      {/* A unidade abre a revisão, e não o serviço: é o campo novo, o que a
+          tropa mais erra, e o que o Comando usa para cobrar a fração. */}
+      <section>
+        <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.14em] text-texto-suave">
+          Unidade declarada
+        </p>
+        <LinhaEco
+          rotulo="Comando"
+          valor={unidade.comando?.nome ?? "—"}
+        />
+        <LinhaEco rotulo="Batalhão" valor={unidade.batalhao?.nome ?? "—"} />
+        <LinhaEco
+          rotulo="Fração"
+          valor={
+            <strong className="text-vermelho">{unidade.fracao?.nome ?? "—"}</strong>
+          }
+        />
+      </section>
+
       <section>
         <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.14em] text-texto-suave">
           Serviço
@@ -975,7 +1123,6 @@ function CartaoRevisao({
           valor={[posto, nomeGuerra].filter(Boolean).join(" ") || "—"}
         />
         <LinhaEco rotulo="Função" valor={funcao || "—"} />
-        {fracao && <LinhaEco rotulo="Fração" valor={fracao} />}
       </section>
 
       <section>
@@ -1055,7 +1202,7 @@ function ComprovanteProtocolo({
   re,
   nomeGuerra,
   posto,
-  fracao,
+  unidade,
   auditou,
   quantidadeEfetiva,
   identificadores,
@@ -1071,7 +1218,7 @@ function ComprovanteProtocolo({
   re: string;
   nomeGuerra: string;
   posto: string;
-  fracao?: string;
+  unidade: EscolhaUnidade;
   auditou: boolean | null;
   quantidadeEfetiva: number;
   identificadores: string[];
@@ -1120,10 +1267,16 @@ function ComprovanteProtocolo({
         <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-texto-suave">
           O que ficou gravado
         </p>
+        <LinhaEco
+          rotulo="Unidade"
+          valor={[unidade.comando?.nome, unidade.batalhao?.nome, unidade.fracao?.nome]
+            .filter(Boolean)
+            .join(" › ")}
+        />
         <LinhaEco rotulo="Data / Turno" valor={`${dataBr(data)} · ${turno}`} />
         <LinhaEco
           rotulo="Auditor"
-          valor={`${[posto, nomeGuerra].filter(Boolean).join(" ")} · RE ${re}${fracao ? ` · ${fracao}` : ""}`}
+          valor={`${[posto, nomeGuerra].filter(Boolean).join(" ")} · RE ${re}`}
         />
         <LinhaEco
           rotulo="Auditou?"
