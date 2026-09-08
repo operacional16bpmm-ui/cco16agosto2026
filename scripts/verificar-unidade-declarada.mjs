@@ -23,6 +23,7 @@ import assert from "node:assert/strict";
 const ACTION = "app/(public)/cop2026/lancar/actions.ts";
 const FORM = "app/(public)/cop2026/lancar/formulario-lancamento.tsx";
 const SELETOR = "app/(public)/cop2026/lancar/seletor-unidade.tsx";
+const FORM_FILA = "app/(public)/cop2026/admin/auditores/fila-vinculos.tsx";
 const ROTA = "app/api/cop2026/unidades/route.ts";
 const PAGINA = "app/(public)/cop2026/lancar/page.tsx";
 
@@ -90,6 +91,45 @@ test("o botão de revisar nunca fica cinza sem explicação", () => {
     fonte,
     /pisca-falta/,
     `${FORM} perdeu o pisca do campo pendente: sobra só texto, que quem lança não lê.`
+  );
+});
+
+test("a marca do roster não chega ao navegador de ninguém", () => {
+  /* Fabricio, 08/09/2026: "tire isso de todos os lugares". Tirar o aviso da
+     tela é a metade fácil — a marca também vazava em JSON. Dois canos:
+     `select("*")` na fila de vínculos (levava `re_fora_do_efetivo` para um
+     componente client) e o `payload_bruto` inteiro na planilha (leva
+     `subunidadeRoster`, que vale "outros" exatamente quando o RE não foi
+     achado na relação de 19/07). Nos dois casos não havia coluna na tela e a
+     informação estava publicada assim mesmo, legível no DevTools. */
+  const auditor = ler("lib/db/cop2026-auditor.ts");
+  assert.doesNotMatch(
+    auditor,
+    /from\(TABELA_AUDITOR\)\s*\n?\s*(?:\/\*[\s\S]*?\*\/\s*)?\.select\("\*"\)/,
+    `lib/db/cop2026-auditor.ts voltou ao select("*") na fila de vínculos: ` +
+      `re_fora_do_efetivo volta a viajar para o navegador.`
+  );
+
+  const fila = ler(FORM_FILA);
+  assert.doesNotMatch(
+    fila,
+    /re_fora_do_efetivo/,
+    `${FORM_FILA} voltou a conhecer re_fora_do_efetivo. O componente é client: ` +
+      `o que ele tipa, ele recebe.`
+  );
+
+  const lancamentos = ler("lib/db/cop2026-lancamentos.ts");
+  assert.match(
+    lancamentos,
+    /semEcoDoRoster/,
+    `lib/db/cop2026-lancamentos.ts parou de limpar o payload_bruto antes de ` +
+      `entregar à planilha: subunidadeRoster volta a sair no HTML.`
+  );
+  assert.match(
+    lancamentos,
+    /CHAVES_DE_ROSTER[\s\S]{0,200}subunidadeRoster/,
+    `lib/db/cop2026-lancamentos.ts: subunidadeRoster saiu da lista de chaves ` +
+      `barradas — é justamente ela que vale "outros" para quem não está na relação.`
   );
 });
 

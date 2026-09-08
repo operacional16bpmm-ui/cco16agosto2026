@@ -163,7 +163,6 @@ export type Vinculo = {
   confirmado_em: string | null;
   confirmado_por: string | null;
   bloqueado: boolean;
-  re_fora_do_efetivo: boolean;
   criado_em: string;
 };
 
@@ -258,7 +257,14 @@ export async function listarVinculos(): Promise<{ itens: Vinculo[]; erro: string
   try {
     const { data, error } = await createAdminClient()
       .from(TABELA_AUDITOR)
-      .select("*")
+      /* Colunas NOMEADAS, e `re_fora_do_efetivo` fora da lista de propósito
+         (08/09/2026). Com `select("*")` o flag chegava ao componente client da
+         fila e ficava legível no payload da página, mesmo depois de o aviso
+         sair da tela — a marca continuava publicada, só que em JSON. O campo
+         permanece na tabela para a auditoria do Comando. */
+      .select(
+        "email, re_base, re, nome_guerra, confirmado_em, confirmado_por, bloqueado, criado_em"
+      )
       // Pendente primeiro: a tela existe para esvaziar a fila.
       .order("confirmado_em", { ascending: true, nullsFirst: true })
       .order("criado_em", { ascending: false })

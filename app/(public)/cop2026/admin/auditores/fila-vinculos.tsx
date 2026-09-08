@@ -12,6 +12,11 @@ import {
    é `server-only` e este componente roda no navegador. `import type` seria
    apagado no build, mas deixar a seta apontando para lá convida o próximo a
    importar um valor junto — e aí o cliente de service role entra no bundle. */
+/* SEM o flag do roster (08/09/2026). Tirar o aviso da tela não bastava: o campo
+   continuava vindo do `select("*")` e viajava no payload deste componente
+   client — quem abrisse o DevTools lia, para cada RE, se ele estava ou não na
+   relação de 19/07. Ele segue no banco, para a auditoria; só não sai de lá.
+   Ver `listarVinculos` em lib/db/cop2026-auditor.ts. */
 export type Vinculo = {
   email: string;
   re_base: string;
@@ -20,7 +25,6 @@ export type Vinculo = {
   confirmado_em: string | null;
   confirmado_por: string | null;
   bloqueado: boolean;
-  re_fora_do_efetivo: boolean;
   criado_em: string;
 };
 
@@ -141,8 +145,9 @@ export function FilaVinculos({
                   {/* Nada de marcar "fora do efetivo" na tela: a relação de
                       19/07 é BASE de apoio, não verdade. Vale o RE que o
                       policial declara (mesma regra da fração declarada, ver
-                      verificar:unidade-declarada). O flag continua gravado em
-                      `re_fora_do_efetivo` para a trilha, e nunca vira aviso. */}
+                      verificar:unidade-declarada). O flag continua gravado no
+                      banco para a auditoria — e não chega até aqui: o tipo
+                      acima não o declara e a consulta não o traz. */}
                 </td>
                 <td className="px-4 py-3 text-texto-suave">{quando(v.criado_em)}</td>
                 <td className="px-4 py-3 text-[11.5px]">

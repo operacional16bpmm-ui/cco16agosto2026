@@ -415,10 +415,37 @@ export type LancamentoAdmin = LinhaBanco & {
   /** Fração declarada na árvore de OPM. `null` nos lançamentos anteriores à
    *  migration 029 e nos que entraram sem casar com a árvore. */
   unidade_cod: string | null;
-  /** O envio como chegou: quantidade declarada, identificadores recusados e a
-   *  fração que a relação do efetivo apontava na hora. */
+  /** O envio como chegou: quantidade declarada e identificadores recusados.
+   *  A fração que a relação do efetivo apontava NÃO vem aqui — ver
+   *  `semEcoDoRoster` logo abaixo. */
   payload_bruto: Record<string, unknown> | null;
 };
+
+/**
+ * Chaves do `payload_bruto` que a trilha guarda e a TELA não recebe.
+ *
+ * `subunidadeRoster` é o que a relação do efetivo de 19/07 dizia sobre aquele
+ * RE na hora do lançamento — e vale `"outros"` justamente quando o RE não foi
+ * encontrado nela. Mandar isso ao navegador é publicar, em JSON, a marca de
+ * "fora do efetivo" que o Comando decidiu em 08/09/2026 não exibir: a planilha
+ * é um componente client e está aberta a qualquer conta Google, então quem
+ * abrir o DevTools lê o campo mesmo sem nenhuma coluna na tela.
+ *
+ * O dado continua gravado e continua servindo à auditoria — só não viaja.
+ */
+const CHAVES_DE_ROSTER = ["subunidadeRoster", "reForaDoEfetivo", "foraDoEfetivo"] as const;
+
+function semEcoDoRoster(
+  payload: Record<string, unknown> | null
+): Record<string, unknown> | null {
+  if (!payload) return payload;
+  const limpo: Record<string, unknown> = {};
+  for (const [chave, valor] of Object.entries(payload)) {
+    if ((CHAVES_DE_ROSTER as readonly string[]).includes(chave)) continue;
+    limpo[chave] = valor;
+  }
+  return limpo;
+}
 
 export async function listarParaManejo(filtro?: {
   re?: string;
@@ -444,7 +471,16 @@ export async function listarParaManejo(filtro?: {
 
     const { data, error } = await consulta;
     if (error) throw new Error(error.message);
-    return { itens: (data ?? []) as unknown as LancamentoAdmin[], erro: null };
+    /* A limpeza é AQUI, na borda que entrega para a tela — e não na consulta:
+       o `payload_bruto` é jsonb inteiro, e filtrar chave no `select` do
+       PostgREST obrigaria a listar uma a uma as que existem hoje. Chave nova
+       do formulário passaria a vazar sozinha; assim, o que vaza é o que está
+       na lista, não o que ninguém lembrou de excluir. */
+    const itens = ((data ?? []) as unknown as LancamentoAdmin[]).map((l) => ({
+      ...l,
+      payload_bruto: semEcoDoRoster(l.payload_bruto),
+    }));
+    return { itens, erro: null };
   } catch (erro) {
     console.error("[cop2026-lancamentos] falha ao listar para manejo:", erro);
     return { itens: [], erro: "Não foi possível ler os lançamentos." };
