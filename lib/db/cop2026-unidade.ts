@@ -270,6 +270,63 @@ export async function resolverUnidadeDeclarada(
 }
 
 /**
+ * A cadeia completa (Comando › Batalhão › Fração) de cada código de fração.
+ *
+ * Serve à Planilha de Lançamentos, onde o superior confere DE ONDE veio cada
+ * registro. Três consultas por nível, e não uma por linha: a tela lista até
+ * 2.000 lançamentos e um `select` por linha derrubaria a página.
+ *
+ * Só nomes saem daqui — o código de OPM não aparece em tela nenhuma fora da
+ * área técnica do admin.
+ */
+export async function cadeiaDasFracoes(
+  cods: string[]
+): Promise<Record<string, { fracao: string; batalhao: string; comando: string }>> {
+  const unicos = [...new Set(cods.filter((c) => /^\d{6,9}$/.test(c)))];
+  if (unicos.length === 0) return {};
+
+  return seguro(async () => {
+    const cli = createAdminClient();
+    const pega = async (lista: string[]) => {
+      const { data, error } = await cli
+        .from("cop_unidade")
+        .select("cod, nome, nome_curto, cpa_nome, cod_pai, subunidade_painel")
+        .in("cod", lista);
+      if (error) throw error;
+      return (data ?? []) as Record<string, unknown>[];
+    };
+
+    const fracoes = await pega(unicos);
+    const batalhoes = await pega([
+      ...new Set(fracoes.map((f) => String(f.cod_pai ?? "")).filter(Boolean)),
+    ]);
+    const comandos = await pega([
+      ...new Set(batalhoes.map((b) => String(b.cod_pai ?? "")).filter(Boolean)),
+    ]);
+
+    const porCod = (linhas: Record<string, unknown>[]) =>
+      Object.fromEntries(linhas.map((l) => [String(l.cod), l]));
+    const mapaB = porCod(batalhoes);
+    const mapaC = porCod(comandos);
+
+    const saida: Record<string, { fracao: string; batalhao: string; comando: string }> = {};
+    for (const f of fracoes) {
+      const sub = f.subunidade_painel as string | null;
+      const b = mapaB[String(f.cod_pai ?? "")];
+      const c = b ? mapaC[String(b.cod_pai ?? "")] : undefined;
+      saida[String(f.cod)] = {
+        fracao:
+          (sub && ROTULO_SUBUNIDADE[sub]) ||
+          nomeDeFracao(String(f.nome_curto ?? f.nome ?? "")),
+        batalhao: b ? nomeInstitucional(String(b.nome_curto ?? b.nome ?? "")) : "",
+        comando: c ? nomeInstitucional(String(c.cpa_nome ?? c.nome_curto ?? c.nome ?? "")) : "",
+      };
+    }
+    return saida;
+  }, {});
+}
+
+/**
  * Nome de exibição de uma fração, batalhão ou comando — para o eco do
  * comprovante e do relatório, onde só o nome pode aparecer.
  */

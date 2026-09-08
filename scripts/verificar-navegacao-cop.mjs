@@ -125,6 +125,69 @@ test("as telas de administração não repetem a navegação", () => {
   );
 });
 
+test("a Planilha de Lançamentos abre para autorizado, e só as ações são de admin", () => {
+  /* Decisão do Fabricio, 08/09/2026: os superiores leem o lançamento campo a
+     campo, e o administrador é um só. A tela saiu do gate de admin e ficou no
+     mesmo do Dashboard — conta Google autorizada. O que NÃO se afrouxou:
+     excluir e reclassificar continuam exigindo admin dentro da própria Server
+     Action, porque esconder botão nunca foi controle de acesso. */
+  const pagina = readFileSync(
+    join(RAIZ_ROTAS, "cop2026/admin/lancamentos/page.tsx"),
+    "utf8"
+  );
+  assert.match(
+    pagina,
+    /exigirAcessoCop\(/,
+    "a Planilha de Lançamentos deixou de exigir sessão. Ela carrega RE, nome de guerra e " +
+      "justificativa de policial: aberta na internet é exposição de dado pessoal."
+  );
+  // `await exigirAdminCop(` e não `exigirAdminCop(`: o cabeçalho do arquivo
+  // explica por que o gate mudou, e citar o nome antigo não é chamá-lo.
+  assert.ok(
+    !pagina.includes("await exigirAdminCop("),
+    "a Planilha de Lançamentos voltou a exigir administrador — os superiores perdem a conferência."
+  );
+
+  const acoes = readFileSync(
+    join(RAIZ_ROTAS, "cop2026/admin/lancamentos/actions.ts"),
+    "utf8"
+  );
+  const quantasAcoes = [...acoes.matchAll(/export async function \w+Action/g)].length;
+  const quantosGates = [...acoes.matchAll(/exigirAdminCop\(/g)].length;
+  assert.ok(
+    quantosGates >= quantasAcoes,
+    `actions.ts tem ${quantasAcoes} ação(ões) e só ${quantosGates} chamada(s) a exigirAdminCop(). ` +
+      `Server action é endpoint próprio: sem o gate na primeira linha, qualquer autorizado exclui.`
+  );
+});
+
+test("as demais telas de administração continuam exigindo administrador", () => {
+  const raiz = join(RAIZ_ROTAS, "cop2026/admin");
+  const abertas = [];
+  const varrer = (dir, prefixo) => {
+    for (const item of readdirSync(dir, { withFileTypes: true })) {
+      if (!item.isDirectory()) continue;
+      const rota = `${prefixo}/${item.name}`;
+      const pagina = join(dir, item.name, "page.tsx");
+      // A Planilha de Lançamentos é a exceção deliberada, testada acima.
+      if (existsSync(pagina) && rota !== "/cop2026/admin/lancamentos") {
+        if (!readFileSync(pagina, "utf8").includes("exigirAdminCop")) abertas.push(rota);
+      }
+      varrer(join(dir, item.name), rota);
+    }
+  };
+  varrer(raiz, "/cop2026/admin");
+  if (!readFileSync(join(raiz, "page.tsx"), "utf8").includes("exigirAdminCop")) {
+    abertas.push("/cop2026/admin");
+  }
+
+  assert.deepEqual(
+    abertas,
+    [],
+    `tela(s) de administração sem exigirAdminCop: ${abertas.join(", ")}.`
+  );
+});
+
 test("os atalhos de administração não aparecem para quem não administra", () => {
   // Não é estética: `exigirAdminCop()` responde 404, e um botão que leva a 404
   // faz a tropa achar que o portal quebrou.

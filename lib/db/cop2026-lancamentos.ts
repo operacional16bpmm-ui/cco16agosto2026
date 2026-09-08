@@ -365,6 +365,12 @@ export type LancamentoAdmin = LinhaBanco & {
   origem: string;
   retroativo: boolean;
   criado_por_email: string | null;
+  /** Fração declarada na árvore de OPM. `null` nos lançamentos anteriores à
+   *  migration 029 e nos que entraram sem casar com a árvore. */
+  unidade_cod: string | null;
+  /** O envio como chegou: quantidade declarada, identificadores recusados e a
+   *  fração que a relação do efetivo apontava na hora. */
+  payload_bruto: Record<string, unknown> | null;
 };
 
 export async function listarParaManejo(filtro?: {
@@ -376,7 +382,7 @@ export async function listarParaManejo(filtro?: {
     let consulta = createAdminClient()
       .from(TABELA)
       .select(
-        "id, data_auditoria, hora, turno, re, re_base, nome_guerra, posto, funcao, subunidade, auditou, videos_declarados, videos_contados, videos_validos, numero_parte, justificativa, vinculo_pendente, retroativo, origem, criado_em, criado_por_email, cop_evidencia(bruto, posicao, descartada)"
+        "id, data_auditoria, hora, turno, re, re_base, nome_guerra, posto, funcao, subunidade, unidade_cod, auditou, videos_declarados, videos_contados, videos_validos, numero_parte, justificativa, vinculo_pendente, retroativo, origem, criado_em, criado_por_email, payload_bruto, cop_evidencia(bruto, posicao, descartada)"
       )
       .is("excluido_em", null)
       .order("criado_em", { ascending: false })

@@ -77,6 +77,17 @@ const NAVEGACAO: Atalho[] = [
   { href: "/cop2026/dashboard", rotulo: "Painel", Icone: IconePainel },
   { href: "/cop2026/briefing", rotulo: "Briefing", Icone: IconeBriefing },
   {
+    /* Fica na linha PÚBLICA, e não com as telas de administração, por
+       determinação do Fabricio em 08/09/2026: é dela que os superiores leem o
+       lançamento campo a campo. O endereço continua sob `/admin` para não
+       quebrar link salvo, mas o gate da página passou a ser o mesmo do
+       Dashboard — conta Google autorizada, não administrador. */
+    href: "/cop2026/admin/lancamentos",
+    rotulo: "Planilha de Lançamentos",
+    curto: "Planilha",
+    Icone: IconeLancamentos,
+  },
+  {
     href: "/cop2026/relatorios",
     rotulo: "Relatórios",
     Icone: IconeRelatorios,
@@ -91,10 +102,11 @@ const NAVEGACAO: Atalho[] = [
 ];
 
 /**
- * As NOVE telas de administração, todas na barra — determinação do Fabricio em
+ * As telas de administração, todas na barra — determinação do Fabricio em
  * 08/09/2026 ("todos os botões que você tem como admin"). Elas ficam numa
  * segunda linha, e não misturadas à navegação da tropa: são catorze destinos no
- * total, e uma fila só obrigaria a rolar para achar o Painel.
+ * total, e uma fila só obrigaria a rolar para achar o Painel. A Planilha de
+ * Lançamentos saiu daqui: ela é de consulta, não de administração.
  *
  * A ordem é a mesma das abas de dentro da administração
  * (`app/(public)/cop2026/admin/cabecalho-admin.tsx`) — duas ordens diferentes
@@ -102,12 +114,6 @@ const NAVEGACAO: Atalho[] = [
  */
 const ADMINISTRACAO: Atalho[] = [
   { href: "/cop2026/admin", rotulo: "Autorizados", curto: "Autoriz.", Icone: IconeAutorizados },
-  {
-    href: "/cop2026/admin/lancamentos",
-    rotulo: "Lançamentos",
-    curto: "Lançtos.",
-    Icone: IconeLancamentos,
-  },
   { href: "/cop2026/admin/auditores", rotulo: "Auditores", Icone: IconeAuditores },
   { href: "/cop2026/admin/parametros", rotulo: "Metas", Icone: IconeMetas },
   { href: "/cop2026/admin/unidades", rotulo: "Unidades", Icone: IconeUnidades },
