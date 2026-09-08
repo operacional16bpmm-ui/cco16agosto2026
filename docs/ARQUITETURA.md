@@ -253,6 +253,7 @@ Fluxo obrigatório antes de publicar (`AGENTS.md`): `tsc --noEmit` → `verifica
 | `verificar:paridade` | planilha × banco antes de virar fonte |
 | `verificar:seguranca` | nenhuma tabela do domínio devolve linha para a chave pública |
 | `verificar:superficies` | o identificador não volta às telas de desempenho (ver §15.1) |
+| `verificar:rotas` | rota de API nova não nasce aberta pelo prefixo do proxy (ver §16.4) |
 
 Os scripts usam alias `@/lib` e **só rodam pelos comandos npm** (`scripts/alias-loader.mjs`).
 `node --test` direto falha com `MODULE_NOT_FOUND`, e isso não é bug.
@@ -481,3 +482,151 @@ evidências em setembro, entre eles um Maj PM/COORDOP). Por isso caem em `outros
 não entram na barra de fração nenhuma — o sistema não chuta, por decisão de
 projeto. Resolve-se incluindo os 6 no roster, ou reclassificando lançamento a
 lançamento em `/cop2026/admin/lancamentos`.
+
+---
+
+## 16. Decisões do Comando — 08/09/2026
+
+Quatro pontos que estavam em aberto na §12 e na §15.8 foram decididos. Registradas
+aqui como decisão, não como pendência: o auditor externo vai encontrar cada uma
+delas no código e precisa saber que é escolha, não descuido.
+
+### 16.1 Os 6 REs fora do roster — resolvido
+
+**Decisão:** os Majores COORDOP são do Estado-Maior **em definitivo**; os cinco
+3º Sgt entram no EM **só desta vez**.
+
+Aplicado:
+
+- `p4_efetivo` recebeu **Maj PM Vinícius (100371-2)** e **Maj PM Álvaro Zocchio
+  Júnior (990036-5)**, ambos `cia = EM`, `funcao = COORDOP`. São coordenadores de
+  operações e não constavam do quadro do Batalhão — por isso `identificarPorRe`
+  não os resolvia. Agora todo lançamento futuro deles nasce classificado. Roster:
+  570 → 572.
+- Os **15 lançamentos** de setembro que estavam em `outros` foram reclassificados
+  para `em`, com `editado_por` registrado. Isso inclui os cinco sargentos
+  (Cléber, Jessica Lopes, Camarini, Paulucci, R. Nascimento), que **não** foram
+  inseridos no roster: a decisão vale para este ciclo.
+
+**Consequência, medida:** `semFracaoVideos` **65 → 0**. As frações passaram a somar
+exatamente o total do Batalhão (104+39+42+76+80+54 = 395). O **Estado-Maior foi de
+36 para 104 evidências contra meta 48 — 216,7%**, porque ganhou seis auditores que
+não entraram no rateio da Matriz.
+
+> **O que observar no próximo ciclo:** os cinco sargentos voltarão a cair em
+> `outros` no primeiro lançamento de outubro, porque não estão no roster. Ou eles
+> entram em `p4_efetivo` na fração real, ou a reclassificação se repete todo mês.
+
+### 16.2 Matriz Proporcional — fica como está
+
+**Decisão:** manter a Matriz constante no código, **sem nota na tela**, mesmo com o
+efetivo real divergindo por fração (3ª Cia 111 × 123; 2ª 93 × 87; FT 73 × 68).
+
+A Matriz é documento do Comando e o rateio da meta já foi publicado; o total fecha
+em 570 nos dois lados. O painel continua anunciando o efetivo da Matriz.
+
+### 16.3 Faixa "<50% ABAIXO DA META" — fica como está
+
+**Decisão:** manter a régua e o rótulo. A faixa é do **mês fechado**, então nos
+primeiros quinze dias ela é vermelha por construção, e pode aparecer ao lado de
+"ADIANTADA" — as duas leituras estão corretas e medem coisas diferentes
+(cumprimento acumulado × ritmo). É a régua oficial do ciclo.
+
+### 16.4 Proxy — o prefixo fica, o teste entra
+
+**Decisão:** não mexer na allowlist do `proxy.ts` (mexer arrisca quebrar rota em
+produção) e travar o risco por teste.
+
+Criado `npm run verificar:rotas`: varre `app/api/cop2026/**/route.ts` e falha se
+alguma rota não provar que confere acesso — `exigirAdminCop`, `exigirAcessoCop`,
+`sessaoCop`, `prepararExportacao` (o guarda compartilhado do PDF/PNG, que chama
+`sessaoCop` por dentro) ou a conferência de um bearer. As quatro rotas
+legitimamente abertas estão declaradas **com o motivo escrito**, e um segundo
+teste exige que o motivo exista.
+
+Validado contra regressão: criar `app/api/cop2026/saude/teste-regressao/route.ts`
+sem gate derruba a suíte.
+
+### 16.5 Os dois gates novos
+
+| Gate | Fecha |
+|---|---|
+| `verificar:superficies` | o identificador não volta às telas de desempenho (§15.1) |
+| `verificar:rotas` | rota de API nova não nasce aberta pelo casamento por prefixo |
+
+Ambos validados contra a regressão que deveriam pegar — um teste que nunca falha
+não protege nada.
+
+---
+
+## 16. Decisões do Comando — 08/09/2026
+
+Quatro pontos que estavam em aberto na §12 e na §15.8 foram decididos. Registradas
+aqui como decisão, não como pendência: o auditor externo vai encontrar cada uma
+delas no código e precisa saber que é escolha, não descuido.
+
+### 16.1 Os 6 REs fora do roster — resolvido
+
+**Decisão:** os Majores COORDOP são do Estado-Maior **em definitivo**; os cinco
+3º Sgt entram no EM **só desta vez**.
+
+Aplicado:
+
+- `p4_efetivo` recebeu **Maj PM Vinícius (100371-2)** e **Maj PM Álvaro Zocchio
+  Júnior (990036-5)**, ambos `cia = EM`, `funcao = COORDOP`. São coordenadores de
+  operações e não constavam do quadro do Batalhão — por isso `identificarPorRe`
+  não os resolvia. Agora todo lançamento futuro deles nasce classificado. Roster:
+  570 → 572.
+- Os **15 lançamentos** de setembro que estavam em `outros` foram reclassificados
+  para `em`, com `editado_por` registrado. Isso inclui os cinco sargentos
+  (Cléber, Jessica Lopes, Camarini, Paulucci, R. Nascimento), que **não** foram
+  inseridos no roster: a decisão vale para este ciclo.
+
+**Consequência, medida:** `semFracaoVideos` **65 → 0**. As frações passaram a somar
+exatamente o total do Batalhão (104+39+42+76+80+54 = 395). O **Estado-Maior foi de
+36 para 104 evidências contra meta 48 — 216,7%**, porque ganhou seis auditores que
+não entraram no rateio da Matriz.
+
+> **O que observar no próximo ciclo:** os cinco sargentos voltarão a cair em
+> `outros` no primeiro lançamento de outubro, porque não estão no roster. Ou eles
+> entram em `p4_efetivo` na fração real, ou a reclassificação se repete todo mês.
+
+### 16.2 Matriz Proporcional — fica como está
+
+**Decisão:** manter a Matriz constante no código, **sem nota na tela**, mesmo com o
+efetivo real divergindo por fração (3ª Cia 111 × 123; 2ª 93 × 87; FT 73 × 68).
+
+A Matriz é documento do Comando e o rateio da meta já foi publicado; o total fecha
+em 570 nos dois lados. O painel continua anunciando o efetivo da Matriz.
+
+### 16.3 Faixa "<50% ABAIXO DA META" — fica como está
+
+**Decisão:** manter a régua e o rótulo. A faixa é do **mês fechado**, então nos
+primeiros quinze dias ela é vermelha por construção, e pode aparecer ao lado de
+"ADIANTADA" — as duas leituras estão corretas e medem coisas diferentes
+(cumprimento acumulado × ritmo). É a régua oficial do ciclo.
+
+### 16.4 Proxy — o prefixo fica, o teste entra
+
+**Decisão:** não mexer na allowlist do `proxy.ts` (mexer arrisca quebrar rota em
+produção) e travar o risco por teste.
+
+Criado `npm run verificar:rotas`: varre `app/api/cop2026/**/route.ts` e falha se
+alguma rota não provar que confere acesso — `exigirAdminCop`, `exigirAcessoCop`,
+`sessaoCop`, `prepararExportacao` (o guarda compartilhado do PDF/PNG, que chama
+`sessaoCop` por dentro) ou a conferência de um bearer. As quatro rotas
+legitimamente abertas estão declaradas **com o motivo escrito**, e um segundo
+teste exige que o motivo exista.
+
+Validado contra regressão: criar `app/api/cop2026/saude/teste-regressao/route.ts`
+sem gate derruba a suíte.
+
+### 16.5 Os dois gates novos
+
+| Gate | Fecha |
+|---|---|
+| `verificar:superficies` | o identificador não volta às telas de desempenho (§15.1) |
+| `verificar:rotas` | rota de API nova não nasce aberta pelo casamento por prefixo |
+
+Ambos validados contra a regressão que deveriam pegar — um teste que nunca falha
+não protege nada.
