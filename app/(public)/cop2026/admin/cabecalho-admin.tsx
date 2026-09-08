@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronRight, LayoutDashboard, LogOut, Presentation } from "lucide-react";
+import { ChevronRight, LogOut } from "lucide-react";
 
 /**
  * Cabeçalho das telas de administração da COP.
@@ -47,19 +47,10 @@ export function CabecalhoAdmin({
             </nav>
           </div>
         </div>
+        {/* Os atalhos para Painel e Briefing saíram daqui em 08/09/2026: eles
+            vivem na `BarraCop`, que aparece em todas as telas do módulo. Aqui
+            fica só a sessão — o que é desta tela, e não do módulo. */}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-texto-suave">
-          <Link
-            href="/cop2026/dashboard"
-            className="inline-flex items-center gap-1.5 font-semibold hover:text-vermelho"
-          >
-            <LayoutDashboard size={13} aria-hidden /> Dashboard
-          </Link>
-          <Link
-            href="/cop2026/briefing"
-            className="inline-flex items-center gap-1.5 font-semibold hover:text-vermelho"
-          >
-            <Presentation size={13} aria-hidden /> Briefing
-          </Link>
           <span className="inline-flex items-center gap-2">
             <span className="dados">{email}</span>
             <a
