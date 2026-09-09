@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useState, type CSSProperties } from "react";
 import { ChevronDown, CheckCircle2, AlertTriangle, AlertCircle, Minus, Trophy } from "lucide-react";
 import { ROTULO_NIVEL, type Nivel } from "@/lib/cop2026-metricas";
 import { explicacaoDe } from "@/lib/cop2026-explicacoes";
@@ -31,6 +31,47 @@ const ICONES_NIVEL = {
   critico: <AlertCircle size={12} className="shrink-0" aria-hidden />,
   neutro: <Minus size={12} className="shrink-0" aria-hidden />,
 } as const;
+
+/**
+ * NÚMERO QUE CABE — tipografia fluida para os números grandes dos cartões.
+ *
+ * O problema que isto resolve (apontado pelo Fabrício em 09/09/2026, com print
+ * do briefing): o cartão do velocímetro tinha largura fixa e o número tinha
+ * tamanho fixo (`text-6xl`, 60px). Medido na tela de produção, "44,4%" ocupava
+ * **197,5px dentro de uma caixa de 123px** — o número saía por fora das duas
+ * bordas do quadro, e nenhuma quebra de linha resolvia porque número não quebra.
+ * Pior: `sm:text-6xl` olha a LARGURA DA JANELA, não a do cartão. Numa tela de
+ * 1600px o cartão continua com 360px e o utilitário responsivo mente.
+ *
+ * A régua certa é a do próprio quadro. O elemento que recebe este estilo tem de
+ * viver dentro de um contêiner de consulta (`container-type: inline-size`), e aí
+ * `1cqi` = 1% da largura ÚTIL da caixa. O tamanho sai de uma conta, não de um
+ * palpite:
+ *
+ *   largura do texto ≈ nº de caracteres × `larguraEm` × tamanho da fonte
+ *
+ * `larguraEm` 0,72 é o avanço médio por caractere medido na Inter 900 do painel
+ * (0,658 em "44,4%", 0,703 em "< 50%"), com folga. Invertendo: o tamanho máximo
+ * que cabe em 100% da caixa é `100 / (n × 0,72)` cqi.
+ *
+ * ⚠️ Sem contêiner de consulta ancestral, `cqi` cai na *small viewport* e o
+ * número explode para o tamanho da janela. Quem usa isto põe
+ * `containerType: "inline-size"` no cartão pelo `style` — não pela classe
+ * `@container` — para que a garantia não dependa do Tailwind ter gerado o
+ * utilitário.
+ */
+export function numeroFluido(
+  texto: string,
+  {
+    minRem = 1.25,
+    maxRem = 3.5,
+    larguraEm = 0.72,
+  }: { minRem?: number; maxRem?: number; larguraEm?: number } = {}
+): CSSProperties {
+  const n = Math.max(1, texto.trim().length);
+  const cqi = 100 / (n * larguraEm);
+  return { fontSize: `clamp(${minRem}rem, ${cqi.toFixed(1)}cqi, ${maxRem}rem)` };
+}
 
 export function Selo({
   nivel,

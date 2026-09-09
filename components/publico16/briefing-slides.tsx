@@ -55,6 +55,8 @@ import { fmtDias, fmtPorTurno, fmtRitmo } from "@/lib/cop2026-tendencia";
 import { type RelatorioMes } from "@/lib/cop2026-relatorios";
 import { DiretrizEmFoco } from "@/components/publico16/diretriz-em-foco";
 import { AgulhaoMetas } from "@/components/publico16/cop/graficos";
+import { CartaoTrajetoria } from "@/components/publico16/cop/ciclo/cartao-trajetoria";
+import { FaixaRitmos } from "@/components/publico16/cop/ciclo/faixa-ritmos";
 import {
   AreaDiaria,
   Barra,
@@ -270,12 +272,33 @@ export function BriefingSlides({
       corpo: (
         <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,360px)_1fr]">
           <div className="bf-entra" style={atraso(0)}>
+            {/* MESMO velocímetro do painel, com os MESMOS índices — pedido do
+                Fabrício em 09/09/2026 ("deixa nesse quadro da meta global as
+                mesmas informações que tem no dashboard; lá está mais
+                completo"). O que o briefing mostrava era a versão pobre do
+                componente: cumprimento + ritmo necessário. Entram agora as três
+                leituras que o painel já dá e que respondem perguntas
+                diferentes:
+
+                  · TRAJETÓRIA (`cartaoRitmo`) — quanto do que já DEVERIA estar
+                    feito a esta altura foi feito, com o previsto e o saldo;
+                  · TENDÊNCIA · RITMO DIÁRIO (`faixaRitmos`) — alvo × real na
+                    mesma régua, mais a recuperação e a pressão dela;
+                  · a marca `▲ leitura atual` dentro da faixa ativa da régua.
+
+                `ritmo`/`diasRestantes` saem: o cartão "Ritmo necessário" que
+                eles alimentavam é justamente o lugar que a TRAJETÓRIA ocupa, e
+                o número da recuperação continua na faixa abaixo — exatamente
+                como no painel. O KPI "Ritmo necessário" ao lado permanece. */}
             <AgulhaoMetas
               pct={p.pct}
               total={p.total}
               meta={p.meta}
-              ritmo={ritmo}
-              diasRestantes={p.janela.diasRestantes}
+              cartaoRitmo={<CartaoTrajetoria meta={p.meta} total={p.total} janela={p.janela} />}
+              faixaRitmos={
+                <FaixaRitmos meta={p.meta} total={p.total} janela={p.janela} rotuloPeriodo="mês" />
+              }
+              marcaPosicao={`leitura atual ${PCT.format(p.pct)}%`}
               titulo='16º BPM/M — "1º Ten PM Fernão"'
               subtitulo={{
                 linha1: `META GLOBAL — ${FMT.format(p.meta)} EVIDÊNCIAS`,

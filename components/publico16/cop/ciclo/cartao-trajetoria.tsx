@@ -9,6 +9,7 @@ import {
   progressoDaJanela,
   progressoDoMes,
 } from "@/lib/cop2026-tendencia";
+import { numeroFluido } from "@/components/publico16/cop/primitivos";
 
 /**
  * Cartão TRAJETÓRIA — par do cartão de CUMPRIMENTO (o "63,5% da meta").
@@ -75,11 +76,17 @@ export function CartaoTrajetoria({
 
   const cor = COR_TRAJETORIA[t.situacao];
   const saldo = t.saldoTrajetoria;
+  const aderencia = t.aderencia === null ? "—" : `${N1.format(t.aderencia)}%`;
 
   return (
     <div
       className="pulso-faixa-card flex min-h-[130px] flex-col items-center justify-center rounded-2xl border-2 bg-white/95 px-2.5 py-3 text-center shadow-[0_7px_18px_rgba(15,23,42,0.14)] sm:min-h-[136px] sm:px-3"
-      style={{ borderColor: `color-mix(in srgb, ${cor} 55%, white)` }}
+      /* Contêiner de consulta: "147,9%" tem seis caracteres e, em tamanho fixo,
+         não cabia na caixa de 123px do briefing. Ver `numeroFluido`. */
+      style={{
+        borderColor: `color-mix(in srgb, ${cor} 55%, white)`,
+        containerType: "inline-size",
+      }}
     >
       <span
         className="text-[10px] font-black uppercase tracking-[0.12em]"
@@ -89,11 +96,11 @@ export function CartaoTrajetoria({
       </span>
 
       <span
-        className="dados mt-0.5 text-[40px] font-black leading-none tracking-tight tabular-nums sm:text-[46px]"
-        style={{ color: cor }}
+        className="dados mt-0.5 font-black leading-none tracking-tight tabular-nums"
+        style={{ ...numeroFluido(aderencia, { maxRem: 2.875 }), color: cor }}
         title={`Realizado ${N0.format(total)} sobre ${N0.format(t.metaAcumulada)} previstos até aqui`}
       >
-        {t.aderencia === null ? "—" : `${N1.format(t.aderencia)}%`}
+        {aderencia}
       </span>
 
       <span className="mt-1 text-[9.5px] font-black uppercase leading-tight tracking-[0.1em] text-slate-600">

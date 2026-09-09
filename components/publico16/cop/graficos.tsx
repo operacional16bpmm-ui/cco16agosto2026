@@ -41,7 +41,7 @@ import Link from "next/link";
 import type { CSSProperties } from "react";
 import { FaixaRitmos } from "@/components/publico16/cop/ciclo/faixa-ritmos";
 import { fmtDias, fmtPorTurno, fmtRitmo, fmtTurnos } from "@/lib/cop2026-tendencia";
-import { COR_NIVEL, Selo } from "./primitivos";
+import { COR_NIVEL, Selo, numeroFluido } from "./primitivos";
 import { IconePlanilha } from "@/components/publico16/cop/icones-cop";
 import { cn } from "@/lib/utils";
 
@@ -423,7 +423,18 @@ export function AgulhaoMetas({
 
   return (
     <div
-      style={{ "--faixa": corAgulha } as CSSProperties}
+      /* O quadro é a régua de tudo o que mora dentro dele. Ele é uma ILHA de
+         largura fixa (360px no briefing, ~400px no painel) dentro de uma janela
+         que pode ter 1600px: todo utilitário `sm:` daqui para dentro estava
+         perguntando o tamanho da JANELA e recebendo a resposta errada — era por
+         isso que a régua de faixas abria em 4 colunas de 60px e "Cumprimento
+         Insuficiente" saía por fora do cartão numa tela larga.
+         `container-type: inline-size` transforma o quadro em contêiner de
+         consulta: daqui para dentro, `@[..]:` e a unidade `cqi` medem O QUADRO.
+         Vai no `style` de propósito — o utilitário `@container` do Tailwind faria
+         o mesmo, mas se a classe não fosse gerada os `cqi` cairiam na largura da
+         janela e os números explodiriam. */
+      style={{ "--faixa": corAgulha, containerType: "inline-size" } as CSSProperties}
       className="relative flex h-full w-full max-w-none flex-col items-center justify-between overflow-hidden rounded-2xl border-2 border-slate-800/75 bg-gradient-to-b from-[#ffffff] via-[#f8fafc] to-[#edf3f8] p-4 shadow-[0_18px_46px_rgba(7,18,37,0.28),0_5px_16px_rgba(7,18,37,0.18)] ring-2 ring-slate-900/15 sm:p-5 card-interativo"
     >
       {/* Vídeo de Viatura em Cores Vívidas e Giroflex Iluminado */}
@@ -550,11 +561,21 @@ export function AgulhaoMetas({
       >
         <div
           className="pulso-faixa-card flex min-h-[130px] flex-col items-center justify-center rounded-2xl border-2 bg-white/95 px-3 py-4 shadow-[0_6px_18px_rgba(15,23,42,0.14),inset_0_1px_0_rgba(255,255,255,0.9)] sm:min-h-[136px]"
-          style={{ borderColor: "color-mix(in srgb, var(--faixa) 55%, white)" }}
+          /* Contêiner aninhado: o número mede a caixa DELE, não o quadro
+             inteiro — são duas caixas lado a lado. */
+          style={{
+            borderColor: "color-mix(in srgb, var(--faixa) 55%, white)",
+            containerType: "inline-size",
+          }}
         >
           <span
-            className="pulso-faixa-texto whitespace-nowrap text-5xl font-black leading-none drop-shadow-sm sm:text-6xl"
-            style={{ letterSpacing: "-0.035em", fontFeatureSettings: '"tnum" 0', color: "var(--faixa)" }}
+            className="pulso-faixa-texto whitespace-nowrap font-black leading-none drop-shadow-sm"
+            style={{
+              ...numeroFluido(`${PCT.format(pct)}%`),
+              letterSpacing: "-0.035em",
+              fontFeatureSettings: '"tnum" 0',
+              color: "var(--faixa)",
+            }}
           >
             {PCT.format(pct)}%
           </span>
@@ -567,12 +588,18 @@ export function AgulhaoMetas({
         {cartaoRitmo === undefined && ritmo !== undefined && (
           <div
             className="pulso-faixa-card flex min-h-[130px] flex-col items-center justify-center rounded-2xl border-2 bg-white/95 px-2.5 py-4 shadow-[0_7px_18px_rgba(15,23,42,0.14)] sm:min-h-[136px] sm:px-3"
-            style={{ borderColor: "color-mix(in srgb, var(--faixa) 55%, white)" }}
+            style={{
+              borderColor: "color-mix(in srgb, var(--faixa) 55%, white)",
+              containerType: "inline-size",
+            }}
           >
             <span className="pulso-faixa-texto text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: "var(--faixa)" }}>
               Ritmo necessário
             </span>
-            <span className="pulso-faixa-texto mt-1.5 text-5xl font-black leading-none tracking-tight sm:text-6xl" style={{ color: "var(--faixa)" }}>
+            <span
+              className="pulso-faixa-texto mt-1.5 font-black leading-none tracking-tight"
+              style={{ ...numeroFluido(fmtRitmo(ritmo)), color: "var(--faixa)" }}
+            >
               {fmtRitmo(ritmo)}
             </span>
             {/* O Batalhão se mede POR DIA. Este cartão dizia "68 evidências/turno
@@ -615,7 +642,13 @@ export function AgulhaoMetas({
 
       {/* Régua de Zonas — cada card na sua própria cor da matriz; a faixa da
           leitura atual fica preenchida e PULSANDO na cor correspondente. */}
-      <div className="relative z-10 mt-4 grid w-full grid-cols-2 gap-2.5 border-t-2 border-slate-300 pt-3 text-center sm:grid-cols-4">
+      {/* Quatro colunas só quando o QUADRO tem largura para elas — 21rem (336px)
+          é o ponto medido em que "Cumprimento Insuficiente" ainda cabe em 10,5px
+          numa das quatro células. Abaixo disso ficam duas colunas: é o caso do
+          briefing, cuja coluna tem 360px de quadro (320px úteis) mesmo num telão
+          de 1600px. Com `sm:` — que olha a janela — a régua abria em quatro
+          colunas de 60px e o rótulo saía 34px por fora da célula. */}
+      <div className="relative z-10 mt-4 grid w-full grid-cols-2 gap-2.5 border-t-2 border-slate-300 pt-3 text-center @[21rem]:grid-cols-4">
         {REGUA_FAIXAS.map((f) => {
           const ativo = f.nivel === nivel;
           const cor = COR_FAIXA[f.nivel];
@@ -623,7 +656,7 @@ export function AgulhaoMetas({
             <div
               key={f.nivel}
               className={cn(
-                "relative flex min-h-[78px] flex-col justify-center overflow-hidden rounded-xl border-2 px-1.5 py-2.5 transition-all",
+                "relative flex min-w-0 min-h-[78px] flex-col justify-center overflow-hidden rounded-xl border-2 px-1.5 py-2.5 transition-all",
                 ativo ? "pulso-faixa shadow-md" : "shadow-[0_4px_10px_rgba(15,23,42,0.08)]"
               )}
               style={
@@ -636,10 +669,13 @@ export function AgulhaoMetas({
                     }
               }
             >
-              <span className="block font-sans text-[11px] font-black leading-tight tracking-[0.02em] sm:text-xs">
+              <span className="block break-words font-sans text-[11px] font-black leading-tight tracking-[0.02em] sm:text-xs">
                 {f.intervalo}
               </span>
-              <span className="mt-1 block font-sans text-[10px] font-extrabold uppercase leading-tight tracking-[0.04em] sm:text-[10.5px]">
+              {/* `break-words` + `hyphens-auto`: se um dia a célula ficar mais
+                  estreita que a palavra ("Insuficiente"), ela quebra dentro da
+                  caixa em vez de atravessar a borda. */}
+              <span className="mt-1 block hyphens-auto break-words font-sans text-[10px] font-extrabold uppercase leading-tight tracking-[0.04em] sm:text-[10.5px]">
                 {SUBTITULO_NIVEL[f.nivel]}
               </span>
               {ativo && marcaPosicao && (
