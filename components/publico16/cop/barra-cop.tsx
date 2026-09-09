@@ -236,8 +236,8 @@ function Botao({ atalho, ativo }: { atalho: Atalho; ativo: boolean }) {
   const { Icone } = atalho;
   const conteudo = (
     <>
-      <Icone size={21} />
-      <span className="whitespace-nowrap text-[10.5px] font-bold uppercase leading-none tracking-[0.04em]">
+      <Icone size={19} className="sm:size-[21px]" />
+      <span className="whitespace-nowrap text-[10px] font-semibold uppercase leading-none tracking-[0.03em] sm:text-[10.5px] sm:font-bold sm:tracking-[0.04em]">
         <span className="sm:hidden">{atalho.curto ?? atalho.rotulo}</span>
         <span className="hidden sm:inline">{atalho.rotulo}</span>
       </span>
@@ -245,7 +245,7 @@ function Botao({ atalho, ativo }: { atalho: Atalho; ativo: boolean }) {
   );
 
   const classe = cn(
-    "flex min-w-[74px] shrink-0 snap-start flex-col items-center justify-center gap-1.5 rounded-lg border px-3 py-2 transition-colors",
+    "flex min-w-[66px] shrink-0 snap-start flex-col items-center justify-center gap-1 rounded-lg border px-2.5 py-1.5 transition-colors sm:min-w-[74px] sm:gap-1.5 sm:px-3 sm:py-2",
     "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white",
     ativo
       ? atalho.tom === "tec"

@@ -49,8 +49,8 @@ export function BotaoSair({
          que o Major apontou. */
       style={{ borderColor: variante === "escuro" ? "#f0787f" : "#ca0202" }}
       className={cn(
-        "inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg border-2 px-3 py-1.5",
-        "text-[12px] font-black uppercase tracking-[0.08em] transition-all",
+        "inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-1.5 sm:border-2 sm:px-3",
+        "text-[11px] font-bold uppercase tracking-[0.07em] transition-all sm:text-[12px] sm:font-black sm:tracking-[0.08em]",
         "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current",
         variante === "escuro"
           ? "text-[#ffc9cc] hover:bg-[#c0121c] hover:text-white"
@@ -58,7 +58,7 @@ export function BotaoSair({
         mostrarConta ? "" : className
       )}
     >
-      <IconeSair size={16} className="shrink-0" />
+      <IconeSair size={15} className="shrink-0 sm:size-[16px]" />
       Sair
     </a>
   );

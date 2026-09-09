@@ -59,8 +59,8 @@ export function BotaoAdmin({
          utilitário. Ver a nota longa em cartao-acao.tsx. */
       style={{ borderColor: variante === "claro" ? "#0e3a63" : "rgba(56,189,248,0.55)" }}
       className={cn(
-        "group relative inline-flex min-h-11 shrink-0 items-center gap-2 overflow-hidden rounded-lg border px-3 py-2",
-        "text-[12px] font-black uppercase tracking-[0.08em] transition-all",
+        "group relative inline-flex min-h-11 shrink-0 items-center gap-1.5 overflow-hidden rounded-lg border px-2.5 py-1.5 sm:gap-2 sm:px-3 sm:py-2",
+        "text-[11px] font-bold uppercase tracking-[0.07em] transition-all sm:text-[12px] sm:font-black sm:tracking-[0.08em]",
         "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#38bdf8]",
         variante === "claro"
           ? "bg-gradient-to-br from-[#123f68] to-[#0a2440] text-white shadow-[0_6px_16px_rgba(10,36,64,0.30)] hover:-translate-y-0.5 hover:shadow-[0_10px_22px_rgba(10,36,64,0.42)]"
@@ -76,7 +76,7 @@ export function BotaoAdmin({
         aria-hidden
         className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-[#38bdf8]/25 to-transparent transition-transform duration-700 group-hover:translate-x-full"
       />
-      <IconeAdministracao size={17} className="relative shrink-0 text-[#7dd3fc]" />
+      <IconeAdministracao size={16} className="relative shrink-0 text-[#7dd3fc] sm:size-[17px]" />
       <span className="relative">Administração</span>
       {/* Sem sessão o rótulo diz o que vai acontecer no clique. Some no celular,
           onde a barra é estreita — lá o destino é a própria porta. */}

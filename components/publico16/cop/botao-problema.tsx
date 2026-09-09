@@ -55,8 +55,8 @@ export function BotaoProblema({
         "hover:-translate-y-0.5 hover:from-[#e40707] hover:to-[#bd0000]",
         "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white",
         variante === "cheio"
-          ? "min-h-12 rounded-xl border border-red-300/40 px-6 py-3.5 text-[15px]"
-          : "rounded-lg px-3.5 py-2 text-[12.5px] uppercase tracking-wide",
+          ? "min-h-11 rounded-xl border border-red-300/40 px-5 py-3 text-[13.5px] sm:min-h-12 sm:px-6 sm:py-3.5 sm:text-[15px]"
+          : "rounded-lg px-3 py-1.5 text-[11.5px] uppercase tracking-wide sm:px-3.5 sm:py-2 sm:text-[12.5px]",
         className
       )}
     >

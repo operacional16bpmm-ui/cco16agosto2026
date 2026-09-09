@@ -242,7 +242,7 @@ export function CartaoAcao({
             aoVivo && "animar-ao-vivo"
           )}
         />
-        <span className="dados text-[9.5px] font-bold uppercase tracking-[0.22em]">
+        <span className="dados text-[9px] font-semibold uppercase tracking-[0.2em] sm:text-[9.5px] sm:font-bold sm:tracking-[0.22em]">
           {etiqueta}
         </span>
       </span>
@@ -251,17 +251,17 @@ export function CartaoAcao({
         {/* Anel de lente: o ícone do módulo no centro de um diafragma. */}
         <span
           className={cn(
-            "mt-0.5 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full ring-2 transition-transform duration-200 group-hover:scale-105",
+            "mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full ring-1 transition-transform duration-200 group-hover:scale-105 sm:h-11 sm:w-11 sm:ring-2",
             t.anel
           )}
         >
-          <Icone size={22} className="text-white" />
+          <Icone size={20} className="text-white" />
         </span>
         <span className="min-w-0">
-          <span className="block text-[15.5px] font-black leading-tight text-white">
+          <span className="block text-[14px] font-bold leading-tight text-white sm:text-[15.5px] sm:font-black">
             {titulo}
           </span>
-          <span className={cn("mt-1 block text-[12.5px] leading-snug", t.acento)}>
+          <span className={cn("mt-1 block text-[11.5px] leading-snug sm:text-[12.5px]", t.acento)}>
             {nota}
           </span>
         </span>
@@ -270,7 +270,7 @@ export function CartaoAcao({
   );
 
   const classe = cn(
-    "group relative isolate flex min-h-[132px] flex-col overflow-hidden rounded-2xl border-2 p-4",
+    "group relative isolate flex min-h-[120px] flex-col overflow-hidden rounded-2xl border p-3.5 sm:min-h-[132px] sm:border-2 sm:p-4",
     "bg-gradient-to-br transition-all duration-200 hover:-translate-y-1",
     "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
     t.fundo,
