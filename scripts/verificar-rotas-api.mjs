@@ -108,3 +108,32 @@ test("a lista de públicas não cresceu sem motivo escrito", () => {
     );
   }
 });
+
+test("o que este arquivo chama de público está aberto TAMBÉM no proxy", () => {
+  /* A lacuna que este teste fecha, aberta em produção em 09/09/2026:
+     `/api/cop2026/versao` foi declarada pública AQUI, os catorze gates passaram,
+     e em produção ela respondia **307 para /login** — porque quem decide o
+     acesso em tempo de execução é `ROTAS_PUBLICAS` do `proxy.ts`, não esta
+     lista. As duas precisam concordar; esta é a declaração de intenção, aquela
+     é o que roda.
+
+     Exceções deliberadas: as rotas cobertas por um PREFIXO já aberto no proxy
+     (`acesso/*` entra por `/api/cop2026/acesso`) não precisam de linha própria
+     lá — a allowlist do proxy casa por prefixo. */
+  const proxy = readFileSync("proxy.ts", "utf8");
+  const abertasNoProxy = [...proxy.matchAll(/"(\/api\/cop2026\/[^"]+)"/g)].map((m) => m[1]);
+
+  const faltando = [...PUBLICAS.keys()].filter((id) => {
+    const rota = `/api/cop2026/${id}`;
+    return !abertasNoProxy.some((p) => rota === p || rota.startsWith(p + "/"));
+  });
+
+  assert.deepEqual(
+    faltando,
+    [],
+    `rota(s) declarada(s) pública(s) neste arquivo mas FECHADA(S) no proxy: ${faltando.join(", ")}.\n` +
+      `Em produção elas respondem 307 para /login e o gate não acusa nada — foi assim que ` +
+      `/api/cop2026/versao subiu quebrada. Acrescente a rota em ROTAS_PUBLICAS de proxy.ts, ` +
+      `com o motivo escrito ao lado.`
+  );
+});

@@ -133,6 +133,14 @@ const ROTAS_PUBLICAS = [
      por prefixo. */
   "/api/cop2026/briefing-png",
   "/api/cop2026/briefing-pdf",
+  /* Carimbo do que está no ar: commit, horário da publicação e versão do
+     portal. Aberta porque quem mais precisa dela é quem NÃO tem sessão — o
+     `scripts/publicar.mjs` conferindo se o deploy subiu, e o policial que quer
+     saber se o portal dele está velho antes de relatar um bug já corrigido.
+
+     Não devolve pessoa, lançamento nem fração: três campos de metadado de
+     build. NÃO existe subrota, e não deve existir — a lista casa por prefixo. */
+  "/api/cop2026/versao",
   // A Diretriz da COP é norma aberta à tropa e fica embutida na /cop2026;
   // sem esta exceção o leitor de PDF cairia no login.
   "/documentos/diretriz-pm3-001-02-25.pdf",
