@@ -109,6 +109,30 @@ const ROTAS_PUBLICAS = [
      existir: a lista casa por prefixo e qualquer `/api/cop2026/backup/algo`
      nasceria aberta. O que a rota exporta é lista fechada no servidor. */
   "/api/cop2026/backup",
+  /* EXPORTAÇÃO DO PAINEL — PNG e PDF. Abertas em 09/09/2026 porque fechá-las
+     não protegia nada e quebrava o botão no celular.
+
+     O gate que esta lista aplica é o COOKIE_SESSAO da Sala de Comando, NÃO a
+     conta Google da COP. Fora da lista, as duas rotas caíam no fail-closed e
+     respondiam 307 para /login a qualquer pessoa sem a credencial única do
+     Batalhão — inclusive a quem já estava lendo o Dashboard. No celular o botão
+     de exportar é um `<a href>` de propósito (o toque tem de virar navegação,
+     ver BotaoExportar em components/publico16/cop/dashboard-cop.tsx), então a
+     navegação ia parar na tela de login em vez de baixar o arquivo. No desktop
+     o defeito ficava escondido: quem trabalha na Sala de Comando tem a sessão, e
+     o PNG ainda tinha o plano B de rasterizar no próprio navegador.
+
+     Não expõem nada novo: o arquivo é a fotografia do /cop2026/dashboard, que
+     está ABERTO desde 08/09/2026 por determinação do Comando (ver
+     ROTAS_RESTRITAS_COP em lib/cop2026-acesso.ts). Fechar a exportação sem
+     fechar o painel escondia o botão, não o dado. A identidade continua valendo
+     para quem TEM sessão: prepararExportacao() assina o cookie do headless com
+     o e-mail de quem exportou e emite `null` para quem chegou pelo link.
+
+     NÃO existe subrota sob nenhuma das duas, e não deve existir: a lista casa
+     por prefixo. */
+  "/api/cop2026/briefing-png",
+  "/api/cop2026/briefing-pdf",
   // A Diretriz da COP é norma aberta à tropa e fica embutida na /cop2026;
   // sem esta exceção o leitor de PDF cairia no login.
   "/documentos/diretriz-pm3-001-02-25.pdf",
