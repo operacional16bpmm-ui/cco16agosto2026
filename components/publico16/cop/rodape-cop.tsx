@@ -29,7 +29,7 @@ import { EQUIPE } from "@/components/publico16/creditos";
 
 /** Bumpada à mão a cada entrega relevante. Serve para o Comando saber de qual
  *  versão é o print que está circulando na reunião. */
-export const VERSAO_PORTAL = "16.2";
+export const VERSAO_PORTAL = "16.3";
 
 
 const SELOS = [

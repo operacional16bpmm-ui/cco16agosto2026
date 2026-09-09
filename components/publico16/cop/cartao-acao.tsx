@@ -15,14 +15,14 @@ import { cn } from "@/lib/utils";
  * de azul, para contrastar com o fundo da página e com o vermelho das outras
  * duas — mais neuroergonômicas e instintivas de acesso, mas sem ficar baiano"*.
  *
- * A DECISÃO DE COR, escrita para não ser desfeita por engano:
- * - **vermelho** continua sendo SEMÂNTICO e exclusivo das duas ações que a
- *   tropa executa: lançar a auditoria e avisar que o sistema caiu
- *   (docs/cop2026-padroes-comando.md §2 — cor é classificação, não decoração);
- * - **azul bandeirante** (`--azul-bandeira`/`--azul-noite`) é consulta ao vivo:
- *   o Dashboard;
- * - **aço** (grafite azulado) é a leitura fechada do período: o Briefing.
- *   Os dois têm luminância bem acima do fundo `#070b14`, que era o problema.
+ * NA MESMA TARDE ele fechou a paleta: *"os botões que você mexeu agora,
+ * vermelhos: use a cor de cinza bandeirante e algo da cor da PMESP"*. O corpo
+ * dos quatro passou a ser cinza ou azul bandeirante, e a cor institucional
+ * virou ACENTO — o trilho da borda esquerda, o anel da lente e a etiqueta.
+ * A regra de classificação de docs/cop2026-padroes-comando.md §2 sobrevive: o
+ * vermelho continua marcando só o que a tropa EXECUTA, agora como traço e não
+ * como berro. Os quatro corpos têm luminância bem acima do fundo `#070b14`,
+ * que era o problema original.
  *
  * A LINGUAGEM VISUAL é a da própria matéria do sistema — câmera operacional
  * corporal: cantoneiras de visor, o ícone dentro de um anel de lente, a
@@ -35,7 +35,29 @@ import { cn } from "@/lib/utils";
  * etiqueta e ícone distintos.
  */
 
-export type TomAcao = "vermelho" | "azul" | "aco";
+/**
+ * OS QUATRO TONS — determinação do Major Zochio em 09/09/2026, segunda volta:
+ * *"os botões do COP que você mexeu agora, vermelhos: use a cor de cinza
+ * bandeirante e algo da cor da PMESP"*.
+ *
+ * O vermelho CHEIO saiu dos dois cartões de ação. O corpo dos quatro passou a
+ * ser cinza bandeirante ou azul bandeirante, e a cor institucional entra como
+ * **acento** — o trilho de 6px na borda esquerda, o anel da lente e a etiqueta:
+ *
+ * | cartão | corpo | trilho institucional |
+ * |---|---|---|
+ * | Preencher a auditoria | cinza bandeirante claro | vermelho PMESP `#ca0202` |
+ * | Dashboard de metas | azul bandeirante | azul-bandeira `#305388` |
+ * | Relatar problemas | cinza bandeirante escuro | vermelho PMESP `#ca0202` |
+ * | Briefing executivo | aço | cromo/prata — a cor da logomarca da PMESP |
+ *
+ * O QUE O TRILHO PRESERVA: o vermelho continua marcando, e só, as duas coisas
+ * que a tropa EXECUTA (lançar a auditoria e avisar que o sistema caiu). Ele
+ * deixou de ser o corpo do botão e virou o traço — a informação de
+ * classificação sobrevive, o berro não. Quem for pintar um cartão novo de
+ * vermelho cheio está desfazendo esta decisão, não corrigindo um esquecimento.
+ */
+export type TomAcao = "acao" | "alerta" | "azul" | "aco";
 
 /**
  * ⚠️ A COR DA BORDA VAI EM `style`, NÃO EM CLASSE — e isto não é preferência.
@@ -52,17 +74,61 @@ export type TomAcao = "vermelho" | "azul" | "aco";
  * Inline vence os dois. Quem for trocar estas cores por classe: meça o
  * `getComputedStyle(...).borderColor` depois, não confie no HTML.
  */
+/**
+ * O TRILHO É GRADIENTE, E ISSO NÃO É ENFEITE.
+ *
+ * Medido em 09/09/2026: o vermelho institucional chapado (`#ca0202`) sobre o
+ * cinza bandeirante do cartão dá contraste de **1,00:1** — mesma luminância.
+ * Quem enxerga cor vê o traço vermelho; quem tem visão de cor reduzida não vê
+ * traço nenhum. O mesmo valia para o azul-bandeira sobre o corpo azul (1,29:1).
+ *
+ * A saída é a aresta clara: o trilho vai do tom claro ao institucional, o que
+ * separa por LUMINÂNCIA sem trocar a cor da instituição — a base do gradiente
+ * continua sendo o hex oficial.
+ */
+/** Vermelho institucional da PMESP, o mesmo do cabeçalho e do brasão. */
+const VERMELHO_PM = `linear-gradient(180deg, #ff4d4d 0%, #ca0202 55%, #8f0101 100%)`;
+/** Azul-bandeira do portal (`--azul-bandeira`). */
+const AZUL_BANDEIRA = `linear-gradient(180deg, #7db4e8 0%, #305388 55%, #1d3a63 100%)`;
+/** Cromo/prata — a cor em que a logomarca da PMESP é registrada. */
+const CROMO = `linear-gradient(180deg, #ffffff 0%, #c9d3de 55%, #8a97a6 100%)`;
+
 const TONS: Record<
   TomAcao,
-  { fundo: string; borda: string; brilho: string; acento: string; anel: string; foco: string }
+  {
+    fundo: string;
+    borda: string;
+    /** Trilho institucional de 6px na borda esquerda, em gradiente. */
+    trilho: string;
+    brilho: string;
+    acento: string;
+    anel: string;
+    foco: string;
+  }
 > = {
-  vermelho: {
-    fundo: "from-[#c9101a] via-[#a60a12] to-[#7d0007]",
-    borda: "rgba(255,154,154,0.55)",
-    brilho: "shadow-[0_10px_26px_rgba(126,0,0,0.38)] hover:shadow-[0_16px_34px_rgba(126,0,0,0.5)]",
-    acento: "text-[#ffd7d7]",
-    anel: "ring-[#ffd7d7]/45 bg-[#ffffff]/10",
-    foco: "focus-visible:outline-[#ffd7d7]",
+  acao: {
+    /* Cinza bandeirante CLARO — o cartão da ação que o Batalhão precisa que
+       aconteça. É o corpo mais luminoso do conjunto: a hierarquia que antes
+       vinha do vermelho cheio agora vem do brilho e do trilho vermelho. */
+    fundo: "from-[#8b95a5] via-[#5a6474] to-[#333a46]",
+    borda: "rgba(255,107,107,0.8)",
+    trilho: VERMELHO_PM,
+    brilho: "shadow-[0_10px_26px_rgba(24,28,36,0.5)] hover:shadow-[0_16px_34px_rgba(202,2,2,0.35)]",
+    acento: "text-[#ffd2d2]",
+    anel: "ring-[#ff6b6b]/70 bg-[#ca0202]/30",
+    foco: "focus-visible:outline-[#ffd2d2]",
+  },
+  alerta: {
+    /* Cinza bandeirante ESCURO — mesmo trilho vermelho, corpo mais fechado.
+       Fica um degrau abaixo do cartão de lançamento de propósito: relatar
+       falha é ação de exceção, o lançamento é o de todo turno. */
+    fundo: "from-[#6d7787] via-[#434b59] to-[#252a33]",
+    borda: "rgba(255,107,107,0.6)",
+    trilho: VERMELHO_PM,
+    brilho: "shadow-[0_10px_26px_rgba(17,20,26,0.55)] hover:shadow-[0_16px_34px_rgba(202,2,2,0.3)]",
+    acento: "text-[#ffc4c4]",
+    anel: "ring-[#ff6b6b]/55 bg-[#ca0202]/22",
+    foco: "focus-visible:outline-[#ffc4c4]",
   },
   azul: {
     /* Azul bandeirante: `--azul-bandeira` (#305388) puxado para o `--azul-noite`
@@ -70,17 +136,17 @@ const TONS: Record<
        do conjunto — foi a peça que o Major não achava na tela. */
     fundo: "from-[#3d86c9] via-[#2565a8] to-[#173a63]",
     borda: "rgba(125,211,252,0.55)",
+    trilho: AZUL_BANDEIRA,
     brilho: "shadow-[0_10px_26px_rgba(19,47,82,0.5)] hover:shadow-[0_16px_34px_rgba(45,107,168,0.45)]",
     acento: "text-[#bae6fd]",
     anel: "ring-[#bae6fd]/45 bg-[#ffffff]/10",
     foco: "focus-visible:outline-[#bae6fd]",
   },
   aco: {
-    /* Aço: o "cinza bandeirante" que ele pediu como alternativa ao azul. Fica
-       um passo abaixo do azul na hierarquia — o Briefing é leitura de período
-       fechado, o Dashboard é o número de agora. */
+    /* Aço: leitura de período fechado. Trilho em cromo — a cor da logomarca. */
     fundo: "from-[#74849b] via-[#4d5b70] to-[#2b3442]",
     borda: "rgba(226,232,240,0.45)",
+    trilho: CROMO,
     brilho: "shadow-[0_10px_26px_rgba(20,26,36,0.5)] hover:shadow-[0_16px_34px_rgba(90,106,128,0.4)]",
     acento: "text-[#e2e8f0]",
     anel: "ring-[#e2e8f0]/40 bg-[#ffffff]/10",
@@ -149,8 +215,26 @@ export function CartaoAcao({
         aria-hidden
         className="pointer-events-none absolute inset-0 opacity-[0.14] [background-image:repeating-linear-gradient(0deg,rgba(255,255,255,0.5)_0px,rgba(255,255,255,0.5)_1px,transparent_1px,transparent_4px)]"
       />
+      {/* TRILHO INSTITUCIONAL — a cor da PMESP entra por aqui, e não pelo corpo
+          do cartão. Vermelho nas duas ações da tropa, azul-bandeira na consulta
+          ao vivo, cromo na síntese do Comando. Vai em `style` pelo mesmo motivo
+          da borda (a regra sem camada de globals.css). */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 left-0 w-1.5"
+        /* A linha escura de 1px à direita é o que garante o traço em QUALQUER
+           corpo: o vermelho institucional tem quase a mesma luminância do cinza
+           bandeirante claro (1,83:1 no cartão de lançamento), e sem a aresta o
+           trilho depende de enxergar cor. */
+        style={{ backgroundImage: t.trilho, boxShadow: "1px 0 0 rgba(0,0,0,0.5)" }}
+      />
 
-      <span className="relative flex items-center gap-2">
+      {/* O `t.acento` fica NO PAI: o ponto usa `bg-current`, e sem uma cor
+          declarada aqui o `currentColor` que ele herda é o `text-branco` da
+          página — que dentro de `.tema-institucional` vale GRAFITE (#1d1d1d),
+          não branco. Medido em 09/09/2026: o ponto das quatro etiquetas saía
+          quase invisível sobre o corpo do cartão. */}
+      <span className={cn("relative flex items-center gap-2", t.acento)}>
         <span
           aria-hidden
           className={cn(
@@ -158,12 +242,7 @@ export function CartaoAcao({
             aoVivo && "animar-ao-vivo"
           )}
         />
-        <span
-          className={cn(
-            "dados text-[9.5px] font-bold uppercase tracking-[0.22em]",
-            t.acento
-          )}
-        >
+        <span className="dados text-[9.5px] font-bold uppercase tracking-[0.22em]">
           {etiqueta}
         </span>
       </span>

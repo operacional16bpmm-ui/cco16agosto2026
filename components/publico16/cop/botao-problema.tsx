@@ -36,7 +36,7 @@ export function BotaoProblema({
     return (
       <CartaoAcao
         href="/cop2026/inconsistencias"
-        tom="vermelho"
+        tom="alerta"
         etiqueta="Sistema · Falha"
         titulo="Relatar problemas do sistema"
         nota="Formulário caiu, painel travou, dado sumiu — avise o Comando na hora."

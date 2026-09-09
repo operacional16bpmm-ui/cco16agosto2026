@@ -366,16 +366,18 @@ export default async function Cop2026Page({
               pílulas em fila, duas vermelhas cheias e duas escuras sobre fundo
               escuro — as duas escuras "passavam batido". Agora é uma grade de
               quatro cartões do mesmo tamanho, cada um com a sua cor de função:
-              vermelho para o que a tropa EXECUTA, azul bandeirante para a
-              consulta ao vivo, aço para a leitura de período fechado. A regra
-              de cor e o porquê estão em components/publico16/cop/cartao-acao.tsx.
+              cinza bandeirante com trilho vermelho PMESP para o que a tropa
+              EXECUTA, azul bandeirante para a consulta ao vivo, aço com trilho
+              cromo para a leitura de período fechado. A regra de cor e o porquê
+              estão em components/publico16/cop/cartao-acao.tsx — o vermelho saiu
+              do corpo e virou traço em 09/09/2026, por determinação do Major.
               Em fila (`flex-row`) nunca mais: com quatro itens, ou o quarto
               sumia na dobra do celular ou os rótulos encolhiam até ilegíveis. */}
           <div className="mt-9 grid max-w-4xl grid-cols-1 gap-3 sm:grid-cols-2">
             <CartaoAcao
               href={URL_FORMULARIO}
               externo
-              tom="vermelho"
+              tom="acao"
               etiqueta="Turno · Registrar"
               titulo="Preencher a auditoria do turno"
               nota="Mínimo de 3 evidências por turno. Leva menos de dois minutos."
