@@ -270,7 +270,13 @@ export function BriefingSlides({
       }`,
       icone: <Gauge size={13} />,
       corpo: (
-        <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,360px)_1fr]">
+        /* 460px, não 360: o quadro é projetado em telão e agora carrega
+           trajetória e a faixa de ritmos. Com 360 o número da meta era
+           calculado em 34px (o tamanho sai da caixa — ver `numeroFluido`) e a
+           coluna passava de 1280px de altura; com 460 o número volta a ~50px,
+           a régua de faixas reabre em quatro colunas e o cartão encurta. O
+           slide tem 1152px de largura — a folga sobrava à direita. */
+        <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,460px)_1fr]">
           <div className="bf-entra" style={atraso(0)}>
             {/* MESMO velocímetro do painel, com os MESMOS índices — pedido do
                 Fabrício em 09/09/2026 ("deixa nesse quadro da meta global as
