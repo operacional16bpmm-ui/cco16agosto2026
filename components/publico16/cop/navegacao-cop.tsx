@@ -1,9 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Clock, LogOut } from "lucide-react";
+import { Clock } from "lucide-react";
 
 import { FaixaCreditos } from "@/components/publico16/creditos";
 import { BotaoAdmin } from "@/components/publico16/cop/botao-admin";
+import { BotaoSair } from "@/components/publico16/cop/botao-sair";
 
 /**
  * Cabeçalho de identidade das telas de consulta da COP (painel, briefing,
@@ -74,21 +75,17 @@ export function NavegacaoCop({
               </span>
             )}
 
-            <BotaoAdmin ehAdmin={ehAdmin} className="hidden sm:inline-flex" />
+            {/* Administração e Sair aparecem em TODAS as larguras desde
+                09/09/2026 — inclusive no celular, que é onde a tropa e o
+                Comando abrem o portal. Antes os dois eram `hidden sm:`: no
+                telefone não havia como encerrar a sessão nem achar a porta da
+                administração, e o Major cobrou os dois no mesmo dia. */}
+            {/* `claro`: sob `.tema-institucional` o token `--tatico-super`
+                deste cabeçalho é BRANCO, não a superfície tática do tema
+                escuro — variante escura aqui sairia azul sobre branco. */}
+            <BotaoAdmin ehAdmin={ehAdmin} variante="claro" />
 
-            {email && (
-              <div className="hidden items-center gap-2 sm:flex">
-                <span className="dados text-[11px] text-texto-suave">{email}</span>
-                <a
-                  href="/api/cop2026/acesso/sair"
-                  className="flex items-center gap-1 rounded-md border border-borda px-2 py-1 text-[11.5px] font-semibold text-texto-suave hover:border-vermelho/40 hover:text-vermelho"
-                  title="Encerrar sessão"
-                >
-                  <LogOut className="h-3 w-3" />
-                  <span className="hidden md:inline">Sair</span>
-                </a>
-              </div>
-            )}
+            {email && <BotaoSair email={email} variante="claro" mostrarConta />}
           </div>
         </div>
 

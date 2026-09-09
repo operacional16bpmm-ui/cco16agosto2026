@@ -25,7 +25,7 @@ export default async function LayoutCop({ children }: { children: React.ReactNod
 
   return (
     <>
-      <BarraCop ehAdmin={ehAdminCop(identidade?.email)} />
+      <BarraCop ehAdmin={ehAdminCop(identidade?.email)} email={identidade?.email} />
       {children}
     </>
   );

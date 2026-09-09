@@ -7,7 +7,6 @@ import {
   CalendarDays,
   FileBarChart2,
   FileCheck2,
-  Presentation,
   RefreshCw,
 } from "lucide-react";
 import type { Metadata } from "next";
@@ -28,6 +27,13 @@ import { mesCorrente } from "@/lib/cop2026-relatorios";
 import { QuadroRankingCias } from "@/components/publico16/cop/quadro-ranking-cias";
 import { BotaoAdmin } from "@/components/publico16/cop/botao-admin";
 import { BotaoProblema } from "@/components/publico16/cop/botao-problema";
+import { BotaoSair } from "@/components/publico16/cop/botao-sair";
+import { CartaoAcao } from "@/components/publico16/cop/cartao-acao";
+import {
+  IconeBriefing,
+  IconeLancar,
+  IconePainel,
+} from "@/components/publico16/cop/icones-cop";
 import { ehAdminCop } from "@/lib/cop2026-acesso";
 import { identidadeCop } from "@/lib/db/cop2026-autorizados";
 
@@ -178,8 +184,11 @@ export default async function Cop2026Page({
 
   /* `identidadeCop` e não `sessaoCop`: esta página é ABERTA, e perguntar
      "quem é" não pode virar exigência de estar na lista de 22 autorizados.
-     Sem cookie devolve null, `ehAdmin` fica falso e o botão não existe. */
-  const ehAdmin = ehAdminCop((await identidadeCop())?.email);
+     Sem cookie devolve null — e aí o botão de Administração aponta para a
+     porta de login em vez de sumir (mudança de 09/09/2026), e o "Sair" não
+     aparece, porque não há sessão para encerrar. */
+  const identidade = await identidadeCop();
+  const ehAdmin = ehAdminCop(identidade?.email);
 
   return (
     <div
@@ -200,8 +209,12 @@ export default async function Cop2026Page({
                 para não colidir com o brasão no mobile. */}
             {/* Admin ao lado de Relatórios: o botão tem que existir em TODA
                 tela da COP, e esta é a única do conjunto que não usa a
-                NavegacaoCop. Só aparece para quem está em COP2026_ADMINS. */}
+                NavegacaoCop. Desde 09/09/2026 ele aparece para TODO MUNDO —
+                quem não administra é levado à porta de login, não a um 404. */}
             <BotaoAdmin ehAdmin={ehAdmin} className="ml-auto shrink-0" />
+            {identidade?.email && (
+              <BotaoSair email={identidade.email} variante="claro" mostrarConta className="shrink-0" />
+            )}
             <Link
               href="/cop2026/relatorios"
               className="group inline-flex shrink-0 items-center gap-2 rounded-lg bg-[#ca0202] px-3.5 py-2 text-[12px] font-bold uppercase tracking-wide text-white shadow-[0_6px_16px_rgba(202,2,2,0.28)] transition-all hover:-translate-y-0.5 hover:bg-[#e40707] hover:shadow-[0_10px_22px_rgba(202,2,2,0.42)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#07182d] sm:text-[13px]"
@@ -348,39 +361,53 @@ export default async function Cop2026Page({
             cada minuto.
           </p>
 
-          <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <a
+          {/* AS QUATRO ENTRADAS DO SISTEMA, em cartões-visor.
+              Reforma de 09/09/2026 a pedido do Major Zochio: eram quatro
+              pílulas em fila, duas vermelhas cheias e duas escuras sobre fundo
+              escuro — as duas escuras "passavam batido". Agora é uma grade de
+              quatro cartões do mesmo tamanho, cada um com a sua cor de função:
+              vermelho para o que a tropa EXECUTA, azul bandeirante para a
+              consulta ao vivo, aço para a leitura de período fechado. A regra
+              de cor e o porquê estão em components/publico16/cop/cartao-acao.tsx.
+              Em fila (`flex-row`) nunca mais: com quatro itens, ou o quarto
+              sumia na dobra do celular ou os rótulos encolhiam até ilegíveis. */}
+          <div className="mt-9 grid max-w-4xl grid-cols-1 gap-3 sm:grid-cols-2">
+            <CartaoAcao
               href={URL_FORMULARIO}
-              className="group inline-flex min-h-12 items-center justify-center gap-2.5 rounded-xl border border-red-300/40 bg-gradient-to-br from-[#d50909] to-[#a90000] px-7 py-3.5 text-[15px] font-bold text-white shadow-[0_10px_24px_rgba(126,0,0,0.32)] transition-all duration-200 hover:-translate-y-0.5 hover:from-[#e40707] hover:to-[#bd0000] hover:shadow-[0_14px_28px_rgba(126,0,0,0.42)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white active:translate-y-0"
-            >
-              <FileCheck2 className="h-[18px] w-[18px]" />
-              Preencher a auditoria do turno
-              <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-            </a>
+              externo
+              tom="vermelho"
+              etiqueta="Turno · Registrar"
+              titulo="Preencher a auditoria do turno"
+              nota="Mínimo de 3 evidências por turno. Leva menos de dois minutos."
+              Icone={IconeLancar}
+              aoVivo
+            />
             {/* Painel único desde 01/09/2026: o painel do ciclo (Caixa
                 Tendência e título que se anuncia pelo mês corrente) assumiu a
                 URL limpa. Os endereços versionados /v2 e /v3 seguem como
                 redirect permanente em next.config.ts. */}
-            <a
+            <CartaoAcao
               href="/cop2026/dashboard"
-              className="group inline-flex min-h-12 items-center justify-center gap-2.5 rounded-xl border border-white/25 bg-[#07182d]/55 px-6 py-3.5 text-[15px] font-bold text-white shadow-[0_8px_20px_rgba(0,0,0,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/55 hover:bg-[#07182d]/75 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-            >
-              <BarChart3 className="h-[18px] w-[18px] text-white/60" />
-              Dashboard de metas
-            </a>
-            {/* O botão vermelho na altura do olho, ao lado das outras duas
+              tom="azul"
+              etiqueta="Metas · Ao vivo"
+              titulo="Dashboard de metas"
+              nota="A posição de cada fração na meta do mês, atualizada a cada minuto."
+              Icone={IconePainel}
+            />
+            {/* O botão vermelho na altura do olho, ao lado das outras três
                 ações da home. Ele também vive na BarraCop, que está em todas
                 as telas do módulo — aqui ele aparece INTEIRO porque a home é
                 onde alguém que acabou de descobrir a queda entra primeiro, e
                 um ícone de 74px na barra não compete com o hero. */}
-            <BotaoProblema />
-            <a
+            <BotaoProblema variante="visor" />
+            <CartaoAcao
               href="/cop2026/briefing"
-              className="group inline-flex min-h-12 items-center justify-center gap-2.5 rounded-xl border border-white/15 bg-white/[0.06] px-5 py-3.5 text-[15px] font-bold text-slate-200 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/35 hover:bg-white/[0.12] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-            >
-              <Presentation className="h-[18px] w-[18px]" />
-              Briefing executivo
-            </a>
+              tom="aco"
+              etiqueta="Comando · Síntese"
+              titulo="Briefing executivo"
+              nota="A leitura do período em slides, pronta para projetar na reunião."
+              Icone={IconeBriefing}
+            />
           </div>
 
           {/* Os parâmetros que a tropa mais pergunta, na altura do olho, em vez

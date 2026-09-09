@@ -2,6 +2,8 @@ import Link from "next/link";
 import { AlertTriangle, ArrowRight } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { CartaoAcao } from "@/components/publico16/cop/cartao-acao";
+import { IconeProblema } from "@/components/publico16/cop/icones-cop";
 
 /**
  * BOTÃO "RELATAR PROBLEMAS DO SISTEMA" — o botão vermelho.
@@ -21,11 +23,29 @@ export function BotaoProblema({
   variante = "cheio",
   className,
 }: {
-  /** "cheio" para a home (peça de destaque); "compacto" para as barras de
-   *  navegação do Dashboard e da Planilha, onde ele divide espaço. */
-  variante?: "cheio" | "compacto";
+  /** "visor" para a home (o cartão da grade de ações, desde 09/09/2026);
+   *  "cheio" para o botão-pílula; "compacto" para as barras de navegação do
+   *  Dashboard e da Planilha, onde ele divide espaço. */
+  variante?: "visor" | "cheio" | "compacto";
   className?: string;
 }) {
+  /* A home passou a usar a grade de cartões-visor. Ele continua saindo DAQUI,
+     e não escrito à mão lá, para que destino e texto sigam com uma fonte só —
+     era exatamente o risco documentado acima. */
+  if (variante === "visor") {
+    return (
+      <CartaoAcao
+        href="/cop2026/inconsistencias"
+        tom="vermelho"
+        etiqueta="Sistema · Falha"
+        titulo="Relatar problemas do sistema"
+        nota="Formulário caiu, painel travou, dado sumiu — avise o Comando na hora."
+        Icone={IconeProblema}
+        className={className}
+      />
+    );
+  }
+
   return (
     <Link
       href="/cop2026/inconsistencias"

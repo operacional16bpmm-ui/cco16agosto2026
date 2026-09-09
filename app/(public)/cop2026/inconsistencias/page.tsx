@@ -5,6 +5,7 @@ import { AlertTriangle, ArrowLeft, ShieldCheck } from "lucide-react";
 import { RodapeCop } from "@/components/publico16/cop/rodape-cop";
 import { FaixaCreditos } from "@/components/publico16/creditos";
 import { BotaoAdmin } from "@/components/publico16/cop/botao-admin";
+import { BotaoSair } from "@/components/publico16/cop/botao-sair";
 import { identidadeCop } from "@/lib/db/cop2026-autorizados";
 import { ehAdminCop } from "@/lib/cop2026-acesso";
 import { WHATSAPP_AJUDA } from "@/lib/cop2026-inconsistencia-config";
@@ -33,7 +34,8 @@ export const dynamic = "force-dynamic";
  * escreve.
  */
 export default async function InconsistenciasPage() {
-  const ehAdmin = ehAdminCop((await identidadeCop())?.email);
+  const identidade = await identidadeCop();
+  const ehAdmin = ehAdminCop(identidade?.email);
 
   return (
     <div className="tema-institucional min-h-screen bg-tatico-fundo text-[15px] text-branco">
@@ -48,6 +50,7 @@ export default async function InconsistenciasPage() {
             <ArrowLeft size={15} /> Início
           </Link>
           <BotaoAdmin ehAdmin={ehAdmin} className="ml-auto" />
+          {identidade?.email && <BotaoSair email={identidade.email} variante="claro" />}
         </div>
       </header>
 

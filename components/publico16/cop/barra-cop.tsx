@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { URL_FORMULARIO } from "@/lib/cop2026";
 import { cn } from "@/lib/utils";
 import {
+  IconeAdministracao,
   IconeAuditores,
   IconeAutorizados,
   IconeBriefing,
@@ -20,6 +21,7 @@ import {
   IconePainel,
   IconeProblema,
   IconeRelatorios,
+  IconeSair,
   IconeSaude,
   IconeTrilha,
   IconeUnidades,
@@ -64,6 +66,15 @@ type Atalho = {
   externo?: boolean;
   /** Ação principal do módulo: pintada mesmo quando não é a página atual. */
   destaque?: boolean;
+  /**
+   * Cor fora da régua "vermelho = ação, contorno = consulta".
+   *
+   * - `tec`: a porta da administração — azul de tecnologia, para não disputar
+   *   a leitura com o vermelho das duas ações da tropa;
+   * - `sair`: encerrar a sessão — vermelho de CONTORNO, achável na varredura
+   *   sem virar uma terceira ação cheia ao lado das duas que já são.
+   */
+  tom?: "tec" | "sair";
 };
 
 const NAVEGACAO: Atalho[] = [
@@ -162,6 +173,50 @@ const MENSAGEM_AJUDA =
   "Olá! Sou do 16º BPM/M e preciso de ajuda com a Auditoria de COP 2026.";
 const INSTAGRAM = "https://www.instagram.com/16bpmm_oficial/";
 
+/**
+ * A PORTA DA ADMINISTRAÇÃO — na primeira linha, com os botões da tropa, em toda
+ * tela do módulo. Determinação do Major Zochio em 09/09/2026: *"o botão
+ * administrador, que pede login, deixe em todas as janelas lá em cima junto com
+ * os outros botões, bem destacado e ícone diferente (tecnologia)"*.
+ *
+ * São DOIS destinos escritos por extenso, e não um `href` calculado, para que
+ * `verificar:navegacao` confira os dois: quem administra entra direto; quem não
+ * tem sessão vai para a porta aberta, que explica a regra e oferece o login com
+ * o retorno já apontado para a administração. É o que impede o 404 de
+ * `exigirAdminCop()` — a objeção que antes justificava esconder o botão.
+ *
+ * A segunda linha (`ADMINISTRACAO`) continua só para quem administra: ali são
+ * as TELAS de dentro, e cada uma responde 404 a quem não está na lista.
+ */
+const ADMIN_DIRETO: Atalho = {
+  href: "/cop2026/admin",
+  rotulo: "Administração",
+  curto: "Admin",
+  Icone: IconeAdministracao,
+  prefixo: true,
+  tom: "tec",
+};
+
+const ADMIN_LOGIN: Atalho = {
+  href: "/cop2026/acesso?redirect=%2Fcop2026%2Fadmin",
+  rotulo: "Administração",
+  curto: "Admin",
+  Icone: IconeAdministracao,
+  tom: "tec",
+};
+
+/* Rota de API, não página: fica FORA de um literal `href:` de propósito —
+   `verificar:navegacao` procura `app/(public)/<caminho>/page.tsx` para todo
+   `href:` interno da barra, e esta não é uma página. */
+const ROTA_SAIR = "/api/cop2026/acesso/sair";
+
+const ATALHO_SAIR: Atalho = {
+  href: ROTA_SAIR,
+  rotulo: "Sair",
+  Icone: IconeSair,
+  tom: "sair",
+};
+
 const CONTATO: Atalho[] = [
   {
     href: `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(MENSAGEM_AJUDA)}`,
@@ -191,21 +246,47 @@ function Botao({ atalho, ativo }: { atalho: Atalho; ativo: boolean }) {
 
   const classe = cn(
     "flex min-w-[74px] shrink-0 snap-start flex-col items-center justify-center gap-1.5 rounded-lg border px-3 py-2 transition-colors",
+    "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white",
     ativo
-      ? "border-vermelho bg-vermelho text-white shadow-[0_2px_10px_rgba(213,52,65,0.45)]"
-      : atalho.destaque
-        ? "border-vermelho bg-vermelho/30 text-white hover:bg-vermelho/45"
-        : "border-white/15 text-white/80 hover:border-white/40 hover:bg-white/10 hover:text-white"
+      ? atalho.tom === "tec"
+        ? "border-[#7dd3fc] bg-[#155a8a] text-white shadow-[0_2px_12px_rgba(56,189,248,0.45)]"
+        : "border-vermelho bg-vermelho text-white shadow-[0_2px_10px_rgba(213,52,65,0.45)]"
+      : atalho.tom === "tec"
+        ? /* Azul de tecnologia, cheio: é o botão que o Major mandou destacar em
+             todas as telas. Cheio e não de contorno porque, entre onze botões de
+             contorno, contorno é invisível. */
+          "border-[#38bdf8]/60 bg-[#0d2b46] text-[#dbeafe] shadow-[0_2px_12px_rgba(0,0,0,0.35)] hover:border-[#38bdf8] hover:bg-[#144063] hover:text-white"
+        : atalho.tom === "sair"
+          ? "border-[#f0787f]/70 text-[#ffc9cc] hover:border-[#ff5964] hover:bg-[#c0121c] hover:text-white"
+          : atalho.destaque
+            ? "border-vermelho bg-vermelho/30 text-white hover:bg-vermelho/45"
+            : "border-white/15 text-white/80 hover:border-white/40 hover:bg-white/10 hover:text-white"
   );
 
-  /* Link externo é `<a>` de propósito: `next/link` faria prefetch de um PDF e
-     de dois domínios de fora. */
-  return atalho.externo ? (
+  /* A cor da borda dos dois tons novos vai em `style`: `app/globals.css` tem
+     `* { border-color: var(--borda) }` fora de camada, e no Tailwind v4 isso
+     vence qualquer `border-*` de utilitário (nota longa em cartao-acao.tsx). É
+     por isso que a borda dos botões desta barra sempre foi, na prática, o
+     `--borda` do tema — invisível. Os dois botões que o Major mandou destacar
+     não podem depender disso. */
+  const estilo =
+    atalho.tom === "tec"
+      ? { borderColor: ativo ? "#7dd3fc" : "rgba(56,189,248,0.6)" }
+      : atalho.tom === "sair"
+        ? { borderColor: "#f0787f" }
+        : undefined;
+
+  /* `<a>` cru em dois casos: link externo (`next/link` faria prefetch de um PDF
+     e de dois domínios de fora) e o SAIR — cujo destino é a rota que apaga o
+     cookie. Com prefetch, o mouse passando por cima derrubaria a sessão de
+     quem não clicou. */
+  return atalho.externo || atalho.tom === "sair" ? (
     <a
       href={atalho.href}
-      target="_blank"
-      rel="noopener noreferrer"
+      target={atalho.externo ? "_blank" : undefined}
+      rel={atalho.externo ? "noopener noreferrer" : undefined}
       className={classe}
+      style={estilo}
       title={atalho.rotulo}
     >
       {conteudo}
@@ -214,6 +295,7 @@ function Botao({ atalho, ativo }: { atalho: Atalho; ativo: boolean }) {
     <Link
       href={atalho.href}
       className={classe}
+      style={estilo}
       title={atalho.rotulo}
       aria-current={ativo ? "page" : undefined}
     >
@@ -226,7 +308,15 @@ function Separador() {
   return <span className="mx-1 h-9 w-px shrink-0 self-center bg-white/25" aria-hidden />;
 }
 
-export function BarraCop({ ehAdmin = false }: { ehAdmin?: boolean }) {
+export function BarraCop({
+  ehAdmin = false,
+  /** Conta aberta, quando há sessão. Só decide se o "Sair" aparece — o gate de
+   *  cada página continua sendo `exigirAcessoCop` / `exigirAdminCop`. */
+  email,
+}: {
+  ehAdmin?: boolean;
+  email?: string;
+}) {
   const pathname = usePathname();
 
   /* A tela de acesso é a porta: oferecer nela os atalhos que exigem sessão
@@ -255,11 +345,34 @@ export function BarraCop({ ehAdmin = false }: { ehAdmin?: boolean }) {
               <Botao key={a.href} atalho={a} ativo={estaAtivo(pathname, a)} />
             ))}
             <Separador />
+            {/* A porta da administração e a saída da sessão: no fim da primeira
+                linha, junto dos outros botões, em toda tela do módulo. O SAIR só
+                existe quando existe sessão — oferecer "sair" a quem nunca entrou
+                é oferecer um botão que não faz nada. */}
+            <Botao
+              atalho={ehAdmin ? ADMIN_DIRETO : ADMIN_LOGIN}
+              ativo={ehAdmin && estaAtivo(pathname, ADMIN_DIRETO)}
+            />
+            {email && <Botao atalho={ATALHO_SAIR} ativo={false} />}
+            <Separador />
             {CONTATO.map((a) => (
               <Botao key={a.href} atalho={a} ativo={false} />
             ))}
           </nav>
         </div>
+
+        {/* A conta aberta, escrita por extenso ao lado do Sair da barra: num
+            computador compartilhado do Batalhão, "sair" só é decisão informada
+            se a pessoa souber DE QUEM é a sessão que vai cair. Some no celular,
+            onde a largura é dos botões. */}
+        {email && (
+          <p className="mt-1 hidden items-center justify-end gap-1.5 text-[10.5px] text-white/45 lg:flex">
+            sessão aberta:{" "}
+            <span className="dados max-w-[32ch] truncate text-white/70" title={email}>
+              {email}
+            </span>
+          </p>
+        )}
 
         {/* Segunda linha: administração. Só existe para quem administra —
             `exigirAdminCop()` responde 404 aos demais, e botão que leva a 404

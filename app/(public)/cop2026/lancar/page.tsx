@@ -8,6 +8,7 @@ import { FaixaCreditos } from "@/components/publico16/creditos";
 import { identidadeCop } from "@/lib/db/cop2026-autorizados";
 import { ehAdminCop } from "@/lib/cop2026-acesso";
 import { BotaoAdmin } from "@/components/publico16/cop/botao-admin";
+import { BotaoSair } from "@/components/publico16/cop/botao-sair";
 import { ORDEM_SUBUNIDADES, ROTULO_SUBUNIDADE } from "@/lib/cop2026";
 import { arvoreDoFormulario, type ArvoreFormulario } from "@/lib/db/cop2026-unidade";
 import { funcoesDeclaradas } from "@/lib/db/cop2026-lancamentos";
@@ -97,6 +98,9 @@ export default async function LancarPage() {
           {/* Mesma identidade já lida para carimbar a autoria do lançamento —
               nenhuma consulta a mais só para decidir se o botão aparece. */}
           <BotaoAdmin ehAdmin={ehAdminCop(identidade?.email)} className="ml-auto shrink-0" />
+          {identidade?.email && (
+            <BotaoSair email={identidade.email} variante="claro" className="shrink-0" />
+          )}
         </div>
         <div className="faixa-institucional h-1.5" />
       </header>

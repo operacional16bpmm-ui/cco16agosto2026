@@ -248,6 +248,42 @@ export function IconeSaude(p: Props) {
   );
 }
 
+/**
+ * Administração — o chip com o escudo no núcleo.
+ *
+ * É a PORTA da área técnica (a que pede login), e não uma tela de dentro dela:
+ * por isso não repete o crachá de `IconeAutorizados` nem o cadeado genérico. O
+ * chip com pinos é o símbolo que o Major pediu em 09/09/2026 ("ícone diferente,
+ * de tecnologia") e o escudo diz de quem é a chave.
+ */
+export function IconeAdministracao(p: Props) {
+  return (
+    <Svg {...p}>
+      <rect x="5.8" y="5.8" width="12.4" height="12.4" rx="2.2" />
+      <path d="M9.6 5.8V3.2M14.4 5.8V3.2M9.6 20.8v-2.6M14.4 20.8v-2.6M5.8 9.6H3.2M5.8 14.4H3.2M20.8 9.6h-2.6M20.8 14.4h-2.6" />
+      <path d="M12 8.5l2.9 1.05v2.3c0 1.65-1.16 3.1-2.9 3.65-1.74-.55-2.9-2-2.9-3.65v-2.3L12 8.5Z" />
+    </Svg>
+  );
+}
+
+/**
+ * Sair — a sessão que se encerra: a porta com a seta indo embora.
+ *
+ * A seta aponta para FORA da moldura de propósito. O ícone de "entrar" e o de
+ * "sair" do mesmo desenho espelhado é o erro clássico: quem olha rápido no
+ * celular não distingue o sentido, e o botão que encerra a sessão do Comando
+ * não pode depender de leitura atenta.
+ */
+export function IconeSair(p: Props) {
+  return (
+    <Svg {...p}>
+      <path d="M14.4 3.8h3.2a2.2 2.2 0 0 1 2.2 2.2v12a2.2 2.2 0 0 1-2.2 2.2h-3.2" />
+      <path d="m9.8 16.4 4.4-4.4-4.4-4.4" />
+      <path d="M14.2 12H3.6" />
+    </Svg>
+  );
+}
+
 /** Ajuda — o balão do WhatsApp com o fone dentro. */
 export function IconeWhatsApp(p: Props) {
   return (

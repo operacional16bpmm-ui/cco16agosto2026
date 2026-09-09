@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronRight, LogOut } from "lucide-react";
+import { ChevronRight } from "lucide-react";
+
+import { BotaoSair } from "@/components/publico16/cop/botao-sair";
 
 /**
  * Cabeçalho das telas de administração da COP.
@@ -59,15 +61,17 @@ export function CabecalhoAdmin({
         {/* Os atalhos para Painel e Briefing saíram daqui em 08/09/2026: eles
             vivem na `BarraCop`, que aparece em todas as telas do módulo. Aqui
             fica só a sessão — o que é desta tela, e não do módulo. */}
+        {/* A sessão aberta e o SAIR. O botão passou a ser o componente único
+            (`BotaoSair`) em 09/09/2026: aqui ele era um contorno cinza de 12px
+            que se confundia com a trilha de navegação ao lado. Esta é a tela
+            onde encerrar a sessão mais importa — é a que administra a lista de
+            acesso, as metas e a trilha. */}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-texto-suave">
           <span className="inline-flex items-center gap-2">
-            <span className="dados">{email}</span>
-            <a
-              href="/api/cop2026/acesso/sair"
-              className="inline-flex min-h-11 items-center gap-1 rounded-md border border-borda px-3 py-1 font-semibold hover:border-vermelho/40 hover:text-vermelho sm:min-h-0 sm:px-2"
-            >
-              <LogOut size={12} aria-hidden /> Sair
-            </a>
+            <span className="dados max-w-[24ch] truncate" title={email}>
+              {email}
+            </span>
+            <BotaoSair email={email} variante="claro" />
           </span>
         </div>
       </div>
