@@ -23,7 +23,8 @@
     "verificar:superficies": "node --experimental-strip-types --no-warnings --import ./scripts/alias-loader.mjs --test scripts/verificar-superficies-id.mjs",
     "verificar:rotas": "node --experimental-strip-types --no-warnings --import ./scripts/alias-loader.mjs --test scripts/verificar-rotas-api.mjs",
     "verificar:unidade-declarada": "node --experimental-strip-types --no-warnings --test scripts/verificar-unidade-declarada.mjs",
-    "verificar:navegacao": "node --experimental-strip-types --no-warnings --test scripts/verificar-navegacao-cop.mjs"
+    "verificar:navegacao": "node --experimental-strip-types --no-warnings --test scripts/verificar-navegacao-cop.mjs",
+    "publicar": "node scripts/publicar.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.123.0",

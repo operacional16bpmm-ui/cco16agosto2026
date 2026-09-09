@@ -16,32 +16,50 @@ Requisitos e o porquê de cada um: **`docs/cop2026-padroes-comando.md`**.
 
 # Deploy é automático — não pergunte, não deixe pendente
 
-Este repo **não tem remote git** (`git remote -v` é vazio): nada de push dispara build.
 Toda alteração termina em produção, sem perguntar e sem devolver o comando para o Fabricio
-copiar. Fluxo obrigatório ao fechar qualquer mudança:
+copiar. **Fluxo obrigatório ao fechar qualquer mudança — dois comandos:**
 
 ```bash
-npx tsc --noEmit \
-  && npm run verificar:vocabulario \
-  && npm run verificar:dado-pessoal \
-  && npm run verificar:periodo \
-  && npm run verificar:lancamento \
-  && npm run verificar:paridade \
-  && npm run verificar:painel \
-  && npm run verificar:tendencia \
-  && npm run verificar:unidades \
-  && npm run verificar:indices \
-  && npm run verificar:excecoes \
-  && npm run verificar:unidade-declarada \
-  && npm run verificar:navegacao \
-  && npm run verificar:rotas \
-  && npm run verificar:seguranca \
-  && git commit -m "<msg>" && npx vercel --prod --yes
+git commit -m "<msg>"     # só os arquivos que VOCÊ tocou, pelo nome
+npm run publicar
 ```
+
+`npm run publicar` (`scripts/publicar.mjs`) faz o resto e **para no primeiro erro**: confere
+a árvore e o projeto Vercel, roda `tsc` e os 14 gates, sincroniza com o pc1, publica, e só
+diz "PUBLICADO" depois de **ler o próprio commit em `/api/cop2026/versao` na produção** e
+conferir que as 5 telas do Comando respondem. Nunca chame `npx vercel --prod` na mão — é
+por onde entram as quatro armadilhas abaixo.
 
 **Nada de `git add -A`.** Outras sessões editam este mesmo working tree ao mesmo
 tempo; `-A` publica o trabalho pela metade de quem estiver do lado. Adicione
 somente os arquivos que você tocou, pelo nome.
+
+## As quatro armadilhas que o `publicar` fecha
+
+1. **DOIS clones, um só histórico.** O trabalho acontece no **pc3**
+   (`/home/verti/_workspace/pmesp/portal-cco16`) e no **pc1**
+   (`/home/pc1/_workspace/pmesp/portal-cco16`), com sessões diferentes nos dois. Desde
+   09/09/2026 existe `origin` (`ssh://pc1/...`) e o pc1 está com
+   `receive.denyCurrentBranch=updateInstead` — o push atualiza a árvore de trabalho dele
+   junto. Se o push for recusado por non-fast-forward, **o pc1 tem trabalho que você não
+   tem**: `git pull --rebase origin master`, confira, publique. Nunca `--force` (em
+   09/09/2026 o pc1 tinha o `e5e6b44`, de outra sessão, que um force teria apagado).
+2. **DOIS projetos Vercel chamados `portal-cco16`.** O do time `16bpmm` (alias
+   `portal-cco16-eta.vercel.app`) e o do time **`avertice`** (alias
+   **`portal-cco16.vercel.app`** — o que o Batalhão abre). Publicar no primeiro imprime
+   "Ready" e não muda nada para o Comando. O script aborta se o `.vercel/project.json`
+   não for `team_aIGPsabZTK6rA7CuUXNKYfJh` / `prj_OmnVH0mUprxpgRiGzoMkVTzKfOvQ`.
+3. **A credencial da Vercel só existe no pc1.** O `auth.json` do CLI é um token OAuth de
+   vida curta com `refreshToken`: copiar para outro nó funciona até vencer e depois quebra
+   calado. Por isso o deploy **sempre roda no pc1** e os outros nós chamam por SSH — o
+   script já faz isso sozinho.
+4. **Não havia como saber o que estava no ar.** Sem integração de git, a Vercel não registra
+   commit nenhum e todo deploy aparece como "CLI". O script carimba o SHA no deploy
+   (`vercel -e COP2026_COMMIT=…`) e `/api/cop2026/versao` devolve commit, horário e versão
+   do portal. É a fonte para responder "o meu está velho?" sem abrir chamado.
+
+`npm run publicar -- --seco` mostra o que faria sem publicar. `-- --sem-gates` pula `tsc` e
+os 14 gates: só para urgência real, e ele avisa em amarelo que pulou.
 
 **`verificar:unidades`** guarda a régua de APRESENTAÇÃO (`lib/cop2026-tendencia.ts`):
 como ritmo e contagem de período chegam à tela. Em 03/09/2026 o briefing executivo
@@ -86,9 +104,10 @@ setembro e afirma que **nenhum contador do painel muda**. Se falhar, procure em
 `lancamentos` que não usa `dados`/`dadosSemFiltroDeSemana` — a leitura tem que
 entrar pelo portão `aplicarFiltros`, sempre.
 
-`npx vercel --prod --yes` já sai com `target: production` e move os aliases
-(`portal-cco16.vercel.app`). Conferir com `npx vercel inspect <url-do-deploy>` — o
-"Promote to production" que a CLI imprime no fim é ruído, não é sinal de que ficou preview.
+O "Promote to production" que a CLI imprime no fim do deploy é **ruído**, não é sinal de que
+ficou preview: `--prod --yes` já sai com `target: production` e move os aliases. Quem responde
+de verdade se ficou em produção é `/api/cop2026/versao` — que é o que o `publicar` consulta.
 
 O `npm run build` local **não fecha no pc1** (memória) e não é pré-requisito: quem compila é a
-Vercel. Se o build quebrar lá, o erro sai em `npx vercel inspect --logs <url>`.
+Vercel. Se o build quebrar lá, o erro sai em `npx vercel inspect --logs <url>` — rodado **no
+pc1**, que é onde o CLI está autenticado.

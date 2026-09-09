@@ -42,6 +42,10 @@ const PUBLICAS = new Map([
     "unidades",
     "organograma da Corporação (nome e código de OPM) para o seletor do formulário público; não devolve pessoa, contagem nem lançamento",
   ],
+  [
+    "versao",
+    "metadado de build — commit, horário da publicação e número de versão. É o que `scripts/publicar.mjs` lê para confirmar que o deploy subiu, e o que permite a qualquer um do Batalhão dizer 'o meu está velho'. Nenhum dado de pessoa, lançamento ou fração passa por aqui",
+  ],
 ]);
 
 /**
