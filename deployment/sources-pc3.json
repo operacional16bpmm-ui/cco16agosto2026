@@ -1,0 +1,12 @@
+{
+  "sources": [
+    {"id": "wiki-log", "domain": "brain", "path": "/home/verti/WIKI/log.md"},
+    {"id": "wiki-painel", "domain": "brain", "path": "/home/verti/WIKI/ferramentas/painel-de-parede.md"},
+    {"id": "wiki-revisor", "domain": "brain", "path": "/home/verti/WIKI/ferramentas/revisor-texto.md"},
+    {"id": "wiki-escuta24h", "domain": "brain", "path": "/home/verti/WIKI/ferramentas/ESCUTA24H.md"},
+    {"id": "wiki-fotos-pmesp", "domain": "pmesp", "path": "/home/verti/WIKI/vertice/sistema-fotos-formatura-pmesp.md"},
+    {"id": "wiki-fotos-pmesp-arq", "domain": "pmesp", "path": "/home/verti/WIKI/vertice/sistema-fotos-formatura-pmesp-arquitetura-2026.md"},
+    {"id": "wiki-bonificacao", "domain": "pmesp", "path": "/home/verti/WIKI/briefings/2026-09-11-automacao-peca-ir-bonificacao.md"},
+    {"id": "claude-vigia", "domain": "brain", "path": "/home/verti/.claude/projects/-home-pc1/memory/vigia-cco16-monitoramento.md"}
+  ]
+}
