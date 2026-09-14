@@ -27,7 +27,15 @@ def run(db, config, kind="event", model=None, clock=time.monotonic):
         client=model or OllamaClient(); new=0
         for domain, items in grouped.items():
             if store.status().get("paused"): raise StoreError("HOME pausado antes da chamada")
-            items=items[:4]; context="\n".join(x["text"][:12000] for x in items)
+            items=items[:4]
+            # Limite por ciclo: o modelo recebe no máximo 12k caracteres no
+            # total, não 12k por fonte (o que estourava o contexto do Ollama).
+            remaining=12000; chunks=[]
+            for item in items:
+                chunk=item["text"][:remaining]
+                chunks.append(chunk); remaining-=len(chunk)
+                if remaining <= 0: break
+            context="\n".join(chunks)
             for p in client.propose(domain,[{"source_id":x["source_id"],"sha256":x["sha256"]} for x in items],context):
                 if store.status().get("paused"): raise StoreError("HOME pausado antes da persistencia")
                 store.create_proposal(domain,p["title"],p["body"],p["sources"],p["kind"],p["reason"],p["verification"]); new+=1
