@@ -12,6 +12,7 @@ from pathlib import Path
 
 EXCLUDED = {'.git', '.venv', 'venv', 'node_modules', '.obsidian', '__pycache__'}
 EXTENSIONS = {'.md', '.txt'}
+SECRET_FILENAMES = {'.env'}
 MAX_BYTES = 20 * 1024 * 1024
 
 
@@ -70,7 +71,9 @@ def _walk(root: Path, counts: dict[str, int]):
         for name in dirs:
             if (base / name).is_symlink():
                 counts['skipped_symlinks'] += 1
-            elif name not in EXCLUDED and not name.startswith('.'):
+            elif name in EXCLUDED or name.startswith('.'):
+                counts['excluded_directories'] += 1
+            else:
                 kept.append(name)
         dirs[:] = sorted(kept)
         for name in sorted(files):
@@ -79,6 +82,8 @@ def _walk(root: Path, counts: dict[str, int]):
                 counts['skipped_symlinks'] += 1
             elif path.suffix.lower() in EXTENSIONS and not name.startswith('.'):
                 yield path
+            else:
+                counts['excluded_files'] += 1
 
 
 def _walk_error(error: OSError):
@@ -89,7 +94,8 @@ def snapshot(roots: dict[str, Path], destination: Path) -> dict[str, object]:
     roots = _sources(roots, destination)
     destination.mkdir(mode=0o700, parents=True, exist_ok=False)
     entries = []
-    counts = {'skipped_symlinks': 0}
+    counts = {'skipped_symlinks': 0, 'excluded_directories': 0,
+              'excluded_files': 0}
     for label, root in roots.items():
         for path in _walk(root, counts):
             relative = Path(label) / path.relative_to(root)
@@ -98,6 +104,14 @@ def snapshot(roots: dict[str, Path], destination: Path) -> dict[str, object]:
             entries.append(entry)
     manifest = {'schema': 1, 'created_at': dt.datetime.now(dt.timezone.utc).isoformat(),
                 'scope': 'documentos md/txt; sem bancos, midia, dependencias ou segredos de configuracao',
+                'exclusions': {
+                    'extensions_included': sorted(EXTENSIONS),
+                    'directory_names': sorted(EXCLUDED),
+                    'hidden_directories': True,
+                    'hidden_files': True,
+                    'secret_filenames': sorted(SECRET_FILENAMES),
+                    'max_file_bytes': MAX_BYTES,
+                },
                 'roots': {k: str(v) for k, v in roots.items()}, 'entries': entries,
                 'files': len(entries), **counts}
     with (destination / 'manifest.json').open('x', encoding='utf-8') as output:
@@ -121,23 +135,54 @@ def _safe_entry(root: Path, text: str) -> Path:
 
 
 def verify(root: Path, expected_manifest: str | None = None) -> dict[str, object]:
-    if (root / 'manifest.json').is_symlink():
-        raise ValueError('manifest nao pode ser symlink')
+    manifest_path = root / 'manifest.json'
+    if manifest_path.is_symlink() or not manifest_path.is_file():
+        raise ValueError('manifest deve ser arquivo regular')
     if expected_manifest and digest(root / 'manifest.json') != expected_manifest:
         raise ValueError('hash externo do manifest diverge')
-    manifest = json.loads((root / 'manifest.json').read_text(encoding='utf-8'))
+    manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
     if manifest.get('schema') != 1:
         raise ValueError('schema desconhecido')
+    entries = manifest.get('entries')
+    if (not isinstance(entries, list) or isinstance(manifest.get('files'), bool)
+            or not isinstance(manifest.get('files'), int)
+            or manifest['files'] != len(entries)):
+        raise ValueError('contagem de arquivos diverge das entradas')
     errors, seen = [], set()
-    for entry in manifest['entries']:
-        name = entry['path']
+    for entry in entries:
+        if not isinstance(entry, dict):
+            raise ValueError('entrada invalida no manifest')
+        name = entry.get('path')
+        size = entry.get('size')
+        sha256 = entry.get('sha256')
+        if (not isinstance(name, str) or isinstance(size, bool)
+                or not isinstance(size, int) or size < 0
+                or not isinstance(sha256, str)
+                or not re.fullmatch(r'[0-9a-f]{64}', sha256)):
+            raise ValueError('entrada invalida no manifest')
         if name in seen:
             raise ValueError('entrada duplicada')
         seen.add(name)
         path = _safe_entry(root, name)
-        if (not path.is_file() or path.stat().st_size != entry['size']
-                or digest(path) != entry['sha256']):
+        if (not path.is_file() or path.stat().st_size != size
+                or digest(path) != sha256):
             errors.append(name)
+    actual = set()
+    for parent, dirs, files in os.walk(root, followlinks=False, onerror=_walk_error):
+        base = Path(parent)
+        for name in dirs:
+            if (base / name).is_symlink():
+                raise ValueError('snapshot contem symlink')
+        for name in files:
+            path = base / name
+            if path.is_symlink() or not path.is_file():
+                raise ValueError('snapshot contem arquivo nao regular')
+            relative = path.relative_to(root).as_posix()
+            if relative != 'manifest.json':
+                actual.add(relative)
+    extras = actual - seen
+    if extras:
+        raise ValueError('snapshot contem arquivos nao declarados: ' + ', '.join(sorted(extras)))
     return {'ok': not errors, 'verified_files': len(seen) - len(errors), 'errors': errors}
 
 
