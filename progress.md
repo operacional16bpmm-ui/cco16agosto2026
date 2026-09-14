@@ -13,6 +13,6 @@
 Ruling: desenvolver modulo ao lado do SBV em copia isolada local — origem sem Git e producao ativa — custo se inadequado: etapa adicional de integracao antes da ativacao.
 Ruling: manter promocao fisica e restart do MCP bloqueados ate aprovacao especifica — instrucoes do host exigem confirmacao de producao — custo: entrega inicial nao altera as interfaces em uso.
 
-Task 1: in_progress
-Task 2: pending
-Task 3: inventory_in_progress
+Task 1: complete (núcleo persistente, gates, leases, stale e regressões)
+Task 2: complete (observer, Ollama local, worker, MCP somente leitura; ativação remota pendente)
+Task 3: partial (backup/catálogo implementados; restauração real e cobertura dos 40 casos ainda pendentes)
