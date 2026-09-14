@@ -10,18 +10,24 @@
 - Pausa, retomada, leases exclusivas, expiracao como falha, quotas de runs e gate de experimento apos sete dias.
 - CLI `python -m home_lab --db PATH` com `status`, `proposals`, `context`, `pause`, `resume`, `decide` e `gate`; sucesso e erro em JSON.
 - Fallback de timezone documentado em `policy.py`: se `America/Sao_Paulo` nao estiver disponivel, usa UTC-3 atual, sem pretender reproduzir regras historicas.
+- Expiracao de leases e persistida antes de validacoes que podem recusar a operacao; pausa e verificada atomicamente em propostas e consumo de eventos.
+- Referencias de propostas carregam a versao da fonte no digest, protegendo contra ABA; dedup valida fonte atual antes de retornar ID.
+- Schema futuro e recusado antes de qualquer DDL; fontes podem ser invalidadas explicitamente, removendo eventos/contexto e marcando propostas dependentes como `stale`.
+- Janela de observacao inicia apenas em ciclo concluido via `start_observation`/`record_observation_success`; `can_experiment` reflete pausa, backlog, lease ativo, janela e gates.
 
 O Store e uma barreira de politica da aplicacao, nao uma barreira do sistema operacional. O deployment deve executar worker e CLI humana com usuarios/permissoes distintos e impedir que o worker escreva no banco de aprovacao ou no codigo/politica. Esta entrega nao escreve no vault, nao acessa PCs remotos e nao altera Wiki/RAG.
 
 ## Evidencias TDD
 
-RED inicial:
+RED inicial dos findings (testes focados, antes das correcoes):
 
 ```text
-python -m unittest tests.test_store -v
-ModuleNotFoundError: No module named 'home_lab'
-FAILED (errors=1)
+python -m unittest tests.test_core_findings -v
+AttributeError: 'Store' object has no attribute 'record_observation_success'
+FAILED (errors=...)
 ```
+
+As falhas adicionais cobriam expiracao revertida por `raise`, dedup de fonte obsoleta, ABA de fonte, pausa permitindo consumo, schema 999 mutando banco e janela iniciada no construtor. Foram reproduzidas pelos oito testes em `tests/test_core_findings.py`.
 
 RED propostas:
 
@@ -39,11 +45,13 @@ Ran 2 tests
 FAILED (failures=2)
 ```
 
-GREEN final registrado pelo comando:
+GREEN final:
 
 ```text
 python -m unittest discover -s tests -v
 ```
+
+Saida atual: `Ran 36 tests`, `OK (skipped=2)` (Windows pula somente os testes explicitamente Linux/bash). O teste de schema verifica tambem bytes do arquivo antes/depois.
 
 O resultado final deve ser consultado no log do commit/execucao desta tarefa; o teste Linux de symlink da Task 3 pode aparecer como `skipped` no Windows e nao pertence a este escopo.
 

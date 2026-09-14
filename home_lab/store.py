@@ -18,6 +18,7 @@ class StoreError(ValueError):
 
 
 class Store:
+    SCHEMA_VERSION = 2
     def __init__(self, path: str | Path, clock: Callable[[], datetime] | None = None):
         self.path = str(path)
         self.clock = clock or (lambda: datetime.now(timezone.utc))
@@ -45,15 +46,25 @@ class Store:
             conn.close()
 
     def _init_schema(self) -> None:
+        # Reject future databases before PRAGMA/WAL or any DDL can mutate them.
+        probe = sqlite3.connect(self.path)
+        try:
+            version_row = probe.execute("SELECT version FROM schema_version LIMIT 1").fetchone()
+        except sqlite3.OperationalError:
+            version_row = None
+        finally:
+            probe.close()
+        if version_row and int(version_row[0]) > self.SCHEMA_VERSION:
+            raise StoreError("schema futuro nao suportado")
         with self._transaction() as conn:
-            conn.executescript("""
+            schema = """
                 CREATE TABLE IF NOT EXISTS schema_version(version INTEGER NOT NULL);
-                INSERT INTO schema_version(version) SELECT 1 WHERE NOT EXISTS(SELECT 1 FROM schema_version);
-                CREATE TABLE IF NOT EXISTS state(key TEXT PRIMARY KEY, value TEXT NOT NULL);
+                INSERT INTO schema_version(version) SELECT 2 WHERE NOT EXISTS(SELECT 1 FROM schema_version);
+                CREATE TABLE IF NOT EXISTS state(key TEXT PRIMARY KEY, value TEXT);
                 CREATE TABLE IF NOT EXISTS sources(
                   source_id TEXT PRIMARY KEY, domain TEXT NOT NULL, path TEXT NOT NULL,
                   sha256 TEXT NOT NULL, kind TEXT NOT NULL, version INTEGER NOT NULL,
-                  created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
+                  created_at TEXT NOT NULL, updated_at TEXT NOT NULL, invalidated INTEGER NOT NULL DEFAULT 0);
                 CREATE TABLE IF NOT EXISTS events(
                   id INTEGER PRIMARY KEY, source_id TEXT NOT NULL REFERENCES sources(source_id),
                   sha256 TEXT NOT NULL, event_type TEXT NOT NULL, created_at TEXT NOT NULL,
@@ -74,8 +85,18 @@ class Store:
                 CREATE TABLE IF NOT EXISTS gates(
                   name TEXT PRIMARY KEY, value INTEGER NOT NULL, actor TEXT NOT NULL,
                   evidence TEXT NOT NULL, updated_at TEXT NOT NULL);
-            """)
-            conn.execute("INSERT OR IGNORE INTO state(key,value) VALUES('observation_started_at',?)", (self._iso(),))
+            """
+            for statement in schema.split(";"):
+                statement = statement.strip()
+                if statement:
+                    conn.execute(statement)
+            columns = {row[1] for row in conn.execute("PRAGMA table_info(sources)")}
+            if "invalidated" not in columns:
+                conn.execute("ALTER TABLE sources ADD COLUMN invalidated INTEGER NOT NULL DEFAULT 0")
+            version = int(conn.execute("SELECT version FROM schema_version LIMIT 1").fetchone()[0])
+            if version < self.SCHEMA_VERSION:
+                conn.execute("UPDATE schema_version SET version=?", (self.SCHEMA_VERSION,))
+            conn.execute("INSERT OR IGNORE INTO state(key,value) VALUES('observation_started_at',NULL)")
 
     def _now(self) -> datetime:
         value = self.clock()
@@ -103,20 +124,21 @@ class Store:
         now = self._iso()
         with self._transaction() as conn:
             row = conn.execute("SELECT * FROM sources WHERE source_id=?", (source_id,)).fetchone()
-            if row and row["sha256"] == sha256 and row["domain"] == domain and row["path"] == path and row["kind"] == kind:
+            if (row and row["sha256"] == sha256 and row["domain"] == domain and row["path"] == path
+                    and row["kind"] == kind and not row["invalidated"]):
                 return int(row["version"])
             version = int(row["version"]) + 1 if row else 1
-            conn.execute("""INSERT INTO sources VALUES(?,?,?,?,?,?,?,?)
+            conn.execute("""INSERT INTO sources VALUES(?,?,?,?,?,?,?,?,?)
                 ON CONFLICT(source_id) DO UPDATE SET domain=excluded.domain,path=excluded.path,
-                sha256=excluded.sha256,kind=excluded.kind,version=excluded.version,updated_at=excluded.updated_at""",
-                (source_id, domain, path, sha256, kind, version, now, now))
+                sha256=excluded.sha256,kind=excluded.kind,version=excluded.version,updated_at=excluded.updated_at,invalidated=0""",
+                (source_id, domain, path, sha256, kind, version, now, now, 0))
             return version
 
     def record_event(self, source_id: str, sha256: str, event_type: str = "changed") -> int:
         self._require(event_type, "event_type")
         with self._transaction() as conn:
-            source = conn.execute("SELECT sha256 FROM sources WHERE source_id=?", (source_id,)).fetchone()
-            if not source or source["sha256"] != sha256:
+            source = conn.execute("SELECT sha256,invalidated FROM sources WHERE source_id=?", (source_id,)).fetchone()
+            if not source or source["invalidated"] or source["sha256"] != sha256:
                 raise StoreError("fonte ausente ou sha divergente")
             conn.execute("INSERT OR IGNORE INTO events(source_id,sha256,event_type,created_at) VALUES(?,?,?,?)",
                          (source_id, sha256, event_type, self._iso()))
@@ -125,7 +147,7 @@ class Store:
             return int(row["id"])
 
     def list_events(self, domain: str | None = None, unprocessed_only: bool = True) -> list[dict]:
-        sql = "SELECT e.* FROM events e JOIN sources s ON s.source_id=e.source_id WHERE 1=1"
+        sql = "SELECT e.* FROM events e JOIN sources s ON s.source_id=e.source_id WHERE s.invalidated=0"
         args: list[object] = []
         if domain is not None:
             sql += " AND s.domain=?"; args.append(domain)
@@ -150,14 +172,18 @@ class Store:
         conn.execute("UPDATE runs SET status='failed',finished_at=?,detail='lease expirado' WHERE status='active' AND expires_at<=?",
                      (self._iso(), self._now().timestamp()))
 
+    def _expire_runs_persisted(self) -> None:
+        with self._transaction() as conn:
+            self._expire_runs(conn)
+
     def begin_run(self, kind: str, owner: str) -> str:
         self._require(owner, "owner")
         if kind not in RUN_LIMITS:
             raise StoreError("kind de run invalido")
         limit, timeout = RUN_LIMITS[kind]
         now = self._now()
+        self._expire_runs_persisted()
         with self._transaction() as conn:
-            self._expire_runs(conn)
             if conn.execute("SELECT 1 FROM state WHERE key='paused_reason'").fetchone():
                 raise StoreError("HOME pausado")
             if conn.execute("SELECT COUNT(*) n FROM proposals WHERE status='pending'").fetchone()["n"] >= 20:
@@ -169,7 +195,10 @@ class Store:
             if count >= limit:
                 raise StoreError("quota de run excedida")
             if kind == "experiment":
-                started = datetime.fromisoformat(conn.execute("SELECT value FROM state WHERE key='observation_started_at'").fetchone()["value"])
+                started_value = conn.execute("SELECT value FROM state WHERE key='observation_started_at'").fetchone()["value"]
+                if not started_value:
+                    raise StoreError("observacao ainda nao iniciada")
+                started = datetime.fromisoformat(started_value)
                 if (now - started).total_seconds() < 7 * 86400:
                     raise StoreError("janela de observacao incompleta")
                 gates = {r["name"]: bool(r["value"]) for r in conn.execute("SELECT name,value FROM gates")}
@@ -183,26 +212,31 @@ class Store:
     def finish_run(self, token: str, status: str, detail: str) -> None:
         if status not in {"completed", "failed", "suspended"}:
             raise StoreError("status de run invalido")
+        self._expire_runs_persisted()
         with self._transaction() as conn:
-            self._expire_runs(conn)
             row = conn.execute("SELECT status FROM runs WHERE token=?", (token,)).fetchone()
             if not row or row["status"] != "active":
                 raise StoreError("lease invalido ou encerrado")
             conn.execute("UPDATE runs SET status=?,finished_at=?,detail=? WHERE token=?",
                          (status, self._iso(), detail, token))
+            if status == "completed" and conn.execute("SELECT value FROM state WHERE key='observation_started_at'").fetchone()["value"] is None:
+                conn.execute("UPDATE state SET value=? WHERE key='observation_started_at'", (self._iso(),))
 
     def mark_events_processed(self, ids: Sequence[int], run_token: str) -> None:
         if not ids:
             raise StoreError("ids obrigatorios")
+        self._expire_runs_persisted()
         with self._transaction() as conn:
-            self._expire_runs(conn)
+            if conn.execute("SELECT 1 FROM state WHERE key='paused_reason'").fetchone():
+                raise StoreError("HOME pausado")
             run = conn.execute("SELECT status FROM runs WHERE token=?", (run_token,)).fetchone()
             if not run or run["status"] != "active":
                 raise StoreError("run invalido")
             for event_id in ids:
-                event = conn.execute("""SELECT e.processed_at,e.sha256,s.sha256 current_sha
+                event = conn.execute("""SELECT e.processed_at,e.sha256,s.sha256 current_sha,s.invalidated
                     FROM events e JOIN sources s ON s.source_id=e.source_id WHERE e.id=?""", (event_id,)).fetchone()
-                if not event or event["processed_at"] or event["sha256"] != event["current_sha"]:
+                if (not event or event["processed_at"] or event["invalidated"]
+                        or event["sha256"] != event["current_sha"]):
                     raise StoreError("evento invalido ou fonte atualizada")
             placeholders = ",".join("?" for _ in ids)
             conn.execute(f"UPDATE events SET processed_at=?,run_token=? WHERE id IN ({placeholders})",
@@ -234,19 +268,24 @@ class Store:
             if not isinstance(source_id, str) or not isinstance(sha256, str):
                 raise StoreError("referencia de fonte invalida")
             normalized.append({"source_id": source_id, "sha256": sha256})
-        normalized.sort(key=lambda item: (item["source_id"], item["sha256"]))
-        digest = proposal_digest(domain, title, body, kind, reason, verification, normalized)
-        dedup_hash = digest
         now = self._now()
         with self._transaction() as conn:
+            if conn.execute("SELECT 1 FROM state WHERE key='paused_reason'").fetchone():
+                raise StoreError("HOME pausado")
+            enriched: list[dict[str, str | int]] = []
+            for item in normalized:
+                source = conn.execute("SELECT domain,sha256,kind,version,invalidated FROM sources WHERE source_id=?",
+                                      (item["source_id"],)).fetchone()
+                if (not source or source["invalidated"] or source["domain"] != domain
+                        or source["sha256"] != item["sha256"] or source["kind"] not in SOURCE_KINDS):
+                    raise StoreError("fonte ausente, cruzada, obsoleta ou nao autorizada")
+                enriched.append({**item, "version": int(source["version"])})
+            enriched.sort(key=lambda item: (str(item["source_id"]), str(item["sha256"]), int(item["version"])))
+            digest = proposal_digest(domain, title, body, kind, reason, verification, enriched)
+            dedup_hash = digest
             duplicate = conn.execute("SELECT id FROM proposals WHERE dedup_hash=?", (dedup_hash,)).fetchone()
             if duplicate:
                 return int(duplicate["id"])
-            for item in normalized:
-                source = conn.execute("SELECT domain,sha256,kind FROM sources WHERE source_id=?",
-                                      (item["source_id"],)).fetchone()
-                if not source or source["domain"] != domain or source["sha256"] != item["sha256"] or source["kind"] not in SOURCE_KINDS:
-                    raise StoreError("fonte ausente, cruzada, obsoleta ou nao autorizada")
             pending = conn.execute("SELECT COUNT(*) n FROM proposals WHERE status='pending'").fetchone()["n"]
             if pending >= 20:
                 raise StoreError("fila pendente cheia")
@@ -256,7 +295,7 @@ class Store:
                 raise StoreError("quota diaria de propostas excedida")
             cursor = conn.execute("""INSERT INTO proposals(domain,title,body,kind,reason,verification,
                 sources_json,digest,dedup_hash,status,created_at,created_day) VALUES(?,?,?,?,?,?,?,?,?,'pending',?,?)""",
-                (domain, title, body, kind, reason, verification, canonical_json(normalized),
+                (domain, title, body, kind, reason, verification, canonical_json(enriched),
                  digest, dedup_hash, now.isoformat(), day))
             return int(cursor.lastrowid)
 
@@ -307,8 +346,10 @@ class Store:
                     return self._proposal_dict(row)
                 raise StoreError("decisao contraditoria")
             for item in json.loads(row["sources_json"]):
-                source = conn.execute("SELECT sha256,domain,kind FROM sources WHERE source_id=?", (item["source_id"],)).fetchone()
-                if not source or source["sha256"] != item["sha256"] or source["domain"] != row["domain"] or source["kind"] not in SOURCE_KINDS:
+                source = conn.execute("SELECT sha256,domain,kind,version,invalidated FROM sources WHERE source_id=?", (item["source_id"],)).fetchone()
+                if (not source or source["invalidated"] or source["sha256"] != item["sha256"]
+                        or source["domain"] != row["domain"] or source["kind"] not in SOURCE_KINDS
+                        or int(source["version"]) != int(item.get("version", 0))):
                     conn.execute("UPDATE proposals SET status='stale' WHERE id=?", (proposal_id,))
                     stale = True
                     break
@@ -331,7 +372,7 @@ class Store:
         conn = self._connect()
         try:
             sources = [dict(row) for row in conn.execute("""SELECT source_id,domain,path,sha256,kind,version,updated_at
-                FROM sources WHERE domain=? AND kind IN ('source','approved') ORDER BY source_id LIMIT ?""", (domain, limit))]
+                FROM sources WHERE domain=? AND invalidated=0 AND kind IN ('source','approved') ORDER BY source_id LIMIT ?""", (domain, limit))]
             pending = [dict(row) | {"label": "pending_proposal"} for row in conn.execute("""SELECT id,domain,title,kind,reason,verification,status,created_at
                 FROM proposals WHERE domain=? AND status='pending' ORDER BY id DESC LIMIT ?""", (domain, limit))]
             return {"domain": domain, "sources": sources, "pending_proposals": pending}
@@ -339,16 +380,45 @@ class Store:
             conn.close()
 
     def status(self) -> dict:
+        self._expire_runs_persisted()
         with self._transaction() as conn:
-            self._expire_runs(conn)
             state = {r["key"]: r["value"] for r in conn.execute("SELECT key,value FROM state")}
             counts = {r["status"]: r["n"] for r in conn.execute("SELECT status,COUNT(*) n FROM proposals GROUP BY status")}
-            started = datetime.fromisoformat(state["observation_started_at"])
-            ready_at = started.timestamp() + 7 * 86400
+            started = datetime.fromisoformat(state["observation_started_at"]) if state.get("observation_started_at") else None
+            ready_at = started.timestamp() + 7 * 86400 if started else None
             gates = {r["name"]: bool(r["value"]) for r in conn.execute("SELECT name,value FROM gates")}
             return {"paused": "paused_reason" in state, "pause_reason": state.get("paused_reason"),
                     "proposal_counts": counts, "pending": counts.get("pending", 0),
-                    "observation_started_at": started.isoformat(),
-                    "experiment_ready_at": datetime.fromtimestamp(ready_at, timezone.utc).isoformat(),
-                    "can_experiment": self._now().timestamp() >= ready_at and gates.get("backup_verified", False)
-                    and gates.get("evaluation_ready", False), "gates": gates}
+                    "observation_started_at": started.isoformat() if started else None,
+                    "experiment_ready_at": datetime.fromtimestamp(ready_at, timezone.utc).isoformat() if ready_at else None,
+                    "can_experiment": (not state.get("paused_reason") and not conn.execute("SELECT 1 FROM runs WHERE status='active'").fetchone()
+                        and counts.get("pending", 0) < 20 and ready_at is not None and self._now().timestamp() >= ready_at
+                        and gates.get("backup_verified", False) and gates.get("evaluation_ready", False)), "gates": gates}
+
+    def start_observation(self, run_token: str) -> str:
+        with self._transaction() as conn:
+            run = conn.execute("SELECT status FROM runs WHERE token=?", (run_token,)).fetchone()
+            if not run or run["status"] != "completed":
+                raise StoreError("ciclo de observacao invalido")
+            current = conn.execute("SELECT value FROM state WHERE key='observation_started_at'").fetchone()["value"]
+            if current:
+                return current
+            started = self._iso()
+            conn.execute("UPDATE state SET value=? WHERE key='observation_started_at'", (started,))
+            return started
+
+    def record_observation_success(self, run_token: str) -> str:
+        return self.start_observation(run_token)
+
+    def invalidate_source(self, source_id: str, reason: str) -> None:
+        self._require(source_id, "source_id"); self._require(reason, "reason")
+        with self._transaction() as conn:
+            source = conn.execute("SELECT source_id FROM sources WHERE source_id=?", (source_id,)).fetchone()
+            if not source:
+                raise StoreError("fonte inexistente")
+            conn.execute("UPDATE sources SET invalidated=1,updated_at=? WHERE source_id=?", (self._iso(), source_id))
+            conn.execute("DELETE FROM events WHERE source_id=?", (source_id,))
+            proposals = conn.execute("SELECT id,sources_json FROM proposals WHERE status='pending'").fetchall()
+            for proposal in proposals:
+                if any(item.get("source_id") == source_id for item in json.loads(proposal["sources_json"])):
+                    conn.execute("UPDATE proposals SET status='stale' WHERE id=?", (proposal["id"],))
