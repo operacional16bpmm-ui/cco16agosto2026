@@ -1,0 +1,14 @@
+[Unit]
+Description=HOME Lab MCP stdio (não ativar como servidor de rede)
+[Service]
+Type=oneshot
+User=home-lab-mcp
+DynamicUser=yes
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+MemoryMax=512M
+CPUQuota=25%
+StateDirectory=home-lab-mcp
+BindReadOnlyPaths=/var/lib/home-lab/home.db
+ExecStart=/usr/bin/python3 -m home_lab.mcp --db /var/lib/home-lab/home.db --domains brain,pmesp

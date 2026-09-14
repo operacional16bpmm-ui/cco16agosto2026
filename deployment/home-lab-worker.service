@@ -1,0 +1,14 @@
+[Unit]
+Description=HOME Lab worker (desativado para revisão)
+[Service]
+Type=oneshot
+User=home-lab
+DynamicUser=yes
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+MemoryMax=2G
+CPUQuota=50%
+StateDirectory=home-lab
+BindReadOnlyPaths=/srv/home-lab/sources
+ExecStart=/usr/bin/python3 -m home_lab.worker --db /var/lib/home-lab/home.db --config /etc/home-lab/sources.json
