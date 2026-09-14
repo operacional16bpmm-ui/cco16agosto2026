@@ -24,7 +24,7 @@ overall_rc=0
   #    inteira e o loop de memoria (decay/eval/brief) nunca roda. Foi o que houve em
   #    08/09/2026 — o ingest travou as 03:00 e as 13h44 seguintes nao produziram nada.
   #    Com teto de 3h a noite continua mesmo que a vetorizacao esteja ruim.
-  if [ -x "$HOME/rag-backups/ingest-pc3.sh" ]; then
+  if [ "${SBV_SKIP_INGEST:-0}" != "1" ] && [ -x "$HOME/rag-backups/ingest-pc3.sh" ]; then
     echo "[night] re-ingest RAG (teto 3h)..."
     RAG_SKIP_EXTRACTION=1 timeout 3h "$HOME/rag-backups/ingest-pc3.sh" 2>&1 | tail -5
     rc=${PIPESTATUS[0]}
